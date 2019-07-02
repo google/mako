@@ -89,6 +89,7 @@ func NewAtAddress(input *qpb.QuickstoreInput, address string) (*Quickstore, erro
 	}
 
 	return &Quickstore{
+		Input: *input,
 		saverImpl: &grpcSaver{
 			client: qspb.NewQuickstoreClient(conn),
 		},
