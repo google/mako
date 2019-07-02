@@ -1,0 +1,98 @@
+// Threshold analyzer determines if data is within threshold bounds.
+//
+// The threshold values are configured via the ThresholdConfig protobuff message
+// and passed into constructor. This allows you to analyze multiple metrics of a
+// run with a single call to Analyze().
+//
+// For more information about mako see go/mako. For analyzer specific
+// information see go/mako-analyzer.
+//
+// AnalyzerOutput.analyzer_type is set to 'Threshold'.
+
+syntax = "proto2";
+
+package mako.analyzers.threshold_analyzer;
+
+import "spec/proto/mako.proto";
+
+// Specify the threshold values for a particular type of data (metric samples,
+// metric aggregate, etc.)
+message ThresholdConfig {
+  // CONDITIONALLY_REQUIRED
+  // At least one of either min or max must be set.
+  //
+  // Min expected value of data.
+  optional double min = 1;
+
+  // CONDITIONALLY_REQUIRED
+  // At least one of either min or max must be set.
+  //
+  // Max expected value of data.
+  optional double max = 2;
+
+  // CONDITIONALLY_REQUIRED
+  // Percent of measurements that can exist outside the min/max range specified
+  // above before failing analysis.
+  //
+  // Not required if data being analyzed is a single value (eg. a run
+  // aggregate, error count, benchmark score)
+  //
+  // Value is percent (eg. 51 for 51%)
+  optional double outlier_percent_max = 3;
+
+  // REQUIRED
+  // Data that threshold will be applied to.
+  optional mako.DataFilter data_filter = 4;
+
+  // OPTIONAL
+  // Name of this config. Will be set in ThresholdConfigResult.config_name if
+  // supplied.
+  optional string config_name = 5;
+}
+
+// Constructor input to threshold analyzer
+message ThresholdAnalyzerInput {
+  // REQUIRED
+  repeated ThresholdConfig configs = 1;
+
+  // UNCOMMON
+  // Name for this analyzer instance, will be output in
+  // AnalyzerOutput.analyzer_name
+  optional string name = 2;
+}
+
+// This message will be text (go/textformat) encoded into
+// AnalyzerOutput.output.
+message ThresholdAnalyzerOutput {
+  // REQUIRED
+  // A result will be added for each evaluated ThresholdConfig.
+  repeated ThresholdConfigResult config_results = 1;
+}
+
+// Results of each ThresholdConfig
+// NEXT ID: 7
+message ThresholdConfigResult {
+  // REQUIRED
+  // Percent of points that were above the max (eg. 51 => 51%)
+  optional double percent_above_max = 1;
+
+  // REQUIRED
+  // Percent of points that were below the min (eg. 51 => 51%)
+  optional double percent_below_min = 2;
+
+  // OPTIONAL
+  // Populated whenever analyzing an aggregate or other single value.
+  optional double value_outside_threshold = 3;
+
+  // REQUIRED
+  // Human readable label associated with the metric being analyzed.
+  optional string metric_label = 4;
+
+  // REQUIRED
+  // The configuration used in analysis that provided this result.
+  optional ThresholdConfig config = 5;
+
+  // REQUIRED
+  // Whether this config evaluation resulted in a regression being flagged.
+  optional bool regression = 6;
+}
