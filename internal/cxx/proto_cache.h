@@ -80,9 +80,6 @@ struct ProtoHash {
 // Functor used to compare two protocol buffers for equality. We defer the
 // comparions to MessageDifferencer configured to allow repeating fields to be
 // treated as sets.
-//
-// TODO(bkutzman) - If other comparison configurations are desired in the future
-// another ProtoCache constructor could be exposed.
 template <class T>
 struct ProtoEquals {
   bool operator()(const T& t1, const T& t2) const {

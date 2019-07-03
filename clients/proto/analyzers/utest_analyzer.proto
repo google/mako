@@ -203,7 +203,7 @@ message UTestAnalyzerOutput {
 }
 
 // Results of each UTestConfig
-// NEXT_ID: 8
+// NEXT_ID: 10
 message UTestConfigResult {
   // REQUIRED
   optional UTestConfig config = 5;
@@ -217,6 +217,14 @@ message UTestConfigResult {
   // Human readable label associated with the metric being analyzed for
   // Sample B.
   optional string b_metric_label = 7;
+
+  // REQUIRED
+  // Median of sample A, with no shift values applied.
+  optional double a_median = 8;
+
+  // REQUIRED
+  // Median of sample B.
+  optional double b_median = 9;
 
   // REQUIRED
   // Z-Statistic resulting from the test

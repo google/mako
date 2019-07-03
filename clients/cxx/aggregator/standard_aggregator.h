@@ -51,7 +51,7 @@ class Aggregator : public mako::Aggregator {
   //     files will be used instead. Large load tests utilizing CNS will likely
   //     benenfit from having a thread per file as CNS reads are a big
   //     bottleneck.
-  //     TODO(andrewstewart): adapt this to use different defaults depending on
+  //     TODO(b/136282446): adapt this to use different defaults depending on
   //     if we're in a small or large test.
   //   buffer_size: The number of values each thread will buffer for each
   //     metric. The buffering is used to reduce contention, since global locks

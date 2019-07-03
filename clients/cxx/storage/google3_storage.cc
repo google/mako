@@ -52,7 +52,7 @@ using ::mako_internal::SudoStorageRequest;
 
 constexpr absl::Duration kRPCDeadline = absl::Seconds(65);
 constexpr char kNoError[] = "";
-constexpr char kMakoStorageServer[] = "mako.googleplex.com";
+constexpr char kMakoStorageServer[] = "mako.dev";
 constexpr char kCreateBenchmarkPath[] = "/storage/benchmark-info/create";
 constexpr char kQueryBenchmarkPath[] = "/storage/benchmark-info/query";
 constexpr char kModificationBenchmarkPath[] = "/storage/benchmark-info/update";
@@ -189,8 +189,8 @@ bool UploadRunInfo(
   for (const auto& tag : tags) {
     *final_run_info.add_tags() = std::string(tag);
   }
-  // TODO(kovas) reference this limit from some common location where it is
-  // defined (instead of redefining it here)
+  // TODO(b/136285571) reference this limit from some common location where it
+  // is defined (instead of redefining it here)
   int tag_limit = 20;
   if (final_run_info.tags_size() > tag_limit) {
     std::string err_msg =

@@ -25,7 +25,6 @@ std::string AnalyzerOptimizer::AddAnalyzer(
 
 std::string AnalyzerOptimizer::OrderAnalyzers(
     std::vector<mako::Analyzer*>* analyzers) {
-  // TODO(bkutzman) if needed we could switch the order of analyzers here.
   for (auto pair : analyzer_to_query_) {
     analyzers->push_back(pair.first);
   }
@@ -176,8 +175,6 @@ std::string AnalyzerOptimizer::AddHistoricalRuns(
           << run_info.benchmark_key() << ") than you are currently testing ("
           << current_run_bundle_.benchmark_info().benchmark_key()
           << "). This is probably not what you want.";
-      // TODO(bkutzman) If we end up with a legit use case here we should lookup
-      // the entire BenchmarkInfo. Until then just fill in the benchmark_key().
       run_bundle->mutable_benchmark_info()->set_benchmark_key(
           run_info.benchmark_key());
     }

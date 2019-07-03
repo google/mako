@@ -77,7 +77,7 @@ namespace downsampler {
 // SWIG doesn't support constexpr.
 // Using same default as Standard Aggregator
 ABSL_CONST_INIT extern const int kMaxThreads;
-// TODO(bkutzman) Wonder if this should be part of storage?
+// TODO(b/136285106) Wonder if this should be part of storage?
 ABSL_CONST_INIT extern const int kMaxErrorStringLength;
 // Max binary size of all SampleAnnotations in all batches. This should be less
 // than maximum sample batch size. The size is in base 10 bytes, e.g.
@@ -103,7 +103,7 @@ class Downsampler : public mako::Downsampler {
   // max. If this value is higher than the number of input files, the number of
   // files will be used instead. Large load tests utilizing CNS will likely
   // benefit from having a thread per file as CNS reads are a big bottleneck.
-  // TODO(andrewstewart): Adapt this to use different defaults depending on if
+  // TODO(b/136282446): Adapt this to use different defaults depending on if
   // we're in a small or large test.
   explicit Downsampler(int max_threads) : max_threads_(max_threads) {
     std::random_device r;

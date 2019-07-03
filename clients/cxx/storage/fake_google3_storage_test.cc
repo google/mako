@@ -181,7 +181,7 @@ TEST_F(FakeGoogle3StorageTest, QueryBenchmarkInfoByNameAndOrProject) {
 }
 
 TEST_F(FakeGoogle3StorageTest, QueryBenchmarkInfoTwoFoundByOwner) {
-  std::string matching_owner = "bkutzman@";
+  std::string matching_owner = "superman@";
   std::string non_matching_owner = "r2@";
   mako::BenchmarkInfo benchmark_info;
 
@@ -216,7 +216,7 @@ TEST_F(FakeGoogle3StorageTest, QueryBenchmarkInfoTwoFoundByOwner) {
 }
 
 TEST_F(FakeGoogle3StorageTest, QueryBenchmarkInfoUsingCursors) {
-  std::string matching_owner = "bkutzman@";
+  std::string matching_owner = "superman@";
   mako::BenchmarkInfo benchmark_info;
 
   // Create three projects with matching owner
@@ -496,11 +496,11 @@ TEST_F(FakeGoogle3StorageTest, QueryRunInfoByKey) {
 
 TEST_F(FakeGoogle3StorageTest, QueryRunInfoTwoFoundByTag) {
   // Applied and queried by
-  std::string matching_tag_1 = "bkutzman@google.com";
+  std::string matching_tag_1 = "superman@example.com";
   // Applied but not queried by
-  std::string matching_tag_2 = "blairkutz@gmail.com";
+  std::string matching_tag_2 = "clarkkent@example.com";
   // Applied to non matching run_info
-  std::string non_matching_tag = "r2-d2@google.com";
+  std::string non_matching_tag = "r2-d2@example.com";
   mako::RunInfo run_info;
 
   // Create two projects with matching tag
@@ -536,7 +536,7 @@ TEST_F(FakeGoogle3StorageTest, QueryRunInfoTwoFoundByTag) {
 }
 
 TEST_F(FakeGoogle3StorageTest, QueryRunInfoUsingCursors) {
-  std::string matching_tag = "bkutzman@";
+  std::string matching_tag = "superman@";
   mako::RunInfo run_info;
 
   // Create three projects with matching tag

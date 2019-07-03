@@ -315,11 +315,11 @@ message BenchmarkInfo {
   // directly.
   //
   // To provide write access to a google account, supply the full email address.
-  //   Example: avallone@google.com
+  //   Example: user@google.com
   //
   // For a Ganpati group, supply the address for the group (including the
   // "prod." part).
-  //   Example: bigtable@prod.google.com
+  //   Example: group@prod.google.com
   //
   // For backward compatibility, these addresses are all considered equivalent
   // for the purposes of direct matches:

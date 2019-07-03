@@ -38,8 +38,6 @@ bool RetryingStorageRequest(
     mako::internal::StorageRetryStrategy* retry_strategy) {
   constexpr absl::Duration kRPCDeadline = absl::Seconds(65);
 
-  // TODO(b/71900406): Use LocalTraceSpan to create a custom span here, to group
-  // associated RPCs.
   std::string result = "FAIL";
   int attempt = 0;
 

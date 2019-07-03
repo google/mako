@@ -55,6 +55,7 @@ import (
 	qspb "github.com/google/mako/internal/quickstore_microservice/proto/quickstore_go_proto"
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
 
+	_ "github.com/google/mako/internal/go/common" // b/111726961
 )
 
 // Quickstore allows saving of data passed via Add* methods to Mako.
@@ -81,9 +82,9 @@ type Quickstore struct {
 
 
 // NewAtAddress creates a new Quickstore that connects to the provided gRPC address.
-func NewAtAddress(input *qpb.QuickstoreInput, address string) (*Quickstore, error) {
+func NewAtAddress(ctx context.Context, input *qpb.QuickstoreInput, address string) (*Quickstore, error) {
 	// suppress go/nogo-check#disallowedfunction google3/third_party/golang/grpc/grpc.WithInsecure
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

@@ -353,8 +353,6 @@ class RecordManager {
     // corresponding to the metric set currently being added
     RecordSaver<T>* biggest_saver = nullptr;
 
-    // TODO(bkutzman) Linear search over number of metric sets is pretty
-    // cheap.
     float biggest_slot_count = 0;
     for (const auto& pair : key_to_record_saver_) {
       const MetricSet& metric_set = pair.first;
