@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -832,33 +832,82 @@ message SampleError {
   optional string error_message = 3;
 }
 
-// The SamplerExecutionStatisticsTrackerInput is not yet available.
-message SamplerExecutionStatisticsTrackerInput {
+// Rate tracking configuration.
+// See MultiSamplerStartInput.sampler_rate_info_config.
+message SamplerRateInfoConfig {
   // REQUIRED
+  // A list of durations, which will define time windows over which execution
+  // rates are tracked. The mako framework will keep counts of set
+  // statistics over rolling windows ending at the current time and starting at
+  // the current time minus each duration.
+  //
+  // NOTE: If a window duration is significantly small ( < 1/sampler rate)
+  // tracked statistics will be inaccurate.
   repeated int64 window_durations_ms = 1;
+
+  // OPTIONAL
+  // Regexes used to filter error messages with.
+  //
+  // Each regex will be represented by a SamplerRateWindow.Stat object. The
+  // fields in the Stat object will represent messages that match against a part
+  // filter.
+  repeated string error_message_regexes = 2;
+
+  // OPTIONAL
+  // Custom events to keep track of.
+  //
+  // When defined, these custom events will be tracked along with the other
+  // tracked data returned in a SamplerRateInfo message. To indicate one of
+  // these events has occurred, add the event ID to the
+  // SamplerOutput.custom_event_ids field in the Sampler.Execute method.
+  repeated string custom_event_ids = 3;
 }
 
-// The SamplerExecutionStatisticsTrackerOutput is not yet available.
-message SamplerExecutionStatisticsTrackerOutput {
+// Rate information an individual or group of samplers.
+message SamplerRateInfo {
   // REQUIRED
-  map<int64, SamplerExecutionStatisticsTrackerWindow>
-      sampler_execution_statistics = 1;
+  // A map of durations (in milliseconds) to SamplerRateWindows.
+  map<int64, SamplerRateWindow> sampler_execution_statistics = 1;
 }
 
-// The SamplerExecutionStatisticsTrackerWindow is not yet available.
-message SamplerExecutionStatisticsTrackerWindow {
+// The SamplerRateWindow represents the collected
+// statistics of multiple variables over a user defined window.
+message SamplerRateWindow {
+  // The stat message contains all of the information we want to convey about
+  // an individual aspect of a sampler. It currently only contains the count of
+  // each event, but may be added to in the future.
   message Stat {
     // REQUIRED
     optional int64 count = 1;
   }
   // REQUIRED
-  optional Stat execution_count = 1;
+  // The Stat representing the number of times the sampler has had execute
+  // called.
+  optional Stat executions = 1;
   // REQUIRED
-  optional Stat expected_execution_count = 2;
+  // The Stat representing the number of times the sampler should have had
+  // execute called.
+  //
+  // NOTE: This may differ from the number of times execute has actually been
+  // called. The sampler may fall behind on executions when the sampler rate is
+  // too high.
+  optional int64 expected_execution_count = 2;
   // REQUIRED
-  optional Stat sample_point_received_count = 3;
-  // REQUIRED
-  optional Stat error_received_count = 4;
+  // The Stat representing the number of times the sampler has returned a sample
+  // point.
+  optional Stat sample_points_received = 3;
+  // OPTIONAL
+  // The Stat representing the number of times the sampler has returned an
+  // error.
+  optional Stat all_errors_received = 4;
+  // OPTIONAL
+  // A map of regexes to Stat objects. The stat objects represent errors
+  // received with messages that match the regex filter.
+  map<string, Stat> filtered_errors_received_counts = 5;
+
+  // Rate info on the custom events specified in the SamplerRateInfoConfig
+  // message.
+  map<string, Stat> custom_events_counts = 6;
 }
 
 // Measurements and SUT errors are written to storage in SampleBatches.
@@ -1672,6 +1721,7 @@ message AnalyzerOutput {
 // work items. Typically populated by a human through the Mako Web UI.
 // NEXT ID: 7
 message AnalysisTriageInfo {
+  // NEXT ID: 5
   enum AnalysisTriageType {
     NONE = 0;
     // Real performance degradation/change which should be fixed in the product.
@@ -1682,12 +1732,16 @@ message AnalysisTriageInfo {
     // ephemeral performance degradation in some part of the system under test,
     // mis-configured analyzer or other flaw in the benchmark.
     FALSE_POSITIVE = 3;
+    // Has been triaged (possibly with metadata attached), but the category of
+    // the failure is unknown.
+    UNKNOWN = 4;
   }
 
   // REQUIRED
   // User response after evaluating the analysis.
   optional AnalysisTriageType analysis_state = 1;
 
+  // NEXT ID: 4
   enum EnvironmentType {
     UNSPECIFIED = 0;
     // Found in presubmit testing environments.
@@ -1979,14 +2033,7 @@ message TestInput {
 
   // If this value is not manually set, the Mako Load framework and
   // Quickstore will attempt to detect and use meaningful Test Pass environment
-  // variables from common test executor infrastructure at Google. Detection
-  // logic will be applied in the following order:
-  // 1. Use the Sponge Invocation ID if run from Guitar.
-  // 2. Use Mako's session_id which should always be available. session_id
-  // is uniquely generated for each process that starts a Load Test or uses
-  // Quickstore. If a single process generates multiple RunInfos they will
-  // share a session_id.
-  //
+  // variables from common test executor infrastructure.
   optional string test_pass_id = 7;
 
   // COMMON
@@ -2025,6 +2072,8 @@ message TestOutput {
     // AnalyzerOutput.regression == True (found a regression) to differentiate
     // between the two cases.
     ANALYSIS_FAIL = 4;
+    // test still in progress
+    IN_PROGRESS = 5;
   }
   optional TestStatus test_status = 1;
 

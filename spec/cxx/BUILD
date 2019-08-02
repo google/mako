@@ -1,6 +1,8 @@
 # C++ libaries for accessing mako
 package(default_visibility = ["//visibility:public"])
 
+licenses(["notice"])
+
 cc_library(
     name = "analyzer",
     srcs = ["analyzer.cc"],

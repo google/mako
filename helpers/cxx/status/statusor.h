@@ -11,8 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_STATUS_OR_H_
-#define THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_STATUS_OR_H_
+
+#ifndef HELPERS_CXX_STATUS_STATUS_OR_H_
+#define HELPERS_CXX_STATUS_STATUS_OR_H_
 
 #include "google/cloud/status_or.h"
 
@@ -25,4 +26,4 @@ using StatusOr = ::google::cloud::StatusOr<T>;
 }  // namespace helpers
 }  // namespace mako
 
-#endif  // THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_STATUS_OR_H_
+#endif  // HELPERS_CXX_STATUS_STATUS_OR_H_

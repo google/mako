@@ -1,3 +1,16 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
 #include "clients/cxx/downsampler/standard_downsampler.h"
 
 #include <stddef.h>
@@ -100,7 +113,8 @@ void ProcessAllRecords(
 void ProcessAllRecords(
     std::vector<std::unique_ptr<mako::SampleError>>* all_records) {
   for (std::unique_ptr<mako::SampleError>& new_error : *all_records) {
-    // Truncate the copy of the sample error as defined in cs/mako.proto
+    // Truncate the copy of the sample error as defined in
+    // https://github.com/google/mako/spec/proto/mako.proto
     if (new_error->error_message().length() > kMaxErrorStringLength) {
       LOG(WARNING) << "Error message from sampler error, truncated to "
                    << kMaxErrorStringLength
@@ -635,6 +649,27 @@ std::string Downsampler::Downsample(
   }
   LOG(INFO) << "Downsampling complete";
   return kNoError;
+}
+
+void GetNewRecord(mako::SampleBatch* batch,
+                  mako::SamplePoint** new_point) {
+  *new_point = batch->add_sample_point_list();
+}
+
+void GetNewRecord(mako::SampleBatch* batch,
+                  mako::SampleError** new_error) {
+  *new_error = batch->add_sample_error_list();
+}
+
+mako::SampleBatch* GetNewBatch(
+    const std::string& benchmark_key, const std::string& run_key,
+    mako::DownsamplerOutput* downsampler_output,
+    int64_t* batch_size_bytes) {
+  mako::SampleBatch* batch = downsampler_output->add_sample_batch_list();
+  batch->set_benchmark_key(benchmark_key);
+  batch->set_run_key(run_key);
+  *batch_size_bytes = batch->ByteSizeLong();
+  return batch;
 }
 
 }  // namespace downsampler

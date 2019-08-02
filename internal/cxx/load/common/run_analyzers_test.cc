@@ -1,3 +1,16 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
 #include "internal/cxx/load/common/run_analyzers.h"
 
 #include <functional>
@@ -158,7 +171,7 @@ TEST_F(RunAnalyzersTest, Success) {
 
   // Validate
   ASSERT_EQ("", err);
-  ASSERT_EQ(mako::TestOutput_TestStatus_PASS, test_output.test_status());
+  ASSERT_EQ(mako::TestOutput::PASS, test_output.test_status());
   ASSERT_NE("", test_output.summary_output());
   ASSERT_EQ(1, test_output.analyzer_output_list_size());
   ASSERT_FALSE(test_output.analyzer_output_list(0).regression());
@@ -171,7 +184,7 @@ TEST_F(RunAnalyzersTest, ConstructHistoryErrorStatus) {
   std::vector<SampleBatch> batches;
   NiceMock<MockAnalyzer> mock_analyzer;
   mako::AnalyzerHistoricQueryOutput mock_output;
-  mock_output.mutable_status()->set_code(mako::Status_Code_FAIL);
+  mock_output.mutable_status()->set_code(mako::Status::FAIL);
   mock_output.mutable_status()->set_fail_message(mock_error);
   EXPECT_CALL(mock_analyzer, ConstructHistoricQuery(_, _))
       .WillRepeatedly(DoAll(SetArgPointee<1>(mock_output), Return(false)));
@@ -184,11 +197,10 @@ TEST_F(RunAnalyzersTest, ConstructHistoryErrorStatus) {
 
   // Validate
   ASSERT_EQ("", err);
-  ASSERT_EQ(mako::TestOutput_TestStatus_ANALYSIS_FAIL,
-            test_output.test_status());
+  ASSERT_EQ(mako::TestOutput::ANALYSIS_FAIL, test_output.test_status());
   ASSERT_NE("", test_output.summary_output());
   ASSERT_EQ(1, test_output.analyzer_output_list_size());
-  ASSERT_EQ(mako::Status_Code_FAIL,
+  ASSERT_EQ(mako::Status::FAIL,
             test_output.analyzer_output_list(0).status().code());
   EXPECT_THAT(test_output.analyzer_output_list(0).status().fail_message(),
               HasSubstr(mock_error));
@@ -200,7 +212,7 @@ TEST_F(RunAnalyzersTest, AnalyzeError) {
   std::vector<SampleBatch> batches;
   NiceMock<MockAnalyzer> mock_analyzer;
   mako::AnalyzerOutput mock_output;
-  mock_output.mutable_status()->set_code(mako::Status_Code_FAIL);
+  mock_output.mutable_status()->set_code(mako::Status::FAIL);
   mock_output.mutable_status()->set_fail_message(mock_error);
   mock_output.set_analyzer_type("JustMyType");
   mock_output.set_analyzer_name("Me");
@@ -216,13 +228,12 @@ TEST_F(RunAnalyzersTest, AnalyzeError) {
 
   // Validate
   ASSERT_EQ("", err);
-  ASSERT_EQ(mako::TestOutput_TestStatus_ANALYSIS_FAIL,
-            test_output.test_status());
+  ASSERT_EQ(mako::TestOutput::ANALYSIS_FAIL, test_output.test_status());
   ASSERT_NE("", test_output.summary_output());
   ASSERT_EQ(1, test_output.analyzer_output_list_size());
   mako::AnalyzerOutput analyzer_output =
       test_output.analyzer_output_list(0);
-  ASSERT_EQ(mako::Status_Code_FAIL, analyzer_output.status().code());
+  ASSERT_EQ(mako::Status::FAIL, analyzer_output.status().code());
   EXPECT_THAT(analyzer_output.status().fail_message(), HasSubstr(mock_error));
   EXPECT_EQ("JustMyType", analyzer_output.analyzer_type());
   EXPECT_EQ("Me", analyzer_output.analyzer_name());
@@ -242,7 +253,7 @@ TEST_F(RunAnalyzersTest, RunAnalyzersSimpleThresholdPass) {
   config->set_outlier_percent_max(0);
   config->mutable_data_filter()->set_value_key(kBenchmarkMetricKey);
   config->mutable_data_filter()->set_data_type(
-      mako::DataFilter_DataType_METRIC_SAMPLEPOINTS);
+      mako::DataFilter::METRIC_SAMPLEPOINTS);
   mako::threshold_analyzer::Analyzer threshold_analyzer(input);
   analyzers.push_back(&threshold_analyzer);
 
@@ -253,7 +264,7 @@ TEST_F(RunAnalyzersTest, RunAnalyzersSimpleThresholdPass) {
 
   // Validate
   ASSERT_EQ("", err);
-  ASSERT_EQ(mako::TestOutput_TestStatus_PASS, test_output.test_status());
+  ASSERT_EQ(mako::TestOutput::PASS, test_output.test_status());
   ASSERT_NE("", test_output.summary_output());
   ASSERT_EQ(1, test_output.analyzer_output_list_size());
   ASSERT_FALSE(test_output.analyzer_output_list(0).regression());
@@ -275,7 +286,7 @@ TEST_F(RunAnalyzersTest,
   config->set_outlier_percent_max(1.0);
   config->mutable_data_filter()->set_value_key(kBenchmarkMetricKey);
   config->mutable_data_filter()->set_data_type(
-      mako::DataFilter_DataType_METRIC_SAMPLEPOINTS);
+      mako::DataFilter::METRIC_SAMPLEPOINTS);
   mako::threshold_analyzer::Analyzer threshold_analyzer(input);
   analyzers.push_back(&threshold_analyzer);
 
@@ -286,8 +297,7 @@ TEST_F(RunAnalyzersTest,
 
   // Validate
   ASSERT_EQ("", err);
-  ASSERT_EQ(mako::TestOutput_TestStatus_ANALYSIS_FAIL,
-            test_output.test_status());
+  ASSERT_EQ(mako::TestOutput::ANALYSIS_FAIL, test_output.test_status());
   ASSERT_NE("", test_output.summary_output());
   ASSERT_EQ(1, test_output.analyzer_output_list_size());
   ASSERT_TRUE(test_output.analyzer_output_list(0).regression());
@@ -314,8 +324,7 @@ TEST_F(RunAnalyzersTest,
 
   // Validate
   ASSERT_EQ("", err);
-  ASSERT_EQ(mako::TestOutput_TestStatus_ANALYSIS_FAIL,
-            test_output.test_status());
+  ASSERT_EQ(mako::TestOutput::ANALYSIS_FAIL, test_output.test_status());
   ASSERT_NE("", test_output.summary_output());
   ASSERT_EQ(1, test_output.analyzer_output_list_size());
 }
@@ -379,7 +388,7 @@ TEST_F(RunAnalyzersTest, RunAnalyzersVisualizeAnalysis) {
   config->set_outlier_percent_max(1.0);
   config->mutable_data_filter()->set_value_key(kBenchmarkMetricKey);
   config->mutable_data_filter()->set_data_type(
-      mako::DataFilter_DataType_METRIC_SAMPLEPOINTS);
+      mako::DataFilter::METRIC_SAMPLEPOINTS);
   mako::threshold_analyzer::Analyzer threshold_analyzer(input);
   // add two analyzers which will regress.
   analyzers.push_back(&threshold_analyzer);
@@ -394,8 +403,7 @@ TEST_F(RunAnalyzersTest, RunAnalyzersVisualizeAnalysis) {
 
   // Validate
   ASSERT_EQ("", err);
-  ASSERT_EQ(mako::TestOutput_TestStatus_ANALYSIS_FAIL,
-            test_output.test_status());
+  ASSERT_EQ(mako::TestOutput::ANALYSIS_FAIL, test_output.test_status());
   ASSERT_NE("", test_output.summary_output());
   EXPECT_THAT(test_output.summary_output(),
               HasSubstr("visualize regression 'unnamed_#1': https://"));

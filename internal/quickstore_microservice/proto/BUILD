@@ -11,6 +11,7 @@ proto_library(
     ],
 )
 
+# TODO(b/
 go_proto_library(
     name = "quickstore_go_proto",
     compilers = ["@io_bazel_rules_go//proto:go_grpc"],
@@ -31,4 +32,18 @@ go_proto_library(
         "//helpers/proto/quickstore:quickstore_go_proto",
         "//spec/proto:mako_go_proto",
     ],
+)
+
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+
+cc_proto_library(
+    name = "quickstore_cc_proto",
+    deps = [":quickstore_proto"],
+)
+
+cc_grpc_library(
+    name = "quickstore_cc_grpc_proto",
+    srcs = [":quickstore_proto"],
+    grpc_only = True,
+    deps = [":quickstore_cc_proto"],
 )

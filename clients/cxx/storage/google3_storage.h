@@ -1,8 +1,22 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
+
 //
 // Provides access to the Google3 version of the Mako storage system.
 //
-#ifndef TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_
-#define TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_
+#ifndef CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_
+#define CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_
 
 #include <memory>
 #include <string>
@@ -17,25 +31,30 @@
 namespace mako {
 namespace google3_storage {
 
-// Google3 version of Mako (go/mako) storage system.
+// Mako (go/mako) base storage client.
 //
-// Not for external use because this sends traffic via HTTP over RPC.
+// Mako customers (http://mako.dev) should instead use NewMakoClient() in
+// https://github.com/google/mako/clients/cxx/storage/mako_client.h.
 //
-// See cs/google3/testing/performance/mako/spec/cxx/storage.h for more
+// See https://github.com/google/mako/spec/cxx/storage.h for more
 // information about interface.
 //
-// See cs/google3/testing/performance/mako/spec/proto/mako.proto for
+// See https://github.com/google/mako/spec/proto/mako.proto for
 // information about the protobuf structures used below.
 //
 // Direct use of this class isn't needed when using the normal flow of Mako.
-//
-// Use only when you are only using Mako's storage system, or need direct
-// access to data outside the Mako dashboard (go/mako).
+// Consider using Quickstore if you want to write performance test data to the
+// storage and dashboard service.
 //
 // This class is thread-safe (as per go/thread-safe) if the `StorageTransport`
 // and the `StorageRetryStrategy` are thread-safe.
 class Storage : public mako::Storage {
  public:
+
+  // Create Storage object with the given storage transport, and the default
+  // retry strategy.
+  explicit Storage(
+      std::unique_ptr<mako::internal::StorageTransport> transport);
 
   // Create Storage object with the given storage transport and retry strategy.
   //
@@ -58,13 +77,13 @@ class Storage : public mako::Storage {
   // Fetch the storage transport. Exposed for testing.
   mako::internal::StorageTransport* transport() { return transport_.get(); }
 
-  // Creates a new BenchmarkInfo record in Mako storage via RPC sent to
-  // server specified in constructor.
+  // Creates a new BenchmarkInfo record in Mako storage via the
+  // StorageTransport.
   //
   // BenchmarkInfoQuery arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -72,13 +91,13 @@ class Storage : public mako::Storage {
       const mako::BenchmarkInfo& benchmark_info,
       mako::CreationResponse* creation_response) override;
 
-  // Updates an existing BenchmarkInfo record in Mako storage via RPC sent
-  // to server specified in constructor.
+  // Updates an existing BenchmarkInfo record in Mako storage via the
+  // StorageTransport.
   //
   // BenchmarkInfoQuery arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -86,13 +105,13 @@ class Storage : public mako::Storage {
       const mako::BenchmarkInfo& benchmark_info,
       mako::ModificationResponse* mod_response) override;
 
-  // Queries for existing BenchmarkInfo records in Mako storage via RPC sent
-  // to server specified in constructor.
+  // Queries for existing BenchmarkInfo records in Mako storage via the
+  // StorageTransport.
   //
   // BenchmarkInfoQuery arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -100,13 +119,13 @@ class Storage : public mako::Storage {
       const mako::BenchmarkInfoQuery& benchmark_info_query,
       mako::BenchmarkInfoQueryResponse* query_response) override;
 
-  // Deletes existing BenchmarkInfo records in Mako storage via RPC sent to
-  // server specified in constructor.
+  // Deletes existing BenchmarkInfo records in Mako storage via the
+  // StorageTransport.
   //
   // BenchmarkInfoQuery arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -115,7 +134,7 @@ class Storage : public mako::Storage {
       mako::ModificationResponse* mod_response) override;
 
   // Queries for the count of matching BenchmarkInfo records in Mako storage
-  // via RPC sent to server specified in constructor.
+  // via the StorageTransport.
   //
   // BenchmarkInfoQuery arg must contain all required fields described in
   // mako.proto.
@@ -123,7 +142,7 @@ class Storage : public mako::Storage {
   // CountResponse will be cleared before issuing the query, and will be
   // populated with the response from Mako storage.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -131,50 +150,49 @@ class Storage : public mako::Storage {
       const mako::BenchmarkInfoQuery& benchmark_info_query,
       mako::CountResponse* count_response) override;
 
-  // Creates a new RunInfo records in Mako storage via RPC sent to
-  // server specified in constructor.
+  // Creates a new RunInfo records in Mako storage via the StorageTransport.
   //
   // RunInfo arg must contain all required fields described in mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
   bool CreateRunInfo(const mako::RunInfo& run_info,
                      mako::CreationResponse* creation_response) override;
 
-  // Updates an existing RunInfo record in Mako storage via RPC sent to
-  // server specified in constructor.
+  // Updates an existing RunInfo record in Mako storage via the
+  // StorageTransport.
   //
   // RunInfo arg must contain all required fields described in mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
   bool UpdateRunInfo(const mako::RunInfo& run_info,
                      mako::ModificationResponse* mod_response) override;
 
-  // Queries for existing RunInfo records in Mako storage via RPC sent to
-  // server specified in constructor.
+  // Queries for existing RunInfo records in Mako storage via the
+  // StorageTransport.
   //
   // RunInfoQuery arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
   bool QueryRunInfo(const mako::RunInfoQuery& run_info_query,
                     mako::RunInfoQueryResponse* query_response) override;
 
-  // Deletes existing RunInfo records in Mako storage via RPC sent to
-  // server specified in constructor.
+  // Deletes existing RunInfo records in Mako storage via the
+  // StorageTransport.
   //
   // RunInfoQuery arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -182,7 +200,7 @@ class Storage : public mako::Storage {
                      mako::ModificationResponse* mod_response) override;
 
   // Queries for the count of matching RunInfo records in Mako storage via
-  // RPC sent to server specified in constructor.
+  // the StorageTransport.
   //
   // RunInfoQuery arg must contain all required fields described in
   // mako.proto.
@@ -190,20 +208,20 @@ class Storage : public mako::Storage {
   // CountResponse will be cleared before issuing the query, and will be
   // populated with the response from Mako storage.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
   bool CountRunInfo(const mako::RunInfoQuery& run_info_query,
                     mako::CountResponse* count_response) override;
 
-  // Creates a new SampleBatch record in Mako storage via RPC sent to
-  // server specified in constructor.
+  // Creates a new SampleBatch record in Mako storage via the
+  // StorageTransport.
   //
   // SampleBatch arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -211,13 +229,13 @@ class Storage : public mako::Storage {
       const mako::SampleBatch& sample_batch,
       mako::CreationResponse* creation_response) override;
 
-  // Queries for existing SampleBatch records in Mako storage via RPC sent
-  // to server specified in constructor.
+  // Queries for existing SampleBatch records in Mako storage via the
+  // StorageTransport.
   //
   // SampleBatchQuery arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -225,13 +243,13 @@ class Storage : public mako::Storage {
       const mako::SampleBatchQuery& sample_batch_query,
       mako::SampleBatchQueryResponse* query_response) override;
 
-  // Deletes existing SampleBatch records in Mako storage via RPC sent to
-  // server specified in constructor.
+  // Deletes existing SampleBatch records in Mako storage via the
+  // StorageTransport.
   //
   // SampleBatchQuery arg must contain all required fields described in
   // mako.proto.
   //
-  // Returns false if RPC fails or backend fails. More details found in
+  // Returns false if message fails or backend fails. More details found in
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
@@ -261,9 +279,9 @@ class Storage : public mako::Storage {
   // More details can be found in interface documentation.
   std::string GetHostname() override { return transport_->GetHostname(); }
 
-  // Returns the number of seconds that the last RPC call took (according to the
-  // server). This is exposed for tests of this library to use and should not
-  // otherwise be relied on. This is also not guaranteed to be correct in
+  // Returns the number of seconds that the last message call took (according to
+  // the server). This is exposed for tests of this library to use and should
+  // not otherwise be relied on. This is also not guaranteed to be correct in
   // multi-threaded situations.
   // TODO(b/73734783): Remove this.
   double last_call_server_elapsed_time() const {
@@ -276,6 +294,7 @@ class Storage : public mako::Storage {
   std::unique_ptr<mako::internal::StorageRetryStrategy> retry_strategy_;
 };
 
+std::string ApplyHostnameFlagOverrides(const std::string& hostname);
 }  // namespace google3_storage
 }  // namespace mako
 
@@ -285,4 +304,4 @@ extern absl::Flag<std::string> FLAGS_mako_internal_sudo_run_as;
 
 extern absl::Flag<std::string> FLAGS_mako_internal_test_pass_id_override;
 extern absl::Flag<std::vector<std::string> > FLAGS_mako_internal_additional_tags;
-#endif  // TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_
+#endif  // CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_

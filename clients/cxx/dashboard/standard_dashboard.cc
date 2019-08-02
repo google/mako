@@ -1,3 +1,16 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
 #include "clients/cxx/dashboard/standard_dashboard.h"
 
 #include <sstream>
@@ -104,9 +117,10 @@ namespace mako {
 namespace standard_dashboard {
 
 Dashboard::Dashboard(absl::string_view hostname) : hostname_(hostname) {
-  // The Mako client replaces "mako.dev" with "makoperf.appspot.com" when using
-  // Stubby, because the HttpOverRpcTransport doesn't recognize alias URLs. Swap
-  // it back here so that the user gets mako.dev URLs.
+  // The Mako client replaces "mako.dev" with "makoperf.appspot.com" for two
+  // reasons: the HttpOverRpcTransport doesn't recognize alias URLs, and
+  // a container might not recognize the certificate used to sign mako.dev.
+  // Swap it back here so that the user gets mako.dev URLs.
   if (hostname_ == "makoperf.appspot.com" ||
       hostname_ == "https://makoperf.appspot.com") {
     hostname_ = "https://mako.dev";

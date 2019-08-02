@@ -1,6 +1,8 @@
 # C++ Internal helpers for mako.
 package(default_visibility = ["//:internal"])
 
+licenses(["notice"])
+
 cc_library(
     name = "filter_utils",
     srcs = ["filter_utils.cc"],
@@ -75,7 +77,6 @@ cc_library(
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
-        "@com_google_glog//:glog",
     ],
 )
 
@@ -198,6 +199,49 @@ cc_test(
         "//spec/proto:mako_cc_proto",
         "//testing/cxx:protocol-buffer-matchers",
         "@com_google_absl//absl/strings",
+        "@com_google_glog//:glog",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "queue_ifc",
+    hdrs = ["queue_ifc.h"],
+    deps = [
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/time",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_glog//:glog",
+    ],
+)
+
+cc_library(
+    name = "queue",
+    hdrs = ["queue.h"],
+    deps = [
+        ":queue_ifc",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_glog//:glog",
+    ],
+)
+
+cc_test(
+    name = "queue_test",
+    size = "small",
+    srcs = [
+        "queue_test.cc",
+    ],
+    deps = [
+        ":queue",
+        "//internal/cxx/load/common:thread_pool_factory",
+        "//internal/proto:mako_internal_cc_proto",
+        "//testing/cxx:protocol-buffer-matchers",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/time",
+        "@com_google_benchmark//:benchmark",
         "@com_google_glog//:glog",
         "@com_google_googletest//:gtest_main",
     ],

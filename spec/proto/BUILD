@@ -6,8 +6,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-exports_files(["LICENSE"])
-
 proto_library(
     name = "mako_proto",
     srcs = ["mako.proto"],

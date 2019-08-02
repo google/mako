@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -253,7 +253,8 @@ bool Analyzer::DoAnalyze(const AnalyzerInput& input, AnalyzerOutput* output) {
 
     // check length
     if (data.size() <
-        check.recent_window_size() + check.minimum_historical_window_size()) {
+        static_cast<std::size_t>(check.recent_window_size() +
+                                 check.minimum_historical_window_size())) {
       std::stringstream errss;
       errss << "Total data length is " << data.size() << ", recent is "
             << check.recent_window_size() << ", historic must be >= "

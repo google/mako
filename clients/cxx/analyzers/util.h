@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_UTIL_H_
-#define THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_UTIL_H_
+#ifndef CLIENTS_CXX_ANALYZERS_UTIL_H_
+#define CLIENTS_CXX_ANALYZERS_UTIL_H_
 
 #include <string>
 
@@ -33,4 +33,4 @@ std::string GetHumanFriendlyDataFilterString(
 }  // namespace analyzer_util
 }  // namespace mako
 
-#endif  // THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_UTIL_H_
+#endif  // CLIENTS_CXX_ANALYZERS_UTIL_H_

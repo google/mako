@@ -1,6 +1,21 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
+
 #include "clients/cxx/storage/google3_storage.h"
 
 #include <array>
+#include <cstring>
 #include <vector>
 #include <utility>
 
@@ -10,10 +25,15 @@
 #include "internal/proto/mako_internal.pb.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/flags/flag.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/strings/ascii.h"
 #include "spec/proto/mako.pb.h"
+
+ABSL_FLAG(
+    std::string, mako_internal_storage_host, "",
+    "If set, overrides the storage host which was passed to constructor.");
 
 ABSL_FLAG(
     std::string, mako_client_tool_tag, "",
@@ -33,16 +53,20 @@ ABSL_FLAG(bool, mako_internal_force_trace, false,
 ABSL_FLAG(std::string, mako_internal_test_pass_id_override, "",
           "If set, overrides the test_pass_id set by a user or the Mako "
           "framework. Useful for frameworks such as Chamber that need to group "
-          "runs. Note this is only applied on RunInfo creation.");
+          "runs. Note this is only applied on RunInfo creation/update. If "
+          "provided along with the mako_internal_test_pass_id_override "
+          "environment variable, this will take precedence (the envrionment "
+          "variable will be ignored).");
 
 ABSL_FLAG(
     std::vector<std::string>, mako_internal_additional_tags, {},
     "Additional tags to attach to all created RunInfos.  Note that these tags "
-    "are only added on RunInfo creation (not, for example, on RunInfo update). "
-    "Be aware of tag limits (go/mako-limits) when using this flag - the "
-    "number of tags in the original RunInfo plus those added via this flag "
-    "must not exceed the limit! Note this is only applied on RunInfo "
-    "creation. ");
+    "are only added on RunInfo creation/update. Be aware of tag limits "
+    "(go/mako-limits) when using this flag - the number of tags in the "
+    "original RunInfo plus those added via this flag must not exceed the "
+    "limit! If provided along with the mako_internal_additional_tags "
+    "environment variable, this will take precedence (the envrionment variable "
+    "will be ignored).");
 
 namespace mako {
 namespace google3_storage {
@@ -50,7 +74,6 @@ namespace {
 
 using ::mako_internal::SudoStorageRequest;
 
-constexpr absl::Duration kRPCDeadline = absl::Seconds(65);
 constexpr char kNoError[] = "";
 constexpr char kMakoStorageServer[] = "mako.dev";
 constexpr char kCreateBenchmarkPath[] = "/storage/benchmark-info/create";
@@ -160,10 +183,26 @@ bool UploadRunInfo(
     internal::StorageTransport* transport,
     internal::StorageRetryStrategy* retry_strategy,
     Response* response, SudoStorageRequest::Type type) {
-  std::vector<std::string> additional_tags = absl::GetFlag(
-      FLAGS_mako_internal_additional_tags);
-  std::string test_pass_id_override = absl::GetFlag(
-      FLAGS_mako_internal_test_pass_id_override);
+  // Look for mako_internal_additional_tags in both flags and environment
+  // variables.  If found in both places, prefer the value from the flags.
+  const char* env_var_additional_tags =
+      std::getenv("mako_internal_additional_tags");
+  std::vector<std::string> additional_tags =
+      absl::GetFlag(FLAGS_mako_internal_additional_tags);
+  if (additional_tags.empty() && env_var_additional_tags) {
+    additional_tags = absl::StrSplit(env_var_additional_tags, ',',
+                                     absl::SkipWhitespace());
+  }
+  // Look for mako_internal_test_pass_id_override in both flags and
+  // environment variables.  If found in both places, prefer the value from the
+  // flags.
+  const char* env_var_test_pass_id_override =
+      std::getenv("mako_internal_test_pass_id_override");
+  std::string test_pass_id_override =
+      absl::GetFlag(FLAGS_mako_internal_test_pass_id_override);
+  if (test_pass_id_override.empty() && env_var_test_pass_id_override) {
+    test_pass_id_override = env_var_test_pass_id_override;
+  }
   if (additional_tags.empty() && test_pass_id_override.empty()) {
     return RetryingStorageRequest(run_info, path, response, transport,
                                   retry_strategy, type);
@@ -212,6 +251,12 @@ bool UploadRunInfo(
 }
 
 }  // namespace
+
+Storage::Storage(
+    std::unique_ptr<mako::internal::StorageTransport> transport)
+    : Storage(std::move(transport),
+              absl::make_unique<mako::internal::StorageBackoff>(
+                  kDefaultOperationTimeout, kMinSleep, kMaxSleep)) {}
 
 Storage::Storage(
     std::unique_ptr<mako::internal::StorageTransport> transport,
@@ -357,5 +402,15 @@ std::string Storage::GetBatchSizeMax(int* batch_size_max) {
   return kNoError;
 }
 
+std::string ApplyHostnameFlagOverrides(const std::string& hostname) {
+  const std::string hostname_override =
+      absl::GetFlag(FLAGS_mako_internal_storage_host);
+  if (!hostname_override.empty()) {
+    LOG(WARNING) << "Overriding constructor-supplied hostname of '" << hostname
+                 << "' with flag value '" << hostname_override << "'";
+    return hostname_override;
+  }
+  return hostname;
+}
 }  // namespace google3_storage
 }  // namespace mako

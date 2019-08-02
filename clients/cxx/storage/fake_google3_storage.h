@@ -1,8 +1,22 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
+
 // Provides an in memory fake of the Mako storage system.
 // Class is Google3 specific because of internal threading library used.
 //
-#ifndef TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
-#define TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
+#ifndef CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
+#define CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
 
 #include <string>
 #include <vector>
@@ -16,10 +30,10 @@ namespace fake_google3_storage {
 
 // Fake Google3 version of Mako (go/mako) storage system.
 //
-// See cs/google3/testing/performance/mako/spec/cxx/storage.h for more
+// See https://github.com/google/mako/spec/cxx/storage.h for more
 // information about interface.
 //
-// See cs/google3/testing/performance/mako/spec/proto/mako.proto for
+// See https://github.com/google/mako/spec/proto/mako.proto for
 // information about the protobuf structures used below.
 //
 // This is useful for unit/integration testing code that depends on
@@ -326,4 +340,4 @@ class Storage : public mako::Storage {
 }  // namespace fake_google3_storage
 }  // namespace mako
 
-#endif  // TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
+#endif  // CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_

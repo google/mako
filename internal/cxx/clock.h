@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_CLOCK_H_
-#define TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_CLOCK_H_
+#ifndef INTERNAL_CXX_CLOCK_H_
+#define INTERNAL_CXX_CLOCK_H_
 
 #include "internal/cxx/clock_external.h"
 
@@ -25,4 +25,4 @@ using external_helpers::Clock;
 }  // namespace helpers
 }  // namespace mako
 
-#endif  // TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_CLOCK_H_
+#endif  // INTERNAL_CXX_CLOCK_H_

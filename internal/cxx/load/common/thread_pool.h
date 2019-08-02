@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_LOAD_COMMON_THREAD_POOL_H_
-#define TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_LOAD_COMMON_THREAD_POOL_H_
+#ifndef INTERNAL_CXX_LOAD_COMMON_THREAD_POOL_H_
+#define INTERNAL_CXX_LOAD_COMMON_THREAD_POOL_H_
 
 #include <cassert>
 #include <cstddef>
@@ -91,4 +91,4 @@ class ThreadPool {
 }  // namespace threadpool_internal
 }  // namespace mako
 
-#endif  // TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_LOAD_COMMON_THREAD_POOL_H_
+#endif  // INTERNAL_CXX_LOAD_COMMON_THREAD_POOL_H_

@@ -1,3 +1,16 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
 #include "clients/cxx/downsampler/standard_downsampler.h"
 
 #include <algorithm>
@@ -707,13 +720,13 @@ TEST_F(StandardMetricDownsamplerTest, MultiSamplerDownsample) {
       LOG(INFO) << " Error count: " << si.error_count;
       LOG(INFO) << " Expected error count: " << si.expected_error_count;
 
-      for (uint32_t i = 0; i < si.metric_count; i++) {
+      for (int i = 0; i < si.metric_count; i++) {
         // Use the sampler name as the metric name as well, to keep them
         // separate
         data.push_back(CreateSampleRecord(i, {{si.sampler_name, i}}));
       }
 
-      for (uint32_t i = 0; i < si.error_count; i++) {
+      for (int i = 0; i < si.error_count; i++) {
         mako::SampleRecord sr = CreateSampleRecord(i, {});
         sr.clear_sample_point();
         sr.mutable_sample_error()->set_error_message(std::to_string(i));
@@ -721,7 +734,7 @@ TEST_F(StandardMetricDownsamplerTest, MultiSamplerDownsample) {
         sr.mutable_sample_error()->set_sampler_name(si.sampler_name);
         data.push_back(sr);
       }
-      for (uint32_t i = 0; i < si.file_count; ++i) {
+      for (int i = 0; i < si.file_count; ++i) {
         // Use sampler name as file name
         std::string file_name = absl::StrCat(si.sampler_name, "_", i);
         WriteFile(file_name, data);

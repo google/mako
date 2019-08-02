@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_CLOCK_MOCK_H_
-#define TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_CLOCK_MOCK_H_
+#ifndef INTERNAL_CXX_CLOCK_MOCK_H_
+#define INTERNAL_CXX_CLOCK_MOCK_H_
 
 #include "gmock/gmock.h"
 #include "internal/cxx/clock.h"
@@ -53,4 +53,4 @@ class ClockMock : public helpers::Clock {
 }  // namespace internal
 }  // namespace mako
 
-#endif  // TESTING_PERFORMANCE_PERFGATE_INTERNAL_CXX_CLOCK_MOCK_H_
+#endif  // INTERNAL_CXX_CLOCK_MOCK_H_

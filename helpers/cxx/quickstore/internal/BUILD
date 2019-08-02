@@ -7,6 +7,8 @@ package(default_visibility = [
     "//java/com/google/testing/performance/mako/helpers/quickstore:__subpackages__",
 ])
 
+licenses(["notice"])
+
 cc_library(
     name = "store",
     srcs = ["store.cc"],
@@ -19,6 +21,7 @@ cc_library(
         "//clients/cxx/dashboard:standard_dashboard",
         "//clients/cxx/downsampler:standard_downsampler",
         "//clients/cxx/fileio:memory_fileio",
+        "//clients/cxx/storage:mako_client",
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
         "//clients/proto/analyzers:utest_analyzer_cc_proto",
         "//clients/proto/analyzers:window_deviation_cc_proto",

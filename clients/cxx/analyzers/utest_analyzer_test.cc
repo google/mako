@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1200,6 +1200,33 @@ TEST_F(AnalyzerTest, AnalyzerConfirmUTestValues) {
               kEpsilon);
   EXPECT_NEAR(0.183013, utest_output_a5_a6.config_result_list(0).p_value(),
               kEpsilon);
+}
+
+TEST_F(AnalyzerTest, AnalyzerConfirmMedianValues) {
+  // Randomly generated
+  const std::vector<double> kA1 = {0.242, 0.287, 0.919, 0.853, 0.031, 0.706,
+                                   0.452, 0.184, 0.870, 0.105, 0.299, 0.911,
+                                   0.974, 0.850, 0.679, 0.062, 0.580, 0.120,
+                                   0.120, 0.699, 0.624, 0.971, 0.984};
+  const std::vector<double> kA2 = {0.768, 0.042, 0.168, 0.071, 0.027, 0.694,
+                                   0.313, 0.252, 0.510, 0.221, 0.139, 0.284,
+                                   0.440, 0.055, 0.855, 0.048, 0.601, 0.015,
+                                   0.848, 0.397, 0.806, 0.247, 0.585};
+  // Example 1
+  AnalyzerOutput output1;
+  HelperCompareTwoSamples(kA1, kA2, 0, UTestConfig_DirectionBias_NO_BIAS, 0.05,
+                          &output1);
+  UTestAnalyzerOutput utest_output1 = ExtractUTestAnalyzerOutput(output1);
+  EXPECT_NEAR(0.624, utest_output1.config_result_list(0).a_median(), kEpsilon);
+  EXPECT_NEAR(0.284, utest_output1.config_result_list(0).b_median(), kEpsilon);
+
+  // Example 2 (shift value)
+  AnalyzerOutput output2;
+  HelperCompareTwoSamples(kA1, kA2, 0.5, UTestConfig_DirectionBias_NO_BIAS,
+                          0.05, &output2);
+  UTestAnalyzerOutput utest_output2 = ExtractUTestAnalyzerOutput(output2);
+  EXPECT_NEAR(0.624, utest_output2.config_result_list(0).a_median(), kEpsilon);
+  EXPECT_NEAR(0.284, utest_output2.config_result_list(0).b_median(), kEpsilon);
 }
 
 TEST_F(AnalyzerTest, OneSided) {

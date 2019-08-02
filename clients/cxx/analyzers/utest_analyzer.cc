@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -95,7 +95,13 @@ class StatsCalculator {
 
   struct Statistics {
     // Automatically initialize all members to 0
-    Statistics() : count_a(0), count_b(0), rank_a(0), rank_b(0) {}
+    Statistics()
+        : count_a(0),
+          count_b(0),
+          rank_a(0),
+          rank_b(0),
+          median_a(std::nan("")),
+          median_b(std::nan("")) {}
 
     // The number of A samples.
     int count_a;
@@ -108,6 +114,12 @@ class StatsCalculator {
 
     // The sum of the ranks of B samples.
     double rank_b;
+
+    // The median of A samples.
+    double median_a;
+
+    // The median of B samples.
+    double median_b;
 
     // Keep track of how many times we encounter a tie among N values.
     // tie_counts[X] is the number of times we saw a tie between X values
@@ -293,9 +305,6 @@ StatsCalculator::Statistics StatsCalculator::GetStats(
   double rank_a = 0;
   double rank_b = 0;
 
-  int index_a = 0;
-  int index_b = 0;
-
   int i = 1;
 
   // Keep track of how many times we encounter a tie among N values.
@@ -305,27 +314,30 @@ StatsCalculator::Statistics StatsCalculator::GetStats(
   std::unordered_map<int, int> tie_counts;
 
   // Iterate through both samples
-  while (index_a < sample_a.size() && index_b < sample_b.size()) {
-    if (sample_a[index_a] + shift_value == sample_b[index_b]) {
+  auto iter_a = sample_a.begin();
+  auto end_a = sample_a.end();
+  auto iter_b = sample_b.begin();
+  auto end_b = sample_b.end();
+  while (iter_a != end_a && iter_b != end_b) {
+    if (*iter_a + shift_value == *iter_b) {
       // Find all values in both samples with this current value
-      double curr = sample_b[index_b];
+      double curr = *iter_b;
 
-      index_a++;
-      index_b++;
+      iter_a++;
+      iter_b++;
       int temp_rank = 2 * i + 1;
       i += 2;
 
       int a_occurrences = 1;
       int b_occurrences = 1;
-      while (index_a < sample_a.size() &&
-             sample_a[index_a] + shift_value == curr) {
-        index_a++;
+      while (iter_a != end_a && *iter_a + shift_value == curr) {
+        iter_a++;
         temp_rank += i;
         i++;
         a_occurrences++;
       }
-      while (index_b < sample_b.size() && sample_b[index_b] == curr) {
-        index_b++;
+      while (iter_b != end_b && *iter_b == curr) {
+        iter_b++;
         temp_rank += i;
         i++;
         b_occurrences++;
@@ -342,17 +354,17 @@ StatsCalculator::Statistics StatsCalculator::GetStats(
       rank_a += val_rank * (a_occurrences);
       rank_b += val_rank * (b_occurrences);
 
-    } else if (sample_a[index_a] + shift_value < sample_b[index_b]) {
+    } else if (*iter_a + shift_value < *iter_b) {
       // Add rank to sample A since it contains a value which is less
       // than the current and any future B sample value
       rank_a += i;
-      index_a++;
+      iter_a++;
       i++;
     } else {
       // Add rank to sample B since it contains a value which is less
       // than the current and any future A sample value
       rank_b += i;
-      index_b++;
+      iter_b++;
       i++;
     }
   }
@@ -365,11 +377,21 @@ StatsCalculator::Statistics StatsCalculator::GetStats(
   int64_t total_rank = n * (n + 1) / 2;
   double rem_rank = total_rank - rank_a - rank_b;
 
-  if (index_a != sample_a.size()) {
+  if (iter_a != end_a) {
     rank_a += rem_rank;
   }
-  if (index_b != sample_b.size()) {
+  if (iter_b != end_b) {
     rank_b += rem_rank;
+  }
+
+  // Iterate through each entire sample set to determine other stats (median).
+  mako::internal::RunningStats a_stats;
+  mako::internal::RunningStats b_stats;
+  for (auto a : sample_a) {
+    a_stats.Add(a + shift_value);
+  }
+  for (auto b : sample_b) {
+    b_stats.Add(b);
   }
 
   // Return relevant data
@@ -379,6 +401,16 @@ StatsCalculator::Statistics StatsCalculator::GetStats(
   stats.rank_a = rank_a;
   stats.rank_b = rank_b;
   stats.tie_counts = tie_counts;
+
+  mako::internal::RunningStats::Result result;
+  result = a_stats.Median();
+  if (result.error.empty()) {
+    stats.median_a = result.value;
+  }
+  result = b_stats.Median();
+  if (result.error.empty()) {
+    stats.median_b = result.value;
+  }
 
   return stats;
 }
@@ -527,6 +559,8 @@ std::string Analyzer::AnalyzeUTestConfig(const std::string& config_name,
   }
 
   // Get the appropriate sample statistics
+  StatsCalculator::Statistics unshifted_stats = s_calc.GetStatsShiftValue(
+      a_value_key, b_value_key, 0.0 /* shift_value */);
   StatsCalculator::Statistics stats;
   if (config.has_relative_shift_value()) {
     stats = s_calc.GetStatsRelativeShiftValue(a_value_key, b_value_key,
@@ -535,8 +569,14 @@ std::string Analyzer::AnalyzeUTestConfig(const std::string& config_name,
     stats = s_calc.GetStatsShiftValue(a_value_key, b_value_key,
                                       config.shift_value());
   } else {
-    stats = s_calc.GetStatsShiftValue(a_value_key, b_value_key,
-                                      0.0 /* shift_value */);
+    stats = unshifted_stats;
+  }
+
+  if (!std::isnan(unshifted_stats.median_a)) {
+    result->set_a_median(unshifted_stats.median_a);
+  }
+  if (!std::isnan(unshifted_stats.median_b)) {
+    result->set_b_median(unshifted_stats.median_b);
   }
 
   // If sample sizes are less than 3, report an error and exit the analyzer

@@ -3,6 +3,8 @@
 # See quickstore_example_test.go for example usage.
 package(default_visibility = ["//visibility:public"])
 
+licenses(["notice"])
+
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
@@ -11,7 +13,7 @@ go_library(
     importpath = "github.com/google/mako/helpers/go/quickstore",
     deps = [
         "//helpers/proto/quickstore:quickstore_go_proto",
-        "//internal/go:common",
+        "//internal/go/common",
         "//internal/quickstore_microservice/proto:quickstore_go_proto",
         "//spec/proto:mako_go_proto",
         "@com_github_golang_glog//:go_default_library",

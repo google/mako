@@ -1,3 +1,17 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
+
 // Package quickstore offers a way to utilize Mako storage, downsampling,
 // aggregation and analyzers in a simple way. This is most helpful when you have
 // a pre-existing benchmarking tool which exports data that you would like to
@@ -22,17 +36,7 @@
 //		}
 //  }
 //
-// See more examples inside cs/f:mako/helpers/go/quickstore/quickstore_example_test.go
-//
-// NOTE: Mako requires LOAS auth to write to a benchmark. This means when
-// running from 'blaze test' you either need to:
-//  * Set one of your benchmark owners to "*", so the forge accounts can have
-//    permission to write data to your benchmark.
-//  * Include the blaze flags below which run the test under your LOAS
-//    credentials:
-//    "--test_output=streamed --test_strategy=local --notest_loasd"
-// Running a test binary directly from blaze-bin will always run with your LOAS
-// credentials.
+// See more examples inside https://github.com/google/mako/helpers/go/quickstore/quickstore_example_test.go
 //
 // Struct is not concurrent safe
 //
@@ -43,13 +47,9 @@ import (
 	"context"
 	"errors"
 
-
-
 	log "github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
-
-
 
 	qpb "github.com/google/mako/helpers/proto/quickstore/quickstore_go_proto"
 	qspb "github.com/google/mako/internal/quickstore_microservice/proto/quickstore_go_proto"
@@ -80,21 +80,24 @@ type Quickstore struct {
 	saverImpl          saver
 }
 
-
-// NewAtAddress creates a new Quickstore that connects to the provided gRPC address.
-func NewAtAddress(ctx context.Context, input *qpb.QuickstoreInput, address string) (*Quickstore, error) {
-	// suppress go/nogo-check#disallowedfunction google3/third_party/golang/grpc/grpc.WithInsecure
+// NewAtAddress creates a new Quickstore that connects to a Quickstore microservice at the provided gRPC address.
+//
+// Along with the Quickstore instance, it returns a function that can be called to request
+// the microsevice terminate itself. This function can be ignored in order to leave the microservice
+// running.
+func NewAtAddress(ctx context.Context, input *qpb.QuickstoreInput, address string) (*Quickstore, func(context.Context), error) {
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 
+	client := qspb.NewQuickstoreClient(conn)
 	return &Quickstore{
-		Input: *input,
-		saverImpl: &grpcSaver{
-			client: qspb.NewQuickstoreClient(conn),
-		},
-	}, nil
+			Input:     *input,
+			saverImpl: &grpcSaver{client},
+		}, func(ctx context.Context) {
+			client.ShutdownMicroservice(ctx, &qspb.ShutdownInput{})
+		}, nil
 }
 
 // AddSamplePoint adds a sample at the specified x-value.
@@ -141,12 +144,12 @@ func (q *Quickstore) AddError(xval float64, errorMessage string) error {
 //  * "~error_sample_count"
 //  * "~benchmark_score"
 //  The corresponding value will be overwritten inside
-//  cs/f:mako/spec/proto/mako.proto%20message%20RunAggregate. If none
+//  https://github.com/google/mako/spec/proto/mako.proto
 //  of these values are provided, they will be calculated automatically by the
 //  framework based on SamplePoints/Errors provided before Store() is called.
 //
 // Otherwise the value_key will be set to a custom aggregate (See
-// cs/f:mako/spec/proto/mako.proto%20RunAggregate.custom_aggregate_list
+// https://github.com/google/mako/spec/proto/mako.proto
 //
 // If no run aggregates are manully set with this method, values are
 // automatically calculated.
@@ -168,11 +171,11 @@ func (q *Quickstore) AddRunAggregate(valueKey string, value float64) error {
 //  * "median_absolute_deviation"
 //  * "count"
 //  The corresponding value inside
-//  cs/f:mako/spec/proto/mako.proto%20message%20MetricAggregate will
+//  https://github.com/google/mako/spec/proto/mako.proto
 //  be set.
 //
 // The value_key can also represent a percentile see
-// cs/f:mako/spec/proto/mako.proto%20MetricAggregate.percentile_list.
+// https://github.com/google/mako/spec/proto/mako.proto
 //
 // For example "p98000" would be interpreted as the 98th percentile. These
 // need to correspond to the percentiles that your benchmark has set.
@@ -251,7 +254,6 @@ type saver interface {
 		[]float64) (qpb.QuickstoreOutput, error)
 }
 
-
 type grpcSaver struct {
 	client qspb.QuickstoreClient
 }
@@ -283,5 +285,5 @@ func (s *grpcSaver) Save(input *qpb.QuickstoreInput,
 		return qpb.QuickstoreOutput{}, nil
 	}
 
-	return *response.GetQuickstoreOutput(), err
+	return *response.GetQuickstoreOutput(), nil
 }

@@ -1,5 +1,18 @@
-#ifndef TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
-#define TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
+#ifndef CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
+#define CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
 
 // Downsampler which considers metrics.
 //
@@ -84,7 +97,7 @@ ABSL_CONST_INIT extern const int kMaxErrorStringLength;
 // 1MB == 1,000,000).
 //
 // Maximum batch size is defined here:
-// http://cs/google3/testing/performance/mako/clients/cxx/storage/google3_storage.cc?l=86
+// https://github.com/google/mako/clients/cxx/storage/google3_storage.cc
 ABSL_CONST_INIT extern const int kMaxAnnotationsSize;
 
 // Downsampler is an implementation of the Mako Downsampler interface.
@@ -141,26 +154,15 @@ class Downsampler : public mako::Downsampler {
 #endif  // SWIG
 };
 
-static void GetNewRecord(mako::SampleBatch* batch,
-                         mako::SamplePoint** new_point) {
-  *new_point = batch->add_sample_point_list();
-}
+void GetNewRecord(mako::SampleBatch* batch,
+                  mako::SamplePoint** new_point);
 
-static void GetNewRecord(mako::SampleBatch* batch,
-                         mako::SampleError** new_error) {
-  *new_error = batch->add_sample_error_list();
-}
+void GetNewRecord(mako::SampleBatch* batch,
+                  mako::SampleError** new_error);
 
-static mako::SampleBatch* GetNewBatch(
+mako::SampleBatch* GetNewBatch(
     const std::string& benchmark_key, const std::string& run_key,
-    mako::DownsamplerOutput* downsampler_output,
-    int64_t* batch_size_bytes) {
-  mako::SampleBatch* batch = downsampler_output->add_sample_batch_list();
-  batch->set_benchmark_key(benchmark_key);
-  batch->set_run_key(run_key);
-  *batch_size_bytes = batch->ByteSizeLong();
-  return batch;
-}
+    mako::DownsamplerOutput* downsampler_output, int64_t* batch_size_bytes);
 
 template <typename T>
 static std::string AddBatch(const std::string& benchmark_key, const std::string& run_key,
@@ -201,4 +203,4 @@ static std::string AddBatch(const std::string& benchmark_key, const std::string&
 }  // namespace downsampler
 }  // namespace mako
 
-#endif  // TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
+#endif  // CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_

@@ -1,6 +1,8 @@
 # C++ Common Load components
 package(default_visibility = ["//:internal"])
 
+licenses(["notice"])
+
 cc_library(
     name = "executor",
     hdrs = ["executor.h"],

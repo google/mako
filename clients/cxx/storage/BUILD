@@ -3,6 +3,8 @@ package(
     default_visibility = ["//visibility:public"],
 )
 
+licenses(["notice"])
+
 cc_library(
     name = "google3_storage",
     srcs = ["google3_storage.cc"],
@@ -56,5 +58,36 @@ cc_test(
         ":fake_google3_storage",
         "//testing/cxx:protocol-buffer-matchers",
         "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "mako_client",
+    srcs = ["mako_client.cc"],
+    hdrs = ["mako_client.h"],
+    deps = [
+        ":base_storage",
+        ":google3_storage",
+        "//internal/cxx/storage_client:google_oauth_fetcher",
+        "//internal/cxx/storage_client:http_transport",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+        "//helpers/cxx/status:statusor",
+    ] + [
+    ],
+)
+
+cc_library(
+    name = "mako_client_internal",
+    hdrs = ["mako_client_internal.h"],
+    visibility = [
+        "//clients/cxx/storage/go:__pkg__",
+        "//clients/cxx/storage/python:__pkg__",
+    ],
+    deps = [
+        "//clients/cxx/storage:google3_storage",
+        "//clients/cxx/storage:mako_client",
+        "//helpers/cxx/status:statusor",
+        "@com_google_absl//absl/strings",
     ],
 )

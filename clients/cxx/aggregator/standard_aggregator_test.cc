@@ -1,3 +1,16 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
 #include "clients/cxx/aggregator/standard_aggregator.h"
 
 #include <set>
@@ -13,15 +26,11 @@
 
 namespace mako {
 namespace aggregator {
+namespace {
 
 using mako::AggregatorInput;
 using mako::AggregatorOutput;
 using mako::MetricAggregate;
-
-// Each element of vector is an ignore range the first element of pair the start
-// of range, second element is end of range.
-const std::vector<std::pair<double, double>> kignore_ranges{
-    std::make_pair(10, 20), std::make_pair(30, 40)};
 
 SampleRecord HelperCreateSampleRecord(
     double input_value, const std::vector<std::pair<std::string, double>>& metrics) {
@@ -50,13 +59,20 @@ AggregatorInput HelperCreateAggregatorInput(const std::vector<std::string>& file
   agg_input.mutable_run_info()->set_run_key("run_key");
   agg_input.mutable_run_info()->set_timestamp_ms(123456);
 
+  // Each element of vector is an ignore range the first element of pair the
+  // start of range, second element is end of range.
+  static const auto& kIgnoreRanges =
+      *new std::vector<std::pair<double, double>>{std::make_pair(10, 20),
+                                                  std::make_pair(30, 40)};
+
   // Add ignore ranges to RunInfo
-  for (int i = 0; i < kignore_ranges.size(); i++) {
+  int i = 0;
+  for (const auto& ignore_range : kIgnoreRanges) {
     mako::LabeledRange* r =
         agg_input.mutable_run_info()->mutable_ignore_range_list()->Add();
-    r->set_label(std::to_string(i));
-    r->mutable_range()->set_start(kignore_ranges[i].first);
-    r->mutable_range()->set_end(kignore_ranges[i].second);
+    r->set_label(std::to_string(i++));
+    r->mutable_range()->set_start(ignore_range.first);
+    r->mutable_range()->set_end(ignore_range.second);
   }
 
   // Create BenchmarkInfo
@@ -432,5 +448,7 @@ TEST_F(StandardAggregatorTest, AggregateMultipleTimes) {
   ASSERT_EQ(out.aggregate().metric_aggregate_list_size(), 1);
   ASSERT_EQ(out.aggregate().metric_aggregate_list(0).mean(), 100);
 }
+
+}  // namespace
 }  // namespace aggregator
 }  // namespace mako

@@ -2,8 +2,6 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
-exports_files(["LICENSE"])
-
 cc_library(
     name = "threshold_analyzer",
     srcs = ["threshold_analyzer.cc"],

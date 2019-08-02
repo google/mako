@@ -17,10 +17,9 @@ again.
 
 ## Code reviews
 
-All submissions, including submissions by project members, require review. We
-use GitHub pull requests for this purpose. Consult
-[GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
-information on using pull requests.
+We're still working out our workflow for accepting code contributions. Please
+start by creating a GitHub issue with details about what you want to do and why,
+and we'll talk about how to best go about it.
 
 ## Community Guidelines
 

@@ -1,5 +1,18 @@
-#ifndef TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_
-#define TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
+#ifndef CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_
+#define CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_
 
 #include <functional>
 #include <list>
@@ -31,7 +44,7 @@ const int kDefaultMaxThreads = 8;
 //
 // This is implementation parallelizes aggregation across multiple threads.
 //
-// See interface at cs/testing/performance/mako/spec/cxx/aggregator.h
+// See interface at https://github.com/google/mako/spec/cxx/aggregator.h
 class Aggregator : public mako::Aggregator {
  public:
   // Default constructor
@@ -91,7 +104,7 @@ class Aggregator : public mako::Aggregator {
   // that the aggregator processes, allowing the called code to collect
   // additional data.
   //
-  // The map pointer points to the the buffers for the currently running thread.
+  // The map pointer points to the buffers for the currently running thread.
   // If you wish for additional metrics to be collected, pass it along with the
   // key and value to AppendToBuffer in your callback. This should help limit
   // contention resulting from the necessary synchronization.
@@ -177,4 +190,4 @@ class Aggregator : public mako::Aggregator {
 }  // namespace aggregator
 }  // namespace mako
 
-#endif  // TESTING_PERFORMANCE_PERFGATE_CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_
+#endif  // CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_

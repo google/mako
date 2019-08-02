@@ -1,3 +1,16 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
 #include "clients/cxx/storage/fake_google3_storage.h"
 
 #include <algorithm>
@@ -50,10 +63,6 @@ std::string NextKey() EXCLUSIVE_LOCKS_REQUIRED(mutex) {
   return std::to_string(++max_key);
 }
 
-}  // namespace
-
-Storage::Storage() : Storage(Options()) {}
-
 mako::Status SuccessStatus() {
   mako::Status status;
   status.set_code(mako::Status::SUCCESS);
@@ -65,59 +74,6 @@ mako::Status ErrorStatus(const std::string& msg) {
   status.set_code(mako::Status::FAIL);
   status.set_fail_message(msg);
   return status;
-}
-
-bool Storage::CreateBenchmarkInfo(
-    const mako::BenchmarkInfo& benchmark_info,
-    mako::CreationResponse* creation_response) {
-  VLOG(2) << "FakeStorage.CreateBenchmarkInfo("
-          << benchmark_info.ShortDebugString() << ")";
-  CHECK(creation_response);
-  absl::MutexLock lock(&mutex);
-  std::string err =
-      mako::internal::ValidateBenchmarkInfoCreationRequest(benchmark_info);
-  if (!err.empty()) {
-    LOG(ERROR) << err;
-    *creation_response->mutable_status() = ErrorStatus(err);
-    return false;
-  }
-  mako::BenchmarkInfo benchmark;
-  benchmark = benchmark_info;
-  benchmark.set_benchmark_key(NextKey());
-  Benchmarks().push_back(benchmark);
-  creation_response->set_key(benchmark.benchmark_key());
-  *creation_response->mutable_status() = SuccessStatus();
-  VLOG(2) << "Created BenchmarkInfo with key: " << benchmark.benchmark_key();
-  return true;
-}
-
-bool Storage::UpdateBenchmarkInfo(
-    const mako::BenchmarkInfo& benchmark_info,
-    mako::ModificationResponse* mod_response) {
-  VLOG(2) << "FakeStorage.UpdateBenchmarkInfo("
-          << benchmark_info.ShortDebugString() << ")";
-  CHECK(mod_response);
-  absl::MutexLock lock(&mutex);
-  std::string err = mako::internal::ValidateBenchmarkInfo(benchmark_info);
-  if (!err.empty()) {
-    LOG(ERROR) << err;
-    *mod_response->mutable_status() = ErrorStatus(err);
-    return false;
-  }
-  for (auto itr = Benchmarks().begin(); itr != Benchmarks().end(); ++itr) {
-    if (itr->benchmark_key() == benchmark_info.benchmark_key()) {
-      *itr = benchmark_info;
-      mod_response->set_count(1);
-      *mod_response->mutable_status() = SuccessStatus();
-      return true;
-    }
-  }
-  mod_response->set_count(0);
-  err = absl::StrCat("Could not find benchmark with key: ",
-                     benchmark_info.benchmark_key());
-  *mod_response->mutable_status() = ErrorStatus(err);
-  LOG(ERROR) << err;
-  return false;
 }
 
 bool SampleBatchQueryMatch(const mako::SampleBatchQuery& query,
@@ -200,6 +156,133 @@ bool BenchmarkInfoQueryMatch(const mako::BenchmarkInfoQuery& query,
   return true;
 }
 
+int GetSize(const RunInfoQueryResponse& response) {
+  return response.run_info_list_size();
+}
+
+bool QueryMatch(const RunInfoQuery& query, const RunInfo& run) {
+  return RunInfoQueryMatch(query, run);
+}
+
+void AddNewElement(const RunInfo& run, RunInfoQueryResponse* response) {
+  *response->add_run_info_list() = run;
+}
+
+int GetSize(const BenchmarkInfoQueryResponse& response) {
+  return response.benchmark_info_list_size();
+}
+
+bool QueryMatch(const BenchmarkInfoQuery& query,
+                const BenchmarkInfo& benchmark) {
+  return BenchmarkInfoQueryMatch(query, benchmark);
+}
+
+void AddNewElement(const BenchmarkInfo& benchmark,
+                   BenchmarkInfoQueryResponse* response) {
+  *response->add_benchmark_info_list() = benchmark;
+}
+
+int GetSize(const SampleBatchQueryResponse& response) {
+  return response.sample_batch_list_size();
+}
+
+bool QueryMatch(const SampleBatchQuery& query, const SampleBatch& batch) {
+  return SampleBatchQueryMatch(query, batch);
+}
+
+void AddNewElement(const SampleBatch& batch,
+                   SampleBatchQueryResponse* response) {
+  *response->add_sample_batch_list() = batch;
+}
+
+template <typename Container, typename Query, typename Response>
+void FindMatchingElements(const Container& container, const Query& query,
+                          int limit_max, Response* response) {
+  auto iter = container.begin();
+  if (query.has_cursor()) {
+    typename Container::size_type cursor = stoi(query.cursor());
+    CHECK_LT(cursor, container.size());
+    std::advance(iter, cursor);
+  }
+
+  int limit = limit_max;
+  if (query.has_limit() && query.limit() > 0) {
+    limit = std::min(static_cast<int>(query.limit()), limit);
+  }
+
+  for (; iter != container.end(); iter++) {
+    const auto& element = *iter;
+    if (limit == GetSize(*response)) {
+      // Match datastore behavior where a returned cursor doesn't necessarily
+      // mean there are more elements.
+      response->set_cursor(
+          std::to_string(std::distance(container.begin(), iter)));
+      break;
+    }
+    if (QueryMatch(query, element)) {
+      AddNewElement(element, response);
+    }
+  }
+  *response->mutable_status() = SuccessStatus();
+}
+
+}  // namespace
+
+Storage::Storage() : Storage(Options()) {}
+
+bool Storage::CreateBenchmarkInfo(
+    const mako::BenchmarkInfo& benchmark_info,
+    mako::CreationResponse* creation_response) {
+  VLOG(2) << "FakeStorage.CreateBenchmarkInfo("
+          << benchmark_info.ShortDebugString() << ")";
+  CHECK(creation_response);
+  absl::MutexLock lock(&mutex);
+  std::string err =
+      mako::internal::ValidateBenchmarkInfoCreationRequest(benchmark_info);
+  if (!err.empty()) {
+    LOG(ERROR) << err;
+    *creation_response->mutable_status() = ErrorStatus(err);
+    return false;
+  }
+  mako::BenchmarkInfo benchmark;
+  benchmark = benchmark_info;
+  benchmark.set_benchmark_key(NextKey());
+  Benchmarks().push_back(benchmark);
+  creation_response->set_key(benchmark.benchmark_key());
+  *creation_response->mutable_status() = SuccessStatus();
+  VLOG(2) << "Created BenchmarkInfo with key: " << benchmark.benchmark_key();
+  return true;
+}
+
+bool Storage::UpdateBenchmarkInfo(
+    const mako::BenchmarkInfo& benchmark_info,
+    mako::ModificationResponse* mod_response) {
+  VLOG(2) << "FakeStorage.UpdateBenchmarkInfo("
+          << benchmark_info.ShortDebugString() << ")";
+  CHECK(mod_response);
+  absl::MutexLock lock(&mutex);
+  std::string err = mako::internal::ValidateBenchmarkInfo(benchmark_info);
+  if (!err.empty()) {
+    LOG(ERROR) << err;
+    *mod_response->mutable_status() = ErrorStatus(err);
+    return false;
+  }
+  for (auto itr = Benchmarks().begin(); itr != Benchmarks().end(); ++itr) {
+    if (itr->benchmark_key() == benchmark_info.benchmark_key()) {
+      *itr = benchmark_info;
+      mod_response->set_count(1);
+      *mod_response->mutable_status() = SuccessStatus();
+      return true;
+    }
+  }
+  mod_response->set_count(0);
+  err = absl::StrCat("Could not find benchmark with key: ",
+                     benchmark_info.benchmark_key());
+  *mod_response->mutable_status() = ErrorStatus(err);
+  LOG(ERROR) << err;
+  return false;
+}
+
 bool Storage::QueryBenchmarkInfo(
     const mako::BenchmarkInfoQuery& benchmark_info_query,
     mako::BenchmarkInfoQueryResponse* query_response) {
@@ -207,35 +290,8 @@ bool Storage::QueryBenchmarkInfo(
           << benchmark_info_query.ShortDebugString() << ")";
   CHECK(query_response);
   absl::MutexLock lock(&mutex);
-
-  // Setup cursor if applicable.
-  int i = 0;
-  if (benchmark_info_query.has_cursor()) {
-    i = stoi(benchmark_info_query.cursor());
-    VLOG(2) << "Setting cursor to: " << i;
-    CHECK(i < Benchmarks().size());
-  }
-
-  // Check limit
-  int limit = bench_limit_max_;
-  if (benchmark_info_query.has_limit() && benchmark_info_query.limit() > 0) {
-    limit = std::min(static_cast<int>(benchmark_info_query.limit()), limit);
-  }
-
-  // Find all matching elements
-  for (; i < Benchmarks().size(); i++) {
-    const mako::BenchmarkInfo& benchmark_info = Benchmarks()[i];
-    if (query_response->benchmark_info_list_size() == limit) {
-      // Match datastore behavior where a returned cursor doesn't necessarily
-      // mean there are more elements.
-      query_response->set_cursor(std::to_string(i));
-      break;
-    }
-    if (BenchmarkInfoQueryMatch(benchmark_info_query, benchmark_info)) {
-      *query_response->add_benchmark_info_list() = benchmark_info;
-    }
-  }
-  *query_response->mutable_status() = SuccessStatus();
+  FindMatchingElements(Benchmarks(), benchmark_info_query, bench_limit_max_,
+                       query_response);
   VLOG(2) << query_response->benchmark_info_list_size() << " benchmarks found";
   return true;
 }
@@ -355,40 +411,7 @@ bool Storage::QueryRunInfo(const mako::RunInfoQuery& run_info_query,
     return false;
   }
 
-  // Setup cursor if applicable.
-  int i = 0;
-  if (run_info_query.has_cursor()) {
-    i = stoi(run_info_query.cursor());
-    VLOG(2) << "Setting cursor to: " << i;
-    CHECK(i < Runs().size());
-  }
-
-  // Check limit
-  int limit = run_limit_max_;
-  if (run_info_query.has_limit() && run_info_query.limit() > 0) {
-    limit = std::min(static_cast<int>(run_info_query.limit()), limit);
-  }
-
-  auto itr = Runs().begin();
-  // Advance the iterator to the cursor location, since std::multiset
-  // is not random access.
-  for (int j = 0; j < i; ++j, ++itr) {
-  }
-
-  // Find all matching elements
-  for (; itr != Runs().end(); ++i, ++itr) {
-    const mako::RunInfo& run_info = *itr;
-    if (query_response->run_info_list_size() == limit) {
-      // Match datastore behavior where a returned cursor doesn't necessarily
-      // mean there are more elements.
-      query_response->set_cursor(std::to_string(i));
-      break;
-    }
-    if (RunInfoQueryMatch(run_info_query, run_info)) {
-      *query_response->add_run_info_list() = run_info;
-    }
-  }
-  *query_response->mutable_status() = SuccessStatus();
+  FindMatchingElements(Runs(), run_info_query, run_limit_max_, query_response);
   VLOG(2) << query_response->run_info_list_size() << " runs found";
   return true;
 }
@@ -460,35 +483,8 @@ bool Storage::QuerySampleBatch(
           << sample_batch_query.ShortDebugString() << ")";
   CHECK(query_response);
   absl::MutexLock lock(&mutex);
-
-  // Setup cursor if applicable.
-  int i = 0;
-  if (sample_batch_query.has_cursor()) {
-    i = stoi(sample_batch_query.cursor());
-    VLOG(2) << "Setting cursor to: " << i;
-    CHECK(i < Batches().size());
-  }
-
-  // Check limit
-  int limit = batch_limit_max_;
-  if (sample_batch_query.has_limit() && sample_batch_query.limit() > 0) {
-    limit = std::min(static_cast<int>(sample_batch_query.limit()), limit);
-  }
-
-  // Find all matching elements
-  for (; i < Batches().size(); i++) {
-    const mako::SampleBatch& sample_batch = Batches()[i];
-    if (query_response->sample_batch_list_size() == limit) {
-      // Match datastore behavior where a returned cursor doesn't necessarily
-      // mean there are more elements.
-      query_response->set_cursor(std::to_string(i));
-      break;
-    }
-    if (SampleBatchQueryMatch(sample_batch_query, sample_batch)) {
-      *query_response->add_sample_batch_list() = sample_batch;
-    }
-  }
-  *query_response->mutable_status() = SuccessStatus();
+  FindMatchingElements(Batches(), sample_batch_query, batch_limit_max_,
+                       query_response);
   VLOG(2) << query_response->sample_batch_list_size()
           << " sample batches found";
   return true;

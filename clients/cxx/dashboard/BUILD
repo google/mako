@@ -1,6 +1,8 @@
 #Implementors of mako dashboard interface.
 package(default_visibility = ["//visibility:public"])
 
+licenses(["notice"])
+
 cc_library(
     name = "standard_dashboard",
     srcs = ["standard_dashboard.cc"],

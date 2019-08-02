@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
 //
 // For more information about the interface see
 // mako/spec/py/analyzer.h
-#ifndef THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_
-#define THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_
+#ifndef CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_
+#define CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_
 
 #include <memory>
 #include <string>
@@ -83,4 +83,4 @@ class Analyzer : public mako::Analyzer {
 }  // namespace utest_analyzer
 }  // namespace mako
 
-#endif  // THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_
+#endif  // CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_

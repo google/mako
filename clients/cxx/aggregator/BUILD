@@ -1,5 +1,7 @@
 package(default_visibility = ["//visibility:public"])
 
+licenses(["notice"])
+
 cc_library(
     name = "standard_aggregator",
     srcs = ["standard_aggregator.cc"],

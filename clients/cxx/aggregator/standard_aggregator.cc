@@ -1,3 +1,16 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
 #include "clients/cxx/aggregator/standard_aggregator.h"
 
 #include <array>
@@ -19,15 +32,9 @@ namespace aggregator {
 namespace {
 constexpr char kNoError[] = "";
 
-// LINT.IfChange
 static constexpr std::array<int, 8> kDefaultPercentileMilliRanks = {
     {1000, 2000, 5000, 10000, 90000, 95000, 98000, 99000}};
 }  // namespace
-// LINT.ThenChange(
-//     //depot/google3/testing/performance/mako/internal/server/webapp/charting/common.js,
-//     //depot/google3/testing/performance/mako/internal/server/dashboard/aggregate_chart_page.go,
-//     //depot/google3/third_party/mako/spec/proto/mako.proto
-// )
 
 ThreadsafeRunningStats* Aggregator::GetOrCreateRunningStats(
     const std::string& value_key,
@@ -211,7 +218,7 @@ std::string Aggregator::AppendToBuffer(
     std::map<std::string, std::unique_ptr<ThreadsafeRunningStats>>* stats_map) {
   std::vector<double>& buffer = (*buffers)[value_key];
   buffer.push_back(value);
-  if (buffer.size() > buffer_size_) {
+  if (buffer.size() > static_cast<std::size_t>(buffer_size_)) {
     std::string err = ProcessBuffer(value_key, buffer, stats_map);
     buffer.clear();
     if (!err.empty()) {

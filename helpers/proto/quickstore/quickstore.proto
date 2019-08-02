@@ -23,7 +23,7 @@ message QuickstoreInput {
   // These fields are optional if you'd like to add more information about the
   // data that is stored. Each field is duplicated with the same name as
   // part of the RunInfo message
-  // (cs/f:mako/spec/proto/mako.proto%20symbol:RunInfo$).
+  // (https://github.com/google/mako/spec/proto/mako.proto
   // Fields below will be set regardless of analysis status.
   optional double timestamp_ms = 2;
   optional int64 build_id = 20;
@@ -62,12 +62,12 @@ message QuickstoreInput {
   // OPTIONAL
   // Analyzers to run after data has been uploaded.
   // See analyzers specific protos for more information.
-  // cs/f:clients/proto/analyzers/threshold_analyzer.proto
+  // https://github.com/google/mako/clients/proto/analyzers/threshold_analyzer.proto
   repeated mako.analyzers.threshold_analyzer.ThresholdAnalyzerInput
       threshold_inputs = 12;
-  // cs/f:clients/proto/analyzers/window_deviation.proto
+  // https://github.com/google/mako/clients/proto/analyzers/window_deviation.proto
   repeated mako.window_deviation.WindowDeviationInput wda_inputs = 13;
-  // cs/f:clients/proto/analyzers/utest_analyzer.proto
+  // https://github.com/google/mako/clients/proto/analyzers/utest_analyzer.proto
   repeated mako.utest_analyzer.UTestAnalyzerInput utest_inputs = 16;
   reserved 15, 19;
   reserved 5;

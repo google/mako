@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 //
 // Threshold analyzer determines if data is within threshold bounds.
 //
-// See docs at cs/f:clients/proto/analyzers/threshold_analyzer.proto
-// See interface at: cs/f:performance/mako/spec/cxx/analyzer.h
-#ifndef THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_THRESHOLD_ANALYZER_H_
-#define THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_THRESHOLD_ANALYZER_H_
+// See docs at https://github.com/google/mako/clients/proto/analyzers/threshold_analyzer.proto
+// See interface at: https://github.com/google/mako/spec/cxx/analyzer.h
+#ifndef CLIENTS_CXX_ANALYZERS_THRESHOLD_ANALYZER_H_
+#define CLIENTS_CXX_ANALYZERS_THRESHOLD_ANALYZER_H_
 
 #include <string>
 
@@ -60,4 +60,4 @@ class Analyzer : public mako::Analyzer {
 }  // namespace threshold_analyzer
 }  // namespace mako
 
-#endif  // THIRD_PARTY_PERFGATE_CLIENTS_CXX_ANALYZERS_THRESHOLD_ANALYZER_H_
+#endif  // CLIENTS_CXX_ANALYZERS_THRESHOLD_ANALYZER_H_

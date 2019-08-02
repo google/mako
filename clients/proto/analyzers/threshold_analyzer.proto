@@ -59,6 +59,11 @@ message ThresholdAnalyzerInput {
   // Name for this analyzer instance, will be output in
   // AnalyzerOutput.analyzer_name
   optional string name = 2;
+
+  // OPTIONAL
+  // Tags to filter runs that provide historical context for this analyzer.
+  // These do NOT affect the analysis itself.
+  repeated string historical_context_tags = 3;
 }
 
 // This message will be text (go/textformat) encoded into

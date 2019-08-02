@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_
-#define THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_
+#ifndef HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_
+#define HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
@@ -68,4 +68,4 @@ ABSL_MUST_USE_RESULT bool IsUnknown(const Status& status);
 }  // namespace helpers
 }  // namespace mako
 
-#endif  // THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_
+#endif  // HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_H_
-#define THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_H_
+#ifndef HELPERS_CXX_STATUS_H_
+#define HELPERS_CXX_STATUS_H_
 
 #include "google/cloud/status.h"
 
@@ -33,4 +33,4 @@ bool HasErrorCode(const Status& status, StatusCode code);
 }  // namespace helpers
 }  // namespace mako
 
-#endif  // THIRD_PARTY_PERFGATE_HELPERS_CXX_STATUS_H_
+#endif  // HELPERS_CXX_STATUS_H_

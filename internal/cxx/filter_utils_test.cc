@@ -1,3 +1,16 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
 #include "internal/cxx/filter_utils.h"
 
 #include <algorithm>
@@ -158,9 +171,13 @@ class FilterUtilsTest : public ::testing::Test {
     metric_2_3->set_run_key(krun_key);
     auto metric_2_values = HelperCreateMetric2Values();
     auto metric_3_values = HelperCreateMetric3Values();
-    for (int i = 0; i < metric_2_values.size(); i++) {
-      auto& metric_2_pair = metric_2_values[i];
-      auto& metric_3_pair = metric_3_values[i];
+    CHECK_EQ(metric_2_values.size(), metric_3_values.size());
+    for (auto metric_2_iter = metric_2_values.begin(),
+              metric_3_iter = metric_3_values.begin();
+         metric_2_iter != metric_2_values.end();
+         metric_2_iter++, metric_3_iter++) {
+      auto& metric_2_pair = *metric_2_iter;
+      auto& metric_3_pair = *metric_3_iter;
 
       SamplePoint* point_2 = metric_2_3->add_sample_point_list();
       point_2->set_input_value(metric_2_pair.first);

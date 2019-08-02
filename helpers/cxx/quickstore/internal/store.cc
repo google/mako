@@ -1,3 +1,17 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// see the license for the specific language governing permissions and
+// limitations under the license.
+//
 // TODO(b/126415270) We'll hold onto 3x - (downsampler removed points) memory
 // during this process. If this becomes a problem we could take a non-const
 // vector to the data and delete as we write to disk.
@@ -19,6 +33,7 @@
 #include "clients/cxx/analyzers/window_deviation.h"
 #include "clients/cxx/downsampler/standard_downsampler.h"
 #include "clients/cxx/fileio/memory_fileio.h"
+#include "clients/cxx/storage/mako_client.h" // NOLINT
 #include "clients/proto/analyzers/threshold_analyzer.pb.h"
 #include "clients/proto/analyzers/utest_analyzer.pb.h"
 #include "clients/proto/analyzers/window_deviation.pb.h"
@@ -68,11 +83,6 @@ QuickstoreOutput InternalQuickstore::Save() {
                                               absl::Uniform<uint64_t>(*gen)));
   }
 
-  // NOTE: Native libraries TAP tests use this check to ensure that SWIG has
-  // been hooked up correctly. If any production system is contacted before this
-  // check those tests will need refactoring.
-  // NOTE II: We do create a google3 storage instance as part of Quickstore
-  // constructor but the stub isn't created until use.
   if (!input_.has_benchmark_key() || input_.benchmark_key().empty()) {
     err = "Must provide non-empty benchmark_key";
     LOG(ERROR) << err;
@@ -239,9 +249,7 @@ std::string InternalQuickstore::UpdateMetricAggregates() {
 
     // Fill each new MetricAggregate with 0's for all percentiles.
     if (!aggs.count(key)) {
-      for (int i = 0; i < percentile_strings.size(); i++) {
-        aggs[key].add_percentile_list(0);
-      }
+      aggs[key].mutable_percentile_list()->Resize(percentile_strings.size(), 0);
     }
 
     aggs[key].set_metric_key(key);
@@ -261,22 +269,18 @@ std::string InternalQuickstore::UpdateMetricAggregates() {
     } else if (type == "count") {
       aggs[key].set_count(value);
     } else if (!type.empty() && type[0] == 'p') {
-      int idx;
-      for (idx = 0; idx < percentile_strings.size(); idx++) {
-        if (type == percentile_strings[idx]) {
-          break;
-        }
-      }
-      if (idx == percentile_strings.size()) {
+      auto begin_it = percentile_strings.begin();
+      auto end_it = percentile_strings.end();
+      auto found_it = std::find(begin_it, end_it, type);
+      if (found_it == end_it) {
         err = absl::StrCat("Invalid percentile: ", type);
         LOG(ERROR) << err;
         return err;
       }
-      aggs[key].set_percentile_list(idx, value);
+      aggs[key].set_percentile_list(std::distance(begin_it, found_it), value);
     } else {
       err = absl::StrCat("Invalid MetricAggregate: metric value key: ", key,
-                         " type: ", type,
-                         " value: ", value);
+                         " type: ", type, " value: ", value);
       LOG(ERROR) << err;
       return err;
     }
@@ -536,6 +540,28 @@ QuickstoreOutput InternalQuickstore::Complete() {
   out.set_run_key(run_info_.run_key());
 
   return out;
+}
+
+QuickstoreOutput Save(const QuickstoreInput& input,
+                      const std::vector<mako::SamplePoint>& points,
+                      const std::vector<mako::SampleError>& errors,
+                      const std::vector<mako::KeyedValue>& run_aggregates,
+                      const std::vector<std::string>& aggregate_value_keys,
+                      const std::vector<std::string>& aggregate_types,
+                      const std::vector<double>& aggregate_values) {
+  auto status_or_storage = mako::NewMakoClient();
+  if (!status_or_storage.ok()) {
+    QuickstoreOutput output;
+    output.set_status(QuickstoreOutput::ERROR);
+    output.set_summary_output(
+        absl::StrCat("Error creating a Mako storage client: ",
+                     status_or_storage.status().message()));
+    return output;
+  }
+  auto s = std::move(status_or_storage).value();
+  return SaveWithStorage(s.get(), input, points, errors, run_aggregates,
+                         aggregate_value_keys, aggregate_types,
+                         aggregate_values);
 }
 
 QuickstoreOutput SaveWithStorage(
