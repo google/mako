@@ -117,8 +117,7 @@ level.
 
 The solution is not to reduce your sample size, but to instead to ignore
 detected changes under a specified size. This is typically referred to as Effect
-Size and in Mako, `shift_value` or `relative_shift_value` serve as a good
-proxy.
+Size and in Mako, `shift_value` or `relative_shift_value` serve as a good proxy.
 
 For more information on this topic, see
 [Large Samples: Too Much of a Good Thing?](http://blog.minitab.com/blog/statistics-and-quality-data-analysis/large-samples-too-much-of-a-good-thing).

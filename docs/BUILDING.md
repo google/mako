@@ -7,7 +7,8 @@ Only building on Linux and MacOS is supported at this time.
 #### Bazel
 
 See Installing Bazel (https://docs.bazel.build/versions/master/install.html) for
-instructions for installing Bazel on your system.
+instructions for installing Bazel on your system. Version v0.28.1 is known to
+work.
 
 #### Git
 
@@ -89,7 +90,7 @@ to connect to a running Mako microservice. Learn more at
 See the [GUIDE.md] for a step-by-step guide to writing and running a Mako
 Quickstore test.
 
-## Building the command-line tool (anchor CLI)
+## Building the command-line tool
 ```bash
 bazel build internal/tools/cli:mako
 ```

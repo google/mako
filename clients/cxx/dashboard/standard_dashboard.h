@@ -23,7 +23,7 @@
 namespace mako {
 namespace standard_dashboard {
 
-// Dashboard implementation for google3. See interface for docs.
+// Dashboard implementation. See interface for docs.
 class Dashboard : public mako::Dashboard {
  public:
   Dashboard();

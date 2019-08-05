@@ -24,8 +24,8 @@ class OAuthTokenProvider {
   // Returns an OAuth2 Bearer token to be used in an "Authorization: Bearer
   // <token>" HTTP header.
   //
-  // Implementations should return ::util::error::FAILED_PRECONDITION for
-  // non-retryable errors. All other error types may be retried.
+  // Implementations should return ::mako::helpers::FailedPreconditionError
+  // for non-retryable errors. All other error types may be retried.
   virtual mako::helpers::StatusOr<std::string> GetBearerToken() = 0;
   virtual ~OAuthTokenProvider() = default;
 };

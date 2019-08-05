@@ -24,6 +24,7 @@ cc_library(
 cc_test(
     name = "quickstore_service_test",
     srcs = ["quickstore_service_test.cc"],
+    linkstatic = 1,  # TODO(b/138956597) Fix linker error requiring this.
     deps = [
         ":quickstore_service",
         "//clients/cxx/storage:fake_google3_storage",

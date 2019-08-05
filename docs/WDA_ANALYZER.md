@@ -35,7 +35,7 @@ The remainder of this page describes how to set the fields therein.
 
 Follow the advice in this section alone for a quick example of creating a WDA
 that will work for most cases. If your case is uncommon or you desire more
-knowledge and control, read the rest of this document. 
+knowledge and control, read the rest of this document.
 
 1.  Choose the metrics you would like to analyze. These are normally the most
     important metrics that directly measure performance.
@@ -413,8 +413,7 @@ well.
 
 However, if your data is not well categorized as a normal distribution (e.g.
 bimodal or uniform distribution), you may want to experiment with values in the
-range 1.0 to 2.0. Use the Mako [WDA Experimentation](#experimentation) to
-experiment with data and coefficient values.
+range 1.0 to 2.0.
 
 ## median_coeff
 
@@ -456,10 +455,6 @@ recommended.
 
 If your recent window is very large, the median of recent values may not be very
 affected by noise, so you may choose to leave `mad_coeff` unset (0.0).
-
-However, if your data is unusual, you may want to experiment with other values.
-Use the Mako [WDA Experimentation](#experimentation) to experiment with data
-and coefficient values.
 
 ## Selecting aggregate data via filter {#data_filter}
 

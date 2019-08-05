@@ -47,6 +47,9 @@ import (
 	"context"
 	"errors"
 
+	"flag"
+	"os"
+
 	log "github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
@@ -210,6 +213,15 @@ func (q *Quickstore) AddMetricAggregate(valueKey string, aggregateType string, v
 // QuickstoreOutput proto buffer also returned for more information about the
 // failure.
 func (q *Quickstore) Store() (qpb.QuickstoreOutput, error) {
+	// Workaround for b/137108136 to make errors in Go logs about flags not being parsed go away.
+	if !flag.Parsed() {
+		// It's possible users are using some other flag library and/or are purposely not calling flag.Parse() for some other reason which would result in a call to flag.Parse() failing.
+		// Instead of exiting, set things up so that we can just log the error and continue.
+		flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
+		if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
+			log.Errorf("Error parsing flags: %v", err)
+		}
+	}
 	save := q.saverImpl
 
 	if q.BenchmarkKey != "" {

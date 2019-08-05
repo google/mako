@@ -30,7 +30,7 @@ class ConsumerQueueInterface {
  public:
   virtual ~ConsumerQueueInterface() {}
 
-  // Wait up to ms_timeout for an item to become available on the queue and
+  // Wait up to timeout for an item to become available on the queue and
   // remove it.
   virtual absl::optional<T> get(absl::Duration timeout) = 0;
 

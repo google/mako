@@ -21,8 +21,8 @@ Mako client libraries are designed to be called from a client project’s
 performance test code. See the client project’s documentation for how to run
 their performance tests.
 
-Since Mako performance tests upload data to http://mako.dev, they require access
-rights to run. Please see [ACCESS.md](docs/ACCESS.md).
+Since Mako performance tests upload data to https://mako.dev, they require
+access rights to run. Please see [ACCESS.md](docs/ACCESS.md).
 
 ## Mako Dashboard
 Results from performance tests that use Mako are visible to the world. Visit
@@ -39,7 +39,7 @@ To learn about how to use the Mako command-line tool, please read
 
 ## Writing a new performance test using Mako
 If you’re writing a new performance test that will use a Mako client to store
-results in http://mako.dev and to guard against performance regressions, please
+results in https://mako.dev and to guard against performance regressions, please
 read [GUIDE.md](docs/GUIDE.md).
 
 There are example performance tests in the [`mako_examples/`](./mako_examples)

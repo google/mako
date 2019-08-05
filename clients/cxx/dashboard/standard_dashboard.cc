@@ -117,9 +117,8 @@ namespace mako {
 namespace standard_dashboard {
 
 Dashboard::Dashboard(absl::string_view hostname) : hostname_(hostname) {
-  // The Mako client replaces "mako.dev" with "makoperf.appspot.com" for two
-  // reasons: the HttpOverRpcTransport doesn't recognize alias URLs, and
-  // a container might not recognize the certificate used to sign mako.dev.
+  // The Mako client replaces "mako.dev" with "makoperf.appspot.com" because:
+  // - a container might not recognize the certificate used to sign mako.dev.
   // Swap it back here so that the user gets mako.dev URLs.
   if (hostname_ == "makoperf.appspot.com" ||
       hostname_ == "https://makoperf.appspot.com") {

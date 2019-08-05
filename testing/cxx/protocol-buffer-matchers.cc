@@ -36,9 +36,6 @@
 namespace mako {
 namespace internal {
 
-using absl::string_view;
-using RegExpStringPiece = absl::string_view;  // copybara
-
 // Utilities.
 
 class StringErrorCollector : public google::protobuf::io::ErrorCollector {
@@ -76,10 +73,10 @@ bool ProtoComparable(const google::protobuf::Message& p, const google::protobuf:
 }
 
 template <typename Container>
-std::string JoinStringPieces(const Container& strings, string_view separator) {
+std::string JoinStringPieces(const Container& strings, absl::string_view separator) {
   std::stringstream stream;
-  string_view sep = "";
-  for (const string_view str : strings) {
+  absl::string_view sep = "";
+  for (const absl::string_view str : strings) {
     stream << sep << str;
     sep = separator;
   }
@@ -91,7 +88,7 @@ std::vector<const google::protobuf::FieldDescriptor*> GetFieldDescriptors(
     const google::protobuf::Descriptor* proto_descriptor,
     const std::vector<std::string>& ignore_fields) {
   std::vector<const google::protobuf::FieldDescriptor*> ignore_descriptors;
-  std::vector<string_view> remaining_descriptors;
+  std::vector<absl::string_view> remaining_descriptors;
 
   const google::protobuf::DescriptorPool* pool = proto_descriptor->file()->pool();
   for (const std::string& name : ignore_fields) {
@@ -168,7 +165,7 @@ class IgnoreFieldPathCriteria
 };
 
 namespace {
-bool Consume(RegExpStringPiece* s, RegExpStringPiece x) {
+bool Consume(absl::string_view* s, absl::string_view x) {
   // We use the implementation of ABSL's StartsWith here until we can pick up a
   // dependency on Abseil.
   if (x.empty() ||
@@ -198,7 +195,7 @@ ParseFieldPathOrDie(const std::string& relative_field_path,
   const RE2 field_subscript_regex(R"(([^.()[\]]+)\[(\d+)\])");
   const RE2 extension_regex(R"(\(([^)]+)\))");
 
-  RegExpStringPiece input(relative_field_path);
+  absl::string_view input(relative_field_path);
   while (!input.empty()) {
     // Consume a dot, except on the first iteration.
     if (input.size() < relative_field_path.size() && !Consume(&input, ".")) {

@@ -1,6 +1,5 @@
-# GCE-compatible alternatives to the top-level packages in //net/grpc.
+# GCE-compatible alternatives for GRPC
 #
-# TODO(b/138388186): Deprecate these on move onto //net/grpc and //third_party/grpc.
 package(default_visibility = ["//:internal"])
 
 licenses(["notice"])

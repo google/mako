@@ -12,8 +12,7 @@
 // see the license for the specific language governing permissions and
 // limitations under the license.
 
-// A way to run functions concurrently and wait for their completion. This is
-// used by LoadTestBase to start and stop TaskGroups.
+// A way to run functions concurrently and wait for their completion.
 //
 // This class is thread-unsafe, as per go/thread-unsafe.
 //

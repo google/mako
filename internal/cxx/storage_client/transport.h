@@ -40,9 +40,10 @@ class StorageTransport {
 
   virtual void set_client_tool_tag(absl::string_view) = 0;
 
-  // Make the specified call. Return Status codes other than util::error::OK
-  // indicate a transport-layer error (e.g. failed to send an RPC). Storage API
-  // errors will be returned via the response with an OK Status.
+  // Make the specified call. Return Status codes other than
+  // mako::helpers::StatusCode::kOk indicate a transport-layer error (e.g.
+  // failed to send an RPC). Storage API errors will be returned via the
+  // response with an OK Status.
   //
   // mako::helpers::StatusCode::kFailedPrecondition indicates an error that
   // is not retryable.

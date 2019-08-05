@@ -45,7 +45,7 @@
 // - For all of the above, the Go interface will accept/return a pointer to
 //   GoMsgType.
 // - The go_wrap_cc target that uses this file will have to have the following
-//   dependency: "//net/proto2/go:proto".
+//   dependency: "@com_github_golang_protobuf//proto:go_default_library".
 //
 // Example:
 //   .h file:

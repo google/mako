@@ -5,7 +5,7 @@ access to the same Mako data that’s available on the dashboard. This tool is
 used by benchmark owners to manage their benchmarks and runs.
 
 Before you can use the Mako CLI, you’ll have to
-[set up authentication](GUIDE.md#authentication).
+[set up authentication](AUTHENTICATION.md).
 
 To learn how to build the Mako command-line tool, please read
 [BUILDING.MD](BUILDING.md#cli)
@@ -41,7 +41,7 @@ in Mako, read [CONCEPTS.md](CONCEPTS.md#benchmarks).
 
 Now save and quit your editor. Assuming there are no syntax errors or other
 issues with your data, the `create_benchmark` subcommand should complete
-successfully and report the http://mako.dev URL where you can find your
+successfully and report the https://mako.dev URL where you can find your
 benchmark.
 
 If you prefer to store a version of your benchmark, the `create_benchmark`

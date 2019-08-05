@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <csignal>
 #include <cstdlib>
 
 #include "glog/logging.h"
@@ -27,7 +28,7 @@ ABSL_FLAG(std::string, addr, "localhost:9813",
 
 static void sigdown(int signo) {
   psignal(signo, "Shutting down, got signal");
-  quick_exit(0);
+  std::exit(0);
 }
 
 int main(int argc, char** argv) {
@@ -35,7 +36,12 @@ int main(int argc, char** argv) {
 
   // Without a PID1 or shell, we need to handle SIGINT on our own.
   struct sigaction down_handler;
+
+  // Initialize all args to avoid undefined behavior.
+  down_handler.sa_flags = 0;
+  sigemptyset(&down_handler.sa_mask);
   down_handler.sa_handler = sigdown;
+
   if (sigaction(SIGINT, &down_handler, nullptr) < 0) {
     return 1;
   }

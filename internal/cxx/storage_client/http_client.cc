@@ -240,7 +240,7 @@ helpers::StatusOr<std::string> Request(
         absl::StrCat("HTTP response from ", url,
                      " does not appear valid: no HTTP status line.");
     LOG(ERROR) << error;
-    // TODO(b/74948849) Maybe should be util::Internal(error).
+    // TODO(b/74948849) Maybe should be mako::helpers::InternalError(error).
     return helpers::FailedPreconditionError(error);
   }
 
@@ -252,7 +252,7 @@ helpers::StatusOr<std::string> Request(
                      "first header line) is missing or malformed. Headers:\n",
                      absl::StrJoin(header_helper.lines, "\n"));
     LOG(ERROR) << error;
-    // TODO(b/74948849) Maybe should be util::Internal(error).
+    // TODO(b/74948849) Maybe should be mako::helpers::InternalError(error).
     return helpers::FailedPreconditionError(error);
   }
 

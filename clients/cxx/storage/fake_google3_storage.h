@@ -13,7 +13,6 @@
 // limitations under the license.
 
 // Provides an in memory fake of the Mako storage system.
-// Class is Google3 specific because of internal threading library used.
 //
 #ifndef CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
 #define CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_

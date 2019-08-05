@@ -76,9 +76,6 @@ class HttpClientInterface {
 };
 
 // A simple and stateless implementation of HttpClientInterface.
-//
-// This client was created as a GCE-compatible alternative to
-// ::webutil::HTTPFetcher.
 class HttpClient : public HttpClientInterface {
  public:
   HttpClient();

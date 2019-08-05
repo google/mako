@@ -3,6 +3,8 @@
 #  mako/clients/go/storage:all
 package(default_visibility = ["//clients/go/storage:__pkg__"])
 
+licenses(["notice"])
+
 load("//swig:swig.bzl", "mako_go_wrap_cc")
 
 mako_go_wrap_cc(

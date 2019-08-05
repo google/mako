@@ -12,27 +12,7 @@
 // see the license for the specific language governing permissions and
 // limitations under the license.
 
-/*
-Package g3storage provides a google3 implementation of the mako
-Storage interface.
-
-This implementation is only for google3 use because it uses http over rpc
-to communicate with the mako server (current GAE app).
-
-For more information about mako see go/mako.
-
-For more information about the interface see
-https://github.com/google/mako/spec/go/storage.go
-
-This package defers work to SWIG wrapping of the C++ Mako client.
-
-NOTE: Because of SWIG, although a Context is passed into each of the functions
-below it is ignored. For this implementation of Mako Storage, calls cannot
-be cancelled via Context.
-
-Because unit testing is trivial, an end-to-end test is used instead:
-https://github.com/google/mako/internal/testing/e2e/google3_storage_go_test.go
-*/
+// Package g3storage provides some helpers for the storage library.
 package g3storage
 
 import (

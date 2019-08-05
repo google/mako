@@ -114,8 +114,7 @@ class Downsampler : public mako::Downsampler {
   // Constructor which allows setting the maximum number of threads to be used
   // for processing files in parallel. A value that is not positive indicates no
   // max. If this value is higher than the number of input files, the number of
-  // files will be used instead. Large load tests utilizing CNS will likely
-  // benefit from having a thread per file as CNS reads are a big bottleneck.
+  // files will be used instead.
   // TODO(b/136282446): Adapt this to use different defaults depending on if
   // we're in a small or large test.
   explicit Downsampler(int max_threads) : max_threads_(max_threads) {

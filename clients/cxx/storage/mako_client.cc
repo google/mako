@@ -37,18 +37,14 @@ namespace {
 
 // The hostname of the Mako server.
 constexpr absl::string_view kMakoHostname = "mako.dev";
-// The Appspot hostname of the Mako AppEngine app. This URL is required when
-// using HttpOverRpcStorageTransport below (see notes in
-// http_over_rpc_transport.h) or HttpTransport in a container with only
-// Google-specific certificates loaded.
+// The Appspot hostname of the Mako AppEngine app.
 constexpr absl::string_view kMakoAppengineHostname = "makoperf.appspot.com";
 
 std::string MaybeGetAppEngineHostname(absl::string_view hostname) {
-  // The HttpOverRpcStorageTransport requires the actual, direct base
-  // AppEngine app URL. The dashboard will take care of recognizing this
-  // appspot URL and changing it back to mako.dev for the user. We need to
-  // check for both with scheme and without scheme because we don't know what
-  // the user will pass in.
+  // Some usages requires the actual, direct base AppEngine app URL. The
+  // dashboard will take care of recognizing this appspot URL and changing it
+  // back to mako.dev for the user. We need to check for both with scheme and
+  // without scheme because we don't know what the user will pass in.
   if (hostname == kMakoHostname ||
       hostname == absl::StrCat("https://", kMakoHostname)) {
     return std::string(kMakoAppengineHostname);

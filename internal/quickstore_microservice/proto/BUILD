@@ -1,5 +1,7 @@
 load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 
+licenses(["notice"])
+
 package(default_visibility = ["//:internal"])
 
 proto_library(
@@ -11,7 +13,6 @@ proto_library(
     ],
 )
 
-# TODO(b/
 go_proto_library(
     name = "quickstore_go_proto",
     compilers = ["@io_bazel_rules_go//proto:go_grpc"],

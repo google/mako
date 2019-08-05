@@ -362,7 +362,7 @@ class RecordManager {
       return err;
     }
 
-    // first pick the RecordSaver to remove a record from.. we pick the one with
+    // first pick the RecordSaver to remove a record from. we pick the one with
     // the most slots, with tie breaking in favor of the RecordSaver
     // corresponding to the metric set currently being added
     RecordSaver<T>* biggest_saver = nullptr;

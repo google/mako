@@ -15,8 +15,8 @@ analyzer types are described below.
 
 Analyzers are configured in the
 [`QuickstoreInput`](../helpers/proto/quickstore/quickstore.proto) argument to
-the Quickstore constructor ([C++](../helpers/cxx/quickstore/quickstore.go),
-[Go](../helpers/cxx/quickstore/quickstore.h)).
+the Quickstore constructor ([C++](../helpers/cxx/quickstore/quickstore.h),
+[Go](../helpers/go/quickstore/quickstore.go)).
 
 Here's a simple example:
 
@@ -53,7 +53,7 @@ out, err := q.Store()
 if out.GetStatus() == qpb.QuickstoreOutput_ANALYSIS_FAIL {
   // If you just want to output messages from the analyzer failures, use
   // GetSummaryOutput(). This output will contain a link to the analyzer
-  // visualization on http://mako.dev.
+  // visualization on https://mako.dev.
   log.Errorf("Analyzer failure(s): %s", out.GetSummaryOutput())
 
   // Optionally, results from individual analyzers can be analyzed and acted
@@ -93,7 +93,7 @@ When an analyzer flags a regression, the analysis visualization will include a
 checkbox next to the analyzer title. Selecting one or multiple of these
 checkboxes will open the triage form (shown below).
 
-![Triage](mako_triage_banner.png)
+![Triage](./images/mako_triage_banner.png)
 
 The fields of the triage form are as follows:
 

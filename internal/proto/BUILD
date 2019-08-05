@@ -1,5 +1,7 @@
 package(default_visibility = ["//:internal"])
 
+licenses(["notice"])
+
 proto_library(
     name = "mako_internal_proto",
     srcs = ["mako_internal.proto"],

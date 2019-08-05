@@ -22,13 +22,11 @@ not support regular expressions.
 
 ## Setting tags
 
-You can set tags in one of four ways:
+You can set tags in one of three ways:
 
-*   From a Mako test, set the `tags` field on TestInput initializing the
-    load framework.
-*   From a Mako test, return the `tags` field from the `Master.Complete()`
-    function. If tags are provided both on the TestInput and from
-    Master.Complete, they will be combined.
+*   From a Mako Quickstore test, set the `tags`, `analysis_pass`, and/or
+    `analysis_fail` fields on QuickstoreInput
+    ([quickstore.proto](../helpers/proto/quickstore/quickstore.proto)).
 *   Using the storage library, set the `RunInfo.tags` field when updating the
     run.
 *   Use the [Mako Command Line Tool](CLI.md) to edit tags of
@@ -38,8 +36,7 @@ You can set tags in one of four ways:
 
 1.  **Label Official Runs**: Always label official data/runs as such. Mako
     does not support negative tag matching (e.g. !dev) so it is important to
-    explicitly tag official runs. One way this is done is by setting a flag
-    from Guitar Cbuild runs.
+    explicitly tag official runs.
 2.  **Key Value Tags**: Mako does not have any explicit support for key
     value tags today, but users still find it convenient and helpful to use
     key value style tags such as "env=prod", "env=test", etc. We recommend
@@ -93,6 +90,8 @@ ways to do so. The recommended approach is to use the [Mako Storage API]
 
 ## Tag limits
 
-- See go/mako-limits for limits on the number of tags per run.
+- See [STORAGE_LIBRARY.md](STORAGE_LIBRARY.md#storage-limitation) for limits on
+  the number of tags per run.
 - There is a limit of 20 tags per run.
-- See [RunInfo.tags](../spec/proto/mako.proto) for the set of legal characters that can be used in a tag.
+- See [RunInfo.tags](../spec/proto/mako.proto) for the set of legal characters
+  that can be used in a tag.

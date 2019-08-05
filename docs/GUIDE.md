@@ -7,20 +7,20 @@ If you haven’t yet read [CONCEPTS.md](./CONCEPTS.md), please do before
 proceeding.
 
 > **NOTE**: Mako performance tests write data to the Mako service,
-http://mako.dev. Running example performance tests, or authoring your own, will
+https://mako.dev. Running example performance tests, or authoring your own, will
 require special access to the service. Please read ACCESS.md before proceeding.
 
-<h2 id="data">Preparing your performance test data</h2>
+## Preparing your performance test data
 
 Before you can use Mako, you must have performance test data which you want to
-store in http://mako.dev and which you’ll use to look for performance
+store in https://mako.dev and which you’ll use to look for performance
 regressions. This performance data can come from anywhere -- microbenchmarks,
 load tests, etc.
 
 The performance test data Mako understands can be classified into three
-categories: Sample Point Data, Custom Aggregates, and Run Metadata.
+categories: **Sample Point Data**, **Custom Aggregates**, and **Run Metadata**.
 
-<h4 id="sample-point-data">Sample Point Data</h4>
+#### Sample Point Data
 
 Repeated measurements of a set of properties over the course of a performance
 test. Each Sample Point consists of:
@@ -42,23 +42,25 @@ Input Value             | Write Latency (ms) | Read Latency (ms) | Instantaneous
 2011-09-22 17:52:11.133 |                    | 383               | 0.51
 
 When using Quickstore, sample point data is added to Mako using the
-`AddSamplePoint` method (see [Using the Mako Quickstore client](#client).
+`AddSamplePoint` method (see
+[Using the Mako Quickstore client](#using-the-mako-quickstore-client)).
 
-<h4 id="custom-aggregate-data">Custom Aggregate Data</h4>
+#### Custom Aggregate Data
 
 A set of key-value aggregates. Each key-value pair represents a single
 measurement for the entire run. Here’s an example of some custom aggregate data:
 
-<table>
-      <tr><td>Average Throughput (KB/s)</td><td>4312.84</td></tr>
-      <tr><td>Branch miss percentage</td><td>1.048</td></tr>
-      <tr><td>Page faults</td><td>42383</td></tr>
-</table>
+Aggregate Metric          | Value
+------------------------- | ------------------
+Average Throughput (KB/s) | 4312.84
+Branch miss percentage    | 1.048
+Page faults               | 42383
 
 When using Quickstore, sample point data is added to Mako using the
-`AddCustomAggregate` method (see [Using the Mako Quickstore client](#client).
+`AddCustomAggregate` method (see
+[Using the Mako Quickstore client](#using-the-mako-quickstore-client)).
 
-<h4 id="run-metadata">Run Metadata</h4>
+#### Run Metadata
 
 Mako runs can have a diverse set of metadata associated with them, including:
 * timestamp
@@ -76,35 +78,22 @@ set of supported run metadata information.
 
 Now that you understand the kinds of data that Mako can work with, think about
 how your data can be made to fit into Mako’s concepts. By the end of this guide,
-we’ll be using a Mako Quickstore client to upload your data to http://mako.dev.
+we’ll be using a Mako Quickstore client to upload your data to https://mako.dev.
 
-<h4 id="authentication">Setting up authentication</h4>
+#### Setting up authentication
 
 The Mako command-line tool and the Mako clients communicate https://mako.dev
 using the Application Default Credentials (ADC) strategy. You can find full
 documentation of this strategy at http://cloud/docs/authentication/production.
 
-When running locally and wanting to authenticate as yourself (as opposed to as a
-service account), the easiest way to set up authentication is using the gcloud
-CLI, which is part of the Google Cloud SDK. Instructions for installing the SDK
-and CLI can be found here: https://cloud.google.com/sdk/gcloud/.
+To learn how to establish credentials to authenticate to https://mako.dev, read
+[AUTHENTICATION.md](AUTHENTICATION.md).
 
-Once the SDK is installed, execute the following command to establish
-credentials that the Mako tools/clients can use:
+#### Preparing your benchmark
 
-```bash
-gcloud auth application-default login
-```
-
-Follow the instructions, which will involve visiting a web page, copying an
-access token, and pasting it in the command-line prompt. Documentation for this
-command can be found here:
-https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login.
-
-<h4 id="preparing-benchmark">Preparing your benchmark</h4>
 Now that you have an idea of the kinds of data you’ll be storing in Mako and
 you’ve set up authentication, it’s time to create your benchmark in
-http://mako.dev. Before proceeding, see [ACCESS.md](./ACCESS.md) to learn how to
+https://mako.dev. Before proceeding, see [ACCESS.md](./ACCESS.md) to learn how to
 get access to create benchmarks.
 
 To create the benchmark you’ll use the Mako command-line tool. Visit
@@ -132,9 +121,10 @@ mako create_benchmark
 ```
 
 This will bring the template up in your shell’s default editor. For the example
-data in the [Preparing your performance test data](#data) section above, we
-might fill out the template as follows. You should replace the configuration
-with a description of your own data.
+data in the
+[Preparing your performance test data](#preparing-your-performance-test-data)
+section above, we might fill out the template as follows. You should replace the
+configuration with a description of your own data.
 
 ```
 benchmark_name: "Example Benchmark"
@@ -184,26 +174,26 @@ information (the `metric_info_list` items) and the custom aggregate information
 
 Now save and quit your editor. Assuming there are no syntax errors or other
 issues with your data, the `create_benchmark` subcommand should complete
-successfully and report the http://mako.dev URL where you can find your
+successfully and report the https://mako.dev URL where you can find your
 benchmark.
 
 The sections below will walk you through setting up code that writes actual
 performance test results to this benchmark.
 
-<h4 id="depending-on-mako">Depending on Mako</h4>
+#### Depending on Mako
 
-When using Mako to store performance results in http://mako.dev and to perform
+When using Mako to store performance results in https://mako.dev and to perform
 regression detection, you must import the Mako Quickstore library into your own
 code. How you go about that depends on your build system. Mako supports two
 build systems: Bazel for C++ and Golang, and `go build` for Golang.
 
-<h5 id="bazel">Bazel</h5>
+##### Bazel
 
 If you use Bazel (for either C++ or Go), you can import Mako as a dependency in
 your WORKSPACE file. Find directions at [BUILDING.md](BUILDING.md#bazel), and to
 learn more about Bazel, visit http://bazel.build.
 
-<h5 id="go-build">go build/test</h5>
+##### go build/test
 
 If you are using Go and you build with `go build` or `go test`, we recommend
 using [Go Modules](https://github.com/golang/go/wiki/Modules) to depend on Mako.
@@ -245,10 +235,11 @@ Then build and run, and Go should take care of importing the Mako module:
 go test
 ```
 
-Note that you need to ensure the [Quickstore microservice](#microservice) is
-running before starting your test that uses Quickstore.
+Note that you need to ensure the
+[Quickstore microservice](#quickstore-microservice) is running before starting
+your test that uses Quickstore.
 
-<h4 id="microservice">Quickstore microservice</h4>
+#### Quickstore microservice
 
 The Go Quickstore client library, when building with `go build/test`, does not
 stand alone -- it requires a running Quickstore microservice. When using Bazel,
@@ -268,45 +259,45 @@ $ MAKO_PORT=9347  # could be any port
 $ bazel run internal/quickstore_microservice:quickstore_microservice_mako -- --addr="localhost:${MAKO_PORT}"
 ```
 
-Note that this command will fail if you haven’t set up authentication
-[as described above](#authentication).
+Note that this command will fail if you haven’t set up authentication as
+described in [AUTHENTICATION.md](AUTHENTICATION.md).
 
 You will need to arrange for the microservice to be built by your test (or
 pulled from a prebuilt location) and started, so that it listens for client
 connections, whenever you run a Go Mako Quickstore test.
 
-<h4 id="client">Using the Mako Quickstore client</h4>
+#### Using the Mako Quickstore client
 
 Now that you’ve prepared your performance test data, established authentication,
 prepared your benchmark, are pulling in Mako as a dependency, and (if you are
 using Go) have started the microservice, you’re ready to write some data to
-http://mako.dev using Quickstore.
+https://mako.dev using Quickstore.
 
 The typical structure of a Quickstore run is:
-1. Collect some performance data. Quickstore doesn’t care where it comes from,=
+1. Collect some performance data. Quickstore doesn’t care where it comes from,
    just that you can represent it in the forms described above in
-   [Preparing your performance test data](#data).
+   [Preparing your performance test data](#preparing-your-performance-test-data).
 2. Configure a `QuickstoreInput`
    ([quickstore.proto](../helpers/proto/quickstore/quickstore.proto)) object
    with your run metadata described above (#run-metadata).
 3. Also in the `QuickstoreInput` object, configure your run analyzers. If you’re
    just getting started, **skip this step** until you’ve got a test that runs
-   and records results to http://mako.dev. Once you’re uploading data for long
+   and records results to https://mako.dev. Once you’re uploading data for long
    enough to get a sense of the performance characteristics of your system under
    test, then consider adding analyzers in order to automate regression
    detection. To read more about analyzers, visit
-   [CONCEPTS.md](CONCEPTS.md#analyzers).
+   [ANALYZERS.md](ANALYZERS.md).
 4. Instantiate a Mako Quickstore client, passing the constructor the
    `QuickstoreInput` object.
 5. Call the `AddSamplePoint` method repeatedly, feeding it your sample point
    data.
 6. Call the `AddCustomAggregate` method repeatedly, feeding it your custom
    aggregate data.
-7. Call the `Store` method to process the data and upload it to http://mako.dev.
+7. Call the `Store` method to process the data and upload it to https://mako.dev.
 
 The examples in [`mako_examples/`](../mako_examples/) illustrate these steps.
 
-<h4 id="regression-detection">Add Regression Detection</h4>
+#### Add Regression Detection
 
 As mentioned in step 3 above, consider skipping adding Mako analyzers for
 regression detection until you’ve been automated your test and have been
@@ -315,13 +306,13 @@ your system’s performance, then you should strongly consider integrating
 analyzers.
 
 In
-[`mako_examples/go_quickstore/example.go`](../mako_examples/go_quickstore/example.go)
+[`mako_examples/go_quickstore/example_test.go`](../mako_examples/go_quickstore/example_test.go)
 we configure a threshold analyzer. This is the simplest analyzer conceptually
 and the easiest to configure. Most tests should start with a threshold analyzer
 and expand from there.
 
 Note that in
-[`mako_examples/go_quickstore/example.go`](../mako_examples/go_quickstore/example.go)
+[`mako_examples/go_quickstore/example_test.go`](../mako_examples/go_quickstore/example_test.go)
 we fail the test when Quickstore reports an analyzer failure. This allows us to
 treat the performance test like a correctness/functional test regarding how
 failures are reported.

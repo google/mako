@@ -91,3 +91,20 @@ cc_library(
         "@com_google_absl//absl/strings",
     ],
 )
+
+cc_test(
+    name = "mako_client_test",
+    srcs = ["mako_client_test.cc"],
+    data = [
+    ],
+    deps = [
+        ":google3_storage",
+        ":mako_client",
+        "//internal/cxx/storage_client:google_oauth_fetcher",
+        "//internal/cxx/storage_client:http_transport",
+        "//internal/cxx/storage_client:oauth_token_provider",
+        "//internal/cxx/storage_client:transport",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_googletest//:gtest_main",
+    ],
+)

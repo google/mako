@@ -92,7 +92,6 @@ COPY_TYPEMAPS(unsigned long long, uint64);
 
 // Since we can't use __SIZE_TYPE__ directly (not defined in SWIG)...
 COPY_TYPEMAPS(unsigned long, size_t);
-//COPY_TYPEMAPS(unsigned short, mode_t); makes files/srcfs.swig fail
 COPY_TYPEMAPS(unsigned int, mode_t);
 COPY_TYPEMAPS(long, time_t);
 COPY_TYPEMAPS(uint64, Fprint);

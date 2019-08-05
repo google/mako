@@ -4,6 +4,8 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
+licenses(["notice"])
+
 proto_library(
     name = "threshold_analyzer_proto",
     srcs = ["threshold_analyzer.proto"],

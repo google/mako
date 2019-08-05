@@ -10,7 +10,7 @@ The ideal goal which Mako wants to help customers achieve is to create tests of 
 maintainable
 flexible enough to test any desired use case
 automated, not requiring a human to inspect charts to look for performance regressions
-used to block submissions or releases
+used to block submissions or releases.
 
 ## Benchmarks
 
@@ -22,12 +22,12 @@ repeated executions of a performance test. A Mako benchmark is defined by the
 
 A Mako BenchmarkInfo defines which specific metrics the associated performance test will write. As the performance test evolves, the benchmark should evolve with it.
 
-Benchmarks can be viewed on the http://mako.dev dashboard. To view all the benchmarks associated with a particular project foo, visit https://mako.dev/project?name=foo. For a real example, check out the Mako team’s benchmarks: https://mako.dev/project?name=MakoTeam. The chart associated with a benchmark is called the [Aggregate Chart](#aggregate-charts).
+Benchmarks can be viewed on the https://mako.dev dashboard. To view all the benchmarks associated with a particular project foo, visit https://mako.dev/project?name=foo. For a real example, check out the Mako team’s benchmarks: https://mako.dev/project?name=MakoTeam. The chart associated with a benchmark is called the [Aggregate Chart](#aggregate-charts).
 
 On the server, benchmarks are represented by a benchmark key. A benchmark with
 benchmark key `5251279936815104` can be found at URL
-http://mako.dev/benchmark?benchmark_key=5251279936815104 (or the shortcut
-http://mako.dev/b/5251279936815104)
+https://mako.dev/benchmark?benchmark_key=5251279936815104 (or the shortcut
+https://mako.dev/b/5251279936815104)
 
 ## Runs
 
@@ -35,12 +35,12 @@ A Mako run represents a single execution of a performance test. A run is defined
 by the RunInfo object in
 [mako.proto](../spec/proto/mako.proto).
 
-Runs can be viewed on the http://mako.dev dashboard. When viewing an Aggregate Chart, each point represents a run. Click on the run key to get to the [Run Chart](#run-charts). When using Quickstore, the `QuickstoreOutput` (see
+Runs can be viewed on the https://mako.dev dashboard. When viewing an Aggregate Chart, each point represents a run. Click on the run key to get to the [Run Chart](#run-charts). When using Quickstore, the `QuickstoreOutput` (see
 [mako.proto](../helpers/proto/quickstore/quickstore.proto)) returned by the `Quickstore.Store()` call contains a link to the run that was created.
 
 Mako runs usually can have [tags](#tags) associated with them.
 
-On the server, runs are represented by a run key. A run with a run key `6559884027887616` can be found at URL http://mako.dev/run?run_key=6559884027887616 (or the shortcut http://mako.dev/r/6559884027887616).
+On the server, runs are represented by a run key. A run with a run key `6559884027887616` can be found at URL https://mako.dev/run?run_key=6559884027887616 (or the shortcut https://mako.dev/r/6559884027887616).
 
 ## Tags
 
@@ -48,7 +48,7 @@ Tags are used to mark runs as coming from a particular environment, having been 
 
 This is important when different runs in the same benchmark have different expected performance characteristics depending on some environmental or configuration factor. So the runs in a hypothetical benchmark that have the `host_machine=bigbeefy` tag might not be comparable to the runs with tag `host_machine=laptop`. This is a great example of a useful tag.
 
-Tags are used in http://mako.dev dashboards to filter Aggregate Charts to only show runs matching that tag. When viewing a Run Chart, scroll down to the *Tags* section to see the tags associated with that run. Clicking on one of the tags will take you to the Aggregate Chart for the benchmark, but with the runs filtered to only those having the clicked-on tag.
+Tags are used in https://mako.dev dashboards to filter Aggregate Charts to only show runs matching that tag. When viewing a Run Chart, scroll down to the *Tags* section to see the tags associated with that run. Clicking on one of the tags will take you to the Aggregate Chart for the benchmark, but with the runs filtered to only those having the clicked-on tag.
 
 Tags are also used when querying Mako, either with the [CLI](CLI.md) or with the storage libraries (STORAGE_LIBRARY.md).
 
@@ -117,9 +117,8 @@ The core of Mako's code is built in C++, spread across many C++ libraries that
 are built using Bazel (or Google's internal equivalent). When using Bazel we
 can use [SWIG](http://www.swig.org/) to wrap this C++ code and make it available
 in other languages. This is much more difficult in a `go build/test` based
-build, however, because `go build`'s support for SWIG is relatively rudimentary
-(or at least we don't know how to organize things to make the Go toolchain
-actually build our many C++ libraries).
+build, however, as `go build`'s SWIG support seems better suited to simpler,
+single-library use cases.
 
 Thus, the strategy for `go build/test` based code is to import a thin, pure Go
 library that implements the Quickstore API and communicates over

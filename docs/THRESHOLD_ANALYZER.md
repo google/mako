@@ -17,7 +17,7 @@ seconds.
 **Cons**
 
 *   Can be difficult to determine adequate thresholds.
-*   Over tolerance could miss regressions.
+*   Extreme thresholds could miss regressions.
 *   SUT or SUT environment changes may require updates to the analyzer
     configuration.
 

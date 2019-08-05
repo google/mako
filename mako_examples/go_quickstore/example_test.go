@@ -11,8 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-
+//
 // An example of the use of Quickstore in a unit test, using Go Modules.
+//
+// This example assumes the microservice is already up and running on localhost,
+// and that the port is specified via the MAKO_PORT environment variable.
 //
 // See the guide to using Quickstore at http://github.com/google/mako/docs/GUIDE.md.
 // In particular, before running this test set up authentication
@@ -26,6 +29,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -38,10 +42,25 @@ import (
 )
 
 const (
-	addr         = "localhost:9813"
+	// This example assumes the microservice is already up and running on localhost,
+	// and that the port is specified via the MAKO_PORT environment variable.
 	benchmarkKey = "5251279936815104"
 	resultsFile  = "performance_test_data.json"
 )
+
+var microservice string
+
+func init() {
+	p := os.Getenv("MAKO_PORT")
+	if p == "" {
+		panic("This test requires the MAKO_PORT env var set to the microservice's listening port. See http://github.com/google/mako/docs/CONCEPTS.md#microservice.")
+	}
+	port, err := strconv.Atoi(p)
+	if err != nil {
+		panic(fmt.Sprintf("Could not parse MAKO_PORT env var: %v", err))
+	}
+	microservice = fmt.Sprintf("localhost:%d", port)
+}
 
 // TestPerformance reads performance_test_data.json, uploads it to
 // http://mako.dev, and analyzes the data for performance regressions.
@@ -109,9 +128,9 @@ func TestPerformance(t *testing.T) {
 	// running at http://github.com/google/mako/docs/GUIDE.md#authentication and
 	// http://github.com/google/mako/docs/GUIDE.md#microservice.
 
-	// Establish a connection to the microservice running at `addr`.
-	fmt.Printf("Connecting to microservice at %s...\n", addr)
-	q, closeq, err := quickstore.NewAtAddress(ctxWithTimeout, input, addr)
+	// Establish a connection to the microservice running at `microservice`.
+	fmt.Printf("Connecting to microservice at %s...\n", microservice)
+	q, closeq, err := quickstore.NewAtAddress(ctxWithTimeout, input, microservice)
 	if err != nil {
 		t.Fatalf("quickstore.NewAtAddress() = %v", err)
 	}
