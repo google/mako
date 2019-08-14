@@ -36,7 +36,7 @@ mako::google3_storage::Storage* NewMakoClient(absl::string_view hostname,
 mako::helpers::StatusOr<
     std::shared_ptr<mako::google3_storage::Storage> /* spacer for swig*/>
 NewMakoClientClif(absl::string_view hostname) {
-  return mako::NewMakoClient(hostname);
+  return {mako::NewMakoClient(hostname)};
 }
 
 }  // namespace internal
