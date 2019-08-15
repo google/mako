@@ -32,5 +32,4 @@ absl::Duration ComputeBackoff(absl::Duration min_delay,
 }  // namespace internal
 }  // namespace mako
 
-
 #endif  // INTERNAL_CXX_BACKOFF_H_

@@ -24,10 +24,10 @@
 #include "src/google/protobuf/repeated_field.h"
 #include "gtest/gtest.h"
 #include "clients/cxx/fileio/memory_fileio.h"
-#include "internal/cxx/filter_utils.h"
-#include "internal/cxx/pgmath.h"
 #include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
+#include "internal/cxx/filter_utils.h"
+#include "internal/cxx/pgmath.h"
 
 namespace mako {
 namespace downsampler {

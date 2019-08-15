@@ -16,8 +16,8 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
+#include "spec/proto/mako.pb.h"
 
 namespace mako {
 namespace internal {

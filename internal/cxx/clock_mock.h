@@ -16,9 +16,9 @@
 #define INTERNAL_CXX_CLOCK_MOCK_H_
 
 #include "gmock/gmock.h"
-#include "internal/cxx/clock.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
+#include "internal/cxx/clock.h"
 
 namespace mako {
 namespace internal {

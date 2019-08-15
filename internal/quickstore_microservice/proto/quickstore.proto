@@ -33,7 +33,7 @@ service Quickstore {
 message StoreInput {
   // REQUIRED
   // Specifies the Mako benchmark to which the data is saved.
-  optional mako.helpers.quickstore.QuickstoreInput quickstore_input = 1;
+  optional mako.quickstore.QuickstoreInput quickstore_input = 1;
   // The SamplePoints holding the data for this test run.
   repeated mako.SamplePoint sample_points = 2;
   // The SampleErrors holding any errors collected during this test run.
@@ -67,7 +67,7 @@ message StoreOutput {
   // The output generated as a result of using Quickstore.
   // Errors are specified by quickstore_output.status, with more details in
   // quickstore_output.summary_output.
-  optional mako.helpers.quickstore.QuickstoreOutput quickstore_output = 1;
+  optional mako.quickstore.QuickstoreOutput quickstore_output = 1;
 }
 
 // Empty but unique messages used to allow any future modifications to be

@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "glog/logging.h"
-#include "internal/cxx/proto_validation.h"
 #include "internal/proto/mako_internal.pb.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/flags/flag.h"
@@ -28,6 +27,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "internal/cxx/proto_validation.h"
 #include "internal/cxx/storage_client/retrying_storage_request.h"
 #include "spec/proto/mako.pb.h"
 

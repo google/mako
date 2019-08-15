@@ -18,9 +18,9 @@
 #include <functional>
 
 #include "glog/logging.h"
+#include "absl/time/time.h"
 #include "internal/cxx/backoff.h"
 #include "internal/cxx/clock.h"
-#include "absl/time/time.h"
 
 namespace mako {
 namespace internal {

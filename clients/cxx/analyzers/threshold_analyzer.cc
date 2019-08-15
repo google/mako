@@ -19,9 +19,9 @@
 
 #include "glog/logging.h"
 #include "src/google/protobuf/text_format.h"
-#include "internal/cxx/filter_utils.h"
 #include "absl/strings/str_cat.h"
 #include "clients/cxx/analyzers/util.h"
+#include "internal/cxx/filter_utils.h"
 
 namespace mako {
 namespace threshold_analyzer {

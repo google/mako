@@ -15,7 +15,7 @@
 // More information about quickstore: go/mako-quickstore
 syntax = "proto2";
 
-package mako.helpers.quickstore;
+package mako.quickstore;
 
 import "clients/proto/analyzers/threshold_analyzer.proto";
 import "clients/proto/analyzers/utest_analyzer.proto";

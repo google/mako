@@ -18,12 +18,12 @@
 
 #include <memory>
 
-#include "internal/cxx/queue_ifc.h"
 #include "internal/proto/mako_internal.pb.h"
 #include "internal/quickstore_microservice/proto/quickstore.grpc.pb.h"
 #include "internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "spec/cxx/storage.h"
 #include "helpers/cxx/status/statusor.h"
+#include "internal/cxx/queue_ifc.h"
 
 namespace mako {
 namespace internal {

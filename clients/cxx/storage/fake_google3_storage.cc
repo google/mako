@@ -19,10 +19,10 @@
 
 #include "glog/logging.h"
 #include "src/google/protobuf/repeated_field.h"
-#include "internal/cxx/proto_validation.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
+#include "internal/cxx/proto_validation.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

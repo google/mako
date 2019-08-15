@@ -73,7 +73,7 @@ TEST(MakoExample, PerformanceTest) {
   //
   // Read about the run metadata you can set in QuickstoreInput at
   // http://github.com/google/mako/blob/master/docs/GUIDE.md#run-metadata.
-  mako::helpers::quickstore::QuickstoreInput quickstore_input;
+  mako::quickstore::QuickstoreInput quickstore_input;
   quickstore_input.set_benchmark_key(kBenchmarkKey);
   quickstore_input.set_duration_time_ms(data.metadata().run_duration_ms());
   quickstore_input.set_timestamp_ms(data.metadata().timestamp_ms());
@@ -108,7 +108,7 @@ TEST(MakoExample, PerformanceTest) {
   //
   // Read about setting up authentication at
   // http://github.com/google/mako/blob/master/docs/GUIDE.md#setting-up-authentication
-  mako::helpers::quickstore::Quickstore quickstore(quickstore_input);
+  mako::quickstore::Quickstore quickstore(quickstore_input);
 
 
   // STEP 5: Feed your sample point data to the Mako Quickstore client.
@@ -130,15 +130,15 @@ TEST(MakoExample, PerformanceTest) {
 
   // STEP 7: Call Store() to instruct Mako to process the data and upload it to
   // http://mako.dev.
-  mako::helpers::quickstore::QuickstoreOutput output = quickstore.Store();
+  mako::quickstore::QuickstoreOutput output = quickstore.Store();
   switch (output.status()) {
-    case mako::helpers::quickstore::QuickstoreOutput::SUCCESS:
+    case mako::quickstore::QuickstoreOutput::SUCCESS:
       LOG(INFO) << " Done! Run can be found at: " << output.run_chart_link();
       break;
-    case mako::helpers::quickstore::QuickstoreOutput::ERROR:
+    case mako::quickstore::QuickstoreOutput::ERROR:
       FAIL() << "Quickstore Store error: " << output.summary_output();
       break;
-    case mako::helpers::quickstore::QuickstoreOutput::ANALYSIS_FAIL:
+    case mako::quickstore::QuickstoreOutput::ANALYSIS_FAIL:
       FAIL() << "Quickstore Analysis Failure: " << output.summary_output()
                  << "\nRun can be found at: " << output.run_chart_link();
       break;

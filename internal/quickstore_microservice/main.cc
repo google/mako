@@ -18,10 +18,10 @@
 #include "include/grpcpp/security/server_credentials.h"
 #include "include/grpcpp/server_builder.h"
 #include "include/grpcpp/server_context.h"
-#include "internal/cxx/queue.h"
 #include "internal/quickstore_microservice/quickstore_service.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "internal/cxx/queue.h"
 
 ABSL_FLAG(std::string, addr, "localhost:9813",
           "Address on which to run the Quickstore microservice.");

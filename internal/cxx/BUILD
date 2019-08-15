@@ -92,30 +92,6 @@ cc_test(
 )
 
 cc_library(
-    name = "proto_cache",
-    hdrs = ["proto_cache.h"],
-    deps = [
-        "//spec/proto:mako_cc_proto",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_glog//:glog",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-cc_test(
-    name = "proto_cache_test",
-    size = "small",
-    srcs = ["proto_cache_test.cc"],
-    deps = [
-        ":proto_cache",
-        "//spec/proto:mako_cc_proto",
-        "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_library(
     name = "backoff",
     srcs = ["backoff.cc"],
     hdrs = ["backoff.h"],
@@ -164,7 +140,7 @@ cc_library(
     testonly = True,
     hdrs = ["clock_mock.h"],
     deps = [
-        "//internal/cxx:clock",
+        ":clock",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
@@ -243,6 +219,30 @@ cc_test(
         "@com_google_absl//absl/time",
         "@com_google_benchmark//:benchmark",
         "@com_google_glog//:glog",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "proto_cache",
+    hdrs = ["proto_cache.h"],
+    deps = [
+        "//spec/proto:mako_cc_proto",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_glog//:glog",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "proto_cache_test",
+    size = "small",
+    srcs = ["proto_cache_test.cc"],
+    deps = [
+        ":proto_cache",
+        "//spec/proto:mako_cc_proto",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
     ],
 )

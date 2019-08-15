@@ -19,9 +19,9 @@
 #include "gtest/gtest.h"
 #include "clients/cxx/storage/fake_google3_storage.h"
 #include "quickstore/quickstore.pb.h"
-#include "internal/cxx/queue.h"
 #include "internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "absl/memory/memory.h"
+#include "internal/cxx/queue.h"
 #include "spec/proto/mako.pb.h"
 #include "testing/cxx/protocol-buffer-matchers.h"
 
@@ -124,7 +124,7 @@ TEST(QuickstoreServiceTest, Store) {
   EXPECT_OK(service.Store(&context, &input, &output));
   EXPECT_THAT(
       output.quickstore_output().status(),
-      Eq(mako::helpers::quickstore::QuickstoreOutput::SUCCESS));
+      Eq(mako::quickstore::QuickstoreOutput::SUCCESS));
 
   mako::RunInfoQuery query;
   query.set_benchmark_key(benchmark_key);

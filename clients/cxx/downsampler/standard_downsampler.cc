@@ -26,7 +26,6 @@
 #include "src/google/protobuf/descriptor.h"
 #include "src/google/protobuf/repeated_field.h"
 #include "clients/cxx/downsampler/metric_set.h"
-#include "internal/cxx/proto_validation.h"
 #include "internal/proto/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 #include "absl/algorithm/container.h"
@@ -37,6 +36,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/synchronization/mutex.h"
 #include "internal/cxx/load/common/executor.h"
+#include "internal/cxx/proto_validation.h"
 
 namespace mako {
 namespace downsampler {

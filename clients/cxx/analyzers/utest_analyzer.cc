@@ -28,12 +28,12 @@
 #include "src/google/protobuf/repeated_field.h"
 #include "src/google/protobuf/text_format.h"
 #include "clients/proto/analyzers/utest_analyzer.pb.h"
-#include "internal/cxx/filter_utils.h"
-#include "internal/cxx/pgmath.h"
 #include "spec/proto/mako.pb.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "clients/cxx/analyzers/util.h"
+#include "internal/cxx/filter_utils.h"
+#include "internal/cxx/pgmath.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

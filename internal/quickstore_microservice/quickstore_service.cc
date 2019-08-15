@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "internal/quickstore_microservice/quickstore_service.h"
+
 #include <memory>
 
 #include "src/google/protobuf/repeated_field.h"
 #include "clients/cxx/storage/mako_client.h"
 #include "helpers/cxx/quickstore/internal/store.h"
-#include "internal/cxx/queue_ifc.h"
 #include "helpers/cxx/status/statusor.h"
+#include "internal/cxx/queue_ifc.h"
 
 namespace mako {
 namespace internal {
@@ -42,7 +43,7 @@ grpc::Status QuickstoreService::Store(grpc::ServerContext* context,
                                       const StoreInput* request,
                                       StoreOutput* response) {
   *response->mutable_quickstore_output() =
-      mako::helpers::quickstore::internal::SaveWithStorage(
+      mako::quickstore::internal::SaveWithStorage(
           storage_.get(), request->quickstore_input(),
           MakeVector(request->sample_points()),
           MakeVector(request->sample_errors()),
