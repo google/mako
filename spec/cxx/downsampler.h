@@ -18,8 +18,8 @@
 #ifndef SPEC_CXX_DOWNSAMPLER_H_
 #define SPEC_CXX_DOWNSAMPLER_H_
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "spec/cxx/fileio.h"
 #include "spec/proto/mako.pb.h"

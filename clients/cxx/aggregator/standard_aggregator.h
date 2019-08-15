@@ -25,9 +25,9 @@
 #include "clients/cxx/aggregator/threadsafe_running_stats.h"
 #include "spec/cxx/aggregator.h"
 #include "spec/cxx/fileio.h"
-#include "spec/proto/mako.pb.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
+#include "spec/proto/mako.pb.h"
 
 namespace mako {
 namespace aggregator {

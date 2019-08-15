@@ -18,8 +18,8 @@
 #include <string>
 #include <vector>
 
-#include "spec/proto/mako.pb.h"
 #include "spec/cxx/analyzer.h"
+#include "spec/proto/mako.pb.h"
 
 namespace mako {
 

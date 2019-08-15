@@ -27,7 +27,6 @@
 #include "src/google/protobuf/repeated_field.h"
 #include "clients/cxx/downsampler/metric_set.h"
 #include "internal/proto/mako_internal.pb.h"
-#include "spec/proto/mako.pb.h"
 #include "absl/algorithm/container.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
@@ -37,6 +36,7 @@
 #include "absl/synchronization/mutex.h"
 #include "internal/cxx/load/common/executor.h"
 #include "internal/cxx/proto_validation.h"
+#include "spec/proto/mako.pb.h"
 
 namespace mako {
 namespace downsampler {

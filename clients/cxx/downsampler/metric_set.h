@@ -15,12 +15,13 @@
 #define CLIENTS_CXX_DOWNSAMPLER_METRIC_SET_H_
 
 #include <stddef.h>
+
 #include <forward_list>
 #include <string>
 
-#include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "spec/proto/mako.pb.h"
 
 namespace mako {
 namespace downsampler {
