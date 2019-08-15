@@ -16,14 +16,14 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "clients/proto/analyzers/threshold_analyzer.pb.h"
-#include "helpers/cxx/quickstore/quickstore.h"
-#include "quickstore/quickstore.pb.h"
 #include "absl/flags/parse.h"
 #include "clients/cxx/analyzers/threshold_analyzer.h"
 #include "helpers/cxx/status/canonical_errors.h"
-#include "helpers/cxx/status/statusor.h"
 #include "helpers/cxx/status/status_matchers.h"
+#include "helpers/cxx/status/statusor.h"
 #include "mako_examples/cxx_quickstore/perf_data.pb.h"
+#include "quickstore/cxx/quickstore.h"
+#include "quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 
 namespace {
@@ -109,7 +109,6 @@ TEST(MakoExample, PerformanceTest) {
   // Read about setting up authentication at
   // http://github.com/google/mako/blob/master/docs/GUIDE.md#setting-up-authentication
   mako::quickstore::Quickstore quickstore(quickstore_input);
-
 
   // STEP 5: Feed your sample point data to the Mako Quickstore client.
   for (const auto& sample : data.samples()) {
