@@ -34,7 +34,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/google/mako/helpers/go/quickstore"
+	"github.com/google/mako/quickstore/go/quickstore"
 
 	tpb "github.com/google/mako/clients/proto/analyzers/threshold_analyzer_go_proto"
 	qpb "github.com/google/mako/quickstore/quickstore_go_proto"

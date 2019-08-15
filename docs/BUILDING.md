@@ -80,7 +80,7 @@ will look roughly like this:
 ```go
 import (
 	"github.com/google/mako/quickstore/go/quickstore"
-  qpb "github.com/google/mako/quickstore/proto/quickstore_go_proto"
+	qpb "github.com/google/mako/quickstore/quickstore_proto"
 )
 ```
 
