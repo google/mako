@@ -18,7 +18,7 @@ See Installing Git
 
 ## Cloning the repository
 ```bash
-$ git clone github.com/google/mako
+$ git clone https://github.com/google/mako
 $ cd mako
 ```
 
@@ -76,19 +76,19 @@ other third-party libraries. This might involve vendoring, using a tool like
 Go Modules.
 
 Regardless of the tool you use, when you import Mako from your `.go` files it
-will look like roughly like this:
+will look roughly like this:
 ```go
 import (
-	"github.com/google/mako/helpers/go/quickstore"
-	qpb "github.com/google/mako/quickstore/quickstore_proto"
+	"github.com/google/mako/quickstore/go/quickstore"
+  qpb "github.com/google/mako/quickstore/proto/quickstore_go_proto"
 )
 ```
 
 Note when using `go build/test` that the Go client doesn't stand alone, it needs
 to connect to a running Mako microservice. Learn more at
-[CONCEPTS.md#microservice].
+[CONCEPTS.md](CONCEPTS.md#microservice).
 
-See the [GUIDE.md] for a step-by-step guide to writing and running a Mako
+See the [GUIDE.md](GUIDE.md) for a step-by-step guide to writing and running a Mako
 Quickstore test.
 
 ## Building the command-line tool

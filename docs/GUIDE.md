@@ -101,7 +101,7 @@ To create the benchmark you’ll use the Mako command-line tool. Visit
 the command-line tool.
 
 ```bash
-$ alias mako=/your/mako/clone/bazel-bin/internal/tools/cli/mako
+$ alias mako=<your mako directory>/bazel-bin/internal/tools/cli/mako
 ```
 
 You can see all the CLI commands using the ‘help’ subcommand:
@@ -175,8 +175,9 @@ information (the `metric_info_list` items) and the custom aggregate information
 
 Now save and quit your editor. Assuming there are no syntax errors or other
 issues with your data, the `create_benchmark` subcommand should complete
-successfully and report the https://mako.dev URL where you can find your
-benchmark.
+successfully and report a benchmark key. Find the benchmark on https://mako.dev
+by copying that benchmark key and visiting 'https://mako.dev/b/BBBBBBB',
+replacing *BBBBBBB* with the benchmark.
 
 The sections below will walk you through setting up code that writes actual
 performance test results to this benchmark.
@@ -210,16 +211,17 @@ cat <<EOF > mako_test.go
 package main
 
 import (
+  "context"
 	"fmt"
 	"testing"
 	"github.com/google/mako/helpers/go/quickstore"
-	qpb "github.com/google/mako/quickstore/quickstore_proto"
+	qpb "github.com/google/mako/quickstore/quickstore_go_proto"
 )
 
 func TestPerformance(t *testing.T) {
 	// This is just a stub for now to get the import working, we’ll fill it out later.
-	_, _ := quickstore.NewAtAddress(“localhost:9813”,&qpb.QuickstoreInput{}) 
-	fmt.Println(“Imported Quickstore”)
+	_, _, _ := quickstore.NewAtAddress(context.Background(), "localhost:9813",&qpb.QuickstoreInput{})
+	fmt.Println("Imported Quickstore")
 }
 EOF
 ```
@@ -301,7 +303,7 @@ The full `docker run` command will look something like:
 
 ```bash
 $ MAKO_PORT=9347  # could be any port
-$ docker run --rm -v ~/.config/gcloud/application_default_credentials.json:/root/adc.json -e "GOOGLE_APPLICATION_CREDENTIALS=/root/adc.json" -p 9813:9813 bazel/internal/quickstore_microservice:quickstore_microservice_mako_image
+$ docker run --rm -v ~/.config/gcloud/application_default_credentials.json:/root/adc.json -e "GOOGLE_APPLICATION_CREDENTIALS=/root/adc.json" -p ${MAKO_PORT}:9813 bazel/internal/quickstore_microservice:quickstore_microservice_mako_image
 ```
 
 As mentioned above, you will need to arrange for the microservice image to be
