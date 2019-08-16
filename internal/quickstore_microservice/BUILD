@@ -54,6 +54,25 @@ cc_binary(
 )
 
 # See https://github.com/google/mako/blob/master/docs/BUILDING.md#microservice-docker-image
+#
+# Note, invoking this rule with `bazel run` will load the image into Docker and attempt to run it.
+# This will fail due to the lack of credentials (see
+# https://github.com/google/mako/blob/master/docs/AUTHENTICATION.md#authenticating-from-a-docker-container).
+# There is no way to pass Docker flags in via a `bazel run` invocation.
+#
+# We would like to set the `legacy_run_behavior` attribute to True so that a `bazel run` invocation
+# only loads the image and does not attempt to run it. That is blocked by
+# https://github.com/bazelbuild/rules_docker/issues/1085.
+#
+# Therefore, to load this Docker image, you must instead use `bazel build` to build a tar file that
+# can be loaded into Docker. e.g.
+#
+# $ bazel build //internal/quickstore_microservice:quickstore_microservice_mako_image.tar
+# $ docker load -i bazel-bin/internal/quickstore_microservice/quickstore_microservice_mako_image.tar
+# $ docker run <docker arguments> bazel/internal/quickstore_microservice:quickstore_microservice_mako_image
+#
+# See an example of a full command-line at
+# https://github.com/google/mako/blob/master/docs/GUIDE.md#quickstore-microservice-as-a-docker-image.
 cc_image(
     name = "quickstore_microservice_mako_image",
     args = ["--addr=0.0.0.0:9813"],
