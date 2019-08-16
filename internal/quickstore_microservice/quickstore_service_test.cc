@@ -18,7 +18,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "clients/cxx/storage/fake_google3_storage.h"
-#include "quickstore/quickstore.pb.h"
+#include "proto/quickstore/quickstore.pb.h"
 #include "internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "absl/memory/memory.h"
 #include "internal/cxx/queue.h"

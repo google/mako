@@ -36,7 +36,7 @@ by the RunInfo object in
 [mako.proto](../spec/proto/mako.proto).
 
 Runs can be viewed on the https://mako.dev dashboard. When viewing an Aggregate Chart, each point represents a run. Click on the run key to get to the [Run Chart](#run-charts). When using Quickstore, the `QuickstoreOutput` (see
-[mako.proto](../quickstore/quickstore.proto)) returned by the `Quickstore.Store()` call contains a link to the run that was created.
+[mako.proto](../proto/quickstore/quickstore.proto)) returned by the `Quickstore.Store()` call contains a link to the run that was created.
 
 Mako runs usually can have [tags](#tags) associated with them.
 

@@ -17,7 +17,7 @@ syntax = "proto2";
 
 package mako.internal.quickstore_microservice;
 
-import "quickstore/quickstore.proto";
+import "proto/quickstore/quickstore.proto";
 import "spec/proto/mako.proto";
 
 service Quickstore {

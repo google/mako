@@ -26,7 +26,7 @@ You can set tags in one of three ways:
 
 *   From a Mako Quickstore test, set the `tags`, `analysis_pass`, and/or
     `analysis_fail` fields on QuickstoreInput
-    ([quickstore.proto](../quickstore/quickstore.proto)).
+    ([quickstore.proto](../proto/quickstore/quickstore.proto)).
 *   Using the storage library, set the `RunInfo.tags` field when updating the
     run.
 *   Use the [Mako Command Line Tool](CLI.md) to edit tags of

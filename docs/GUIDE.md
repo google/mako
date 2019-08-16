@@ -73,7 +73,7 @@ passed to the Quickstore client
 constructors ([C++](../helpers/cxx/quickstore/quickstore.go),
 [Go](../helpers/cxx/quickstore/quickstore.h)). See the comments on 
 `QuickstoreInput` in
-[quickstore.proto](../quickstore/quickstore.proto) for the full
+[quickstore.proto](../proto/quickstore/quickstore.proto) for the full
 set of supported run metadata information.
 
 Now that you understand the kinds of data that Mako can work with, think about
@@ -215,7 +215,7 @@ import (
 	"fmt"
 	"testing"
 	"github.com/google/mako/helpers/go/quickstore"
-	qpb "github.com/google/mako/quickstore/quickstore_go_proto"
+	qpb "github.com/google/mako/proto/quickstore/quickstore_go_proto"
 )
 
 func TestPerformance(t *testing.T) {
@@ -322,7 +322,7 @@ The typical structure of a Quickstore run is:
    just that you can represent it in the forms described above in
    [Preparing your performance test data](#preparing-your-performance-test-data).
 2. Configure a `QuickstoreInput`
-   ([quickstore.proto](../quickstore/quickstore.proto)) object
+   ([quickstore.proto](../proto/quickstore/quickstore.proto)) object
    with your run metadata described above (#run-metadata).
 3. Also in the `QuickstoreInput` object, configure your run analyzers. If you’re
    just getting started, **skip this step** until you’ve got a test that runs

@@ -31,7 +31,7 @@ cc_test(
         "//internal/cxx:queue",
         "//internal/grpc:grpc++_gce",
         "//internal/quickstore_microservice/proto:quickstore_cc_proto",
-        "//quickstore:quickstore_cc_proto",
+        "//proto/quickstore:quickstore_cc_proto",
         "//spec/proto:mako_cc_proto",
         "//testing/cxx:protocol-buffer-matchers",
         "@com_google_absl//absl/memory",

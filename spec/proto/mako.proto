@@ -595,7 +595,6 @@ message RunInfo {
   // A server implementation may apply "hidden tags". These tags
   // all begin with underscore (_). They are not stored in the RunInfo.tags
   // field, but they may be supplied in all queries involving tags.
-  // See the server documentation for hidden tags that may be in use.  //
   //
   // The order of tags is preserved when this proto is stored, making it
   // possible to order tags such that they are easier to read the same way in
