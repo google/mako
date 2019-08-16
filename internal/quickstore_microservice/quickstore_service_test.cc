@@ -120,8 +120,11 @@ TEST(QuickstoreServiceTest, Store) {
 
   StoreOutput output;
 
-  grpc::ServerContext context;
-  EXPECT_OK(service.Store(&context, &input, &output));
+  // If we instantiate a grpc::ServerContext, its destructor segfaults when run
+  // externally. Until we solve this issue, let's just pass in a pointer. The
+  // service implementation doesn't use the context anyway.
+  grpc::ServerContext* context = nullptr;
+  EXPECT_OK(service.Store(context, &input, &output));
   EXPECT_THAT(
       output.quickstore_output().status(),
       Eq(mako::quickstore::QuickstoreOutput::SUCCESS));
@@ -210,8 +213,11 @@ TEST(QuickstoreServiceTest, Shutdown) {
       absl::make_unique<mako::fake_google3_storage::Storage>());
   ShutdownInput input;
   ShutdownOutput output;
-  grpc::ServerContext context;
-  EXPECT_OK(service.ShutdownMicroservice(&context, &input, &output));
+  // If we instantiate a grpc::ServerContext, its destructor segfaults when run
+  // externally. Until we solve this issue, let's just pass in a pointer. The
+  // service implementation doesn't use the context anyway.
+  grpc::ServerContext* context = nullptr;
+  EXPECT_OK(service.ShutdownMicroservice(context, &input, &output));
   EXPECT_TRUE(shutdown_queue.get());
 }
 
