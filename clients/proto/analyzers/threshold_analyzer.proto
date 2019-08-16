@@ -68,6 +68,16 @@ message ThresholdConfig {
 // Specify behavior of checking whether the benchmark is out of tolerance
 // across multiple runs to avoid failing due to outliers and ephemeral
 // performance changes.
+//
+// When the ThresholdConfig's DataFilter.DataType is METRIC_SAMPLEPOINTS this
+// will combine the current run's sample points with the sample points from all
+// historic runs and then execute the threshold analyzer over the results.
+//
+// When the ThresholdConfig's DataFilter.DataType is not METRIC_SAMPLEPOINTS
+// it will use the median of the pre-computed aggregates for the
+// specified DataFilter in each run from the set of historical runs and the
+// current run being analyzed.
+//
 // NEXT ID: 4
 message CrossRunConfig {
   // REQUIRED
@@ -90,25 +100,6 @@ message CrossRunConfig {
   //   * All query limit fields must be unset or in range [0,1000]
   repeated mako.RunInfoQuery run_info_query_list = 1;
 
-  // REQUIRED
-  // When true we will use the average of the pre-computed aggregates for the
-  // specified DataFilter in each run from the set of historical runs and the
-  // current run being analyzed. If false we will re-compute the aggregate from
-  // the combined set of sample points fetched from all historical runs and the
-  // current run being analyzed.
-  //
-  // It is recommended that you keep this value to 'true'. For more information
-  // see the following paragraph on downsampling and how it affects the feature
-  // controlled by this field.
-  //
-  // Downsampling occurs if more than 50000 metrics (note: metrics, not
-  // sample points, each sample point may have multiple metrics) are collected
-  // during for the run, so if each run has a small amount of data, then no
-  // downsampling has occurred. If downsampling has occurred then the aggregate
-  // computed from the downsampled sample population may be significantly
-  // different from the precomputed aggregate.
-  optional bool use_precomputed_aggregates = 2 [default = true];
-
   // OPTIONAL
   // Will skip analysis if the number of returned historical runs is less than
   // min_run_count. This can happen for new benchmarks that don't have history
@@ -118,6 +109,8 @@ message CrossRunConfig {
   // If not populated, will always run analysis on whatever historical runs
   // were returned.
   optional int32 min_run_count = 3;
+
+  reserved 2;
 }
 
 // Constructor input to threshold analyzer

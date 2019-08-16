@@ -18,8 +18,11 @@
 #include "src/google/protobuf/text_format.h"
 #include "gtest/gtest.h"
 #include "clients/proto/analyzers/threshold_analyzer.pb.h"
-#include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
+#include "spec/proto/mako.pb.h"
+#include "testing/cxx/protocol-buffer-matchers.h"
+
+using ::mako::EqualsProto;
 
 namespace mako {
 namespace threshold_analyzer {
@@ -41,8 +44,6 @@ using mako::DataFilter;
 using mako::BenchmarkInfo;
 using mako::RunInfo;
 using mako::RunBundle;
-using mako::SampleBatch;
-using mako::SamplePoint;
 using mako::analyzers::threshold_analyzer::ThresholdAnalyzerInput;
 using mako::analyzers::threshold_analyzer::ThresholdAnalyzerOutput;
 using mako::analyzers::threshold_analyzer::ThresholdConfig;
@@ -654,6 +655,715 @@ TEST_F(AnalyzerTest, NoMinOrMaxFails) {
   EXPECT_FALSE(analyzer.Analyze(HelperCreateAnalyzerInput(), &output));
   EXPECT_FALSE(SuccessfulStatus(output));
 }
+
+TEST(ThresholdAnalyzerTest, QueryTest) {
+  struct Case {
+    std::string name;
+    std::string ctor_in;
+    std::string func_in;
+    std::string want_func_out;
+  };
+  std::vector<Case> cases = {
+      {
+          "no_cross_run_config",
+          // ThresholdAnalyzerInput with no cross_run_config message
+          "name: \"ta\"",
+          // AnalyzerHistoricQueryInput
+          "benchmark_info: < "
+          "  benchmark_key: \"b1\" "
+          "> "
+          "run_info: < "
+          "  benchmark_key: \"b1\" "
+          "  run_key: \"r1\" "
+          "> ",
+          // AnalyzerHistoricQueryOutput
+          "status: < "
+          "  code: SUCCESS "
+          "> ",
+      },
+      {
+          "cross_run_config_no_batches",
+          // ThresholdAnalyzerInput with a cross_run_config message and no
+          // ThresholdConfig using a data filter with METRIC_SAMPLEPOINTS
+          "name: \"ta\""
+          "cross_run_config: < "
+          "  run_info_query_list: < "
+          "    benchmark_key: \"b1\" "
+          "    max_timestamp_ms: 10 "
+          "    limit: 5 "
+          "  > "
+          "  run_info_query_list: < "
+          "    benchmark_key: \"b2\" "
+          "    max_timestamp_ms: 10 "
+          "    limit: 5 "
+          "  > "
+          "> "
+          "configs: < "
+          "  data_filter: < "
+          "    data_type: METRIC_AGGREGATE_MEAN "
+          "    value_key: \"y1\" "
+          "  > "
+          "> ",
+          // AnalyzerHistoricQueryInput
+          "benchmark_info: < "
+          "  benchmark_key: \"b1\" "
+          "> "
+          "run_info: < "
+          "  benchmark_key: \"b1\" "
+          "  run_key: \"r1\" "
+          "> ",
+          // AnalyzerHistoricQueryOutput
+          "status: < "
+          "  code: SUCCESS "
+          "> "
+          "get_batches: false "
+          "run_info_query_list: < "
+          "  benchmark_key: \"b1\" "
+          "  max_timestamp_ms: 10 "
+          "  limit: 5 "
+          "> "
+          "run_info_query_list: < "
+          "  benchmark_key: \"b2\" "
+          "  max_timestamp_ms: 10 "
+          "  limit: 5 "
+          "> ",
+      },
+      {
+          "cross_run_config_with_batches",
+          // ThresholdAnalyzerInput with a cross_run_config message and no
+          // ThresholdConfig using a data filter with METRIC_SAMPLEPOINTS
+          "name: \"ta\""
+          "cross_run_config: < "
+          "  run_info_query_list: < "
+          "    benchmark_key: \"b1\" "
+          "    max_timestamp_ms: 10 "
+          "    limit: 5 "
+          "  > "
+          "  run_info_query_list: < "
+          "    benchmark_key: \"b2\" "
+          "    max_timestamp_ms: 10 "
+          "    limit: 5 "
+          "  > "
+          "> "
+          "configs: < "
+          "  data_filter: < "
+          "    data_type: METRIC_AGGREGATE_MEAN "
+          "    value_key: \"y1\" "
+          "  > "
+          "> "
+          "configs: < "
+          "  data_filter: < "
+          "    data_type: METRIC_SAMPLEPOINTS "
+          "    value_key: \"y2\" "
+          "  > "
+          "> ",
+          // AnalyzerHistoricQueryInput
+          "benchmark_info: < "
+          "  benchmark_key: \"b1\" "
+          "> "
+          "run_info: < "
+          "  benchmark_key: \"b1\" "
+          "  run_key: \"r1\" "
+          "> ",
+          // AnalyzerHistoricQueryOutput
+          "status: < "
+          "  code: SUCCESS "
+          "> "
+          "get_batches: true "
+          "run_info_query_list: < "
+          "  benchmark_key: \"b1\" "
+          "  max_timestamp_ms: 10 "
+          "  limit: 5 "
+          "> "
+          "run_info_query_list: < "
+          "  benchmark_key: \"b2\" "
+          "  max_timestamp_ms: 10 "
+          "  limit: 5 "
+          "> ",
+      },
+  };
+  for (const Case& c : cases) {
+    SCOPED_TRACE(c.name);
+    LOG(INFO) << "Case: " << c.name;
+    ThresholdAnalyzerInput ctor_in;
+    ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(c.ctor_in, &ctor_in));
+    AnalyzerHistoricQueryInput func_in;
+    ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(c.func_in, &func_in));
+    AnalyzerHistoricQueryOutput want_func_out;
+    ASSERT_TRUE(
+        google::protobuf::TextFormat::ParseFromString(c.want_func_out, &want_func_out));
+    threshold_analyzer::Analyzer ta(ctor_in);
+    AnalyzerHistoricQueryOutput got_func_out;
+    bool success = ta.ConstructHistoricQuery(func_in, &got_func_out);
+    LOG(INFO) << "Got:\n" << got_func_out.DebugString();
+    EXPECT_TRUE(success);
+    EXPECT_EQ(got_func_out.DebugString(), want_func_out.DebugString());
+  }
+}
+
+TEST(WindownDeviationTest, AnalyzeCrossRunConfigTest) {
+  struct Case {
+    std::string name;
+    std::string ctor_in;
+    std::string func_in;
+    bool want_regression;
+    Status_Code want_status;
+    // strip out config_results.config since it is just a copy of the ctor_in
+    std::string threshold_analyzer_output;
+  };
+  std::vector<Case> cases = {
+      {
+          "no-regress-current-run",
+          // ThresholdAnalyzerInput
+          "name: \"ta\""
+          "cross_run_config: < "
+          "  run_info_query_list: < > "
+          "> "
+          "configs: < "
+          "  min: 5 "
+          "  data_filter: < "
+          "    data_type: BENCHMARK_SCORE "
+          "  > "
+          "> ",
+          // AnalyzerInput
+          "run_to_be_analyzed: < "
+          "  run_info: < "
+          "    run_key: \"r4\" "
+          "    timestamp_ms: 4 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 50 "
+          "      > "
+          "    > "
+          "  > "
+          "> ",
+          // want_regression
+          false,
+          // want_status
+          Status_Code_SUCCESS,
+          // ThresholdAnalyzerOutput
+          "min_timestamp_ms: 4 "
+          "max_timestamp_ms: 4 "
+          "config_results: < "
+          "  percent_above_max: 0 "
+          "  percent_below_min: 0 "
+          "  value_outside_threshold: 50 "
+          "  metric_label: \"benchmark_score\""
+          "  regression: false "
+          "> ",
+      },
+      {
+          "regress-current-run-no-regress-history",
+          // ThresholdAnalyzerInput
+          "name: \"ta\""
+          "cross_run_config: < "
+          "  run_info_query_list: < > "
+          "> "
+          "configs: < "
+          "  min: 5 "
+          "  data_filter: < "
+          "    data_type: BENCHMARK_SCORE "
+          "  > "
+          "> ",
+          // AnalyzerInput
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h1\" "
+          "    timestamp_ms: 1 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 6"
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h2\" "
+          "    timestamp_ms: 2 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 6 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h3\" "
+          "    timestamp_ms: 3 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 4 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "run_to_be_analyzed: < "
+          "  run_info: < "
+          "    run_key: \"r4\" "
+          "    timestamp_ms: 4 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 4 "
+          "      > "
+          "    > "
+          "  > "
+          "> ",
+          // want_regression
+          false,
+          // want_status
+          Status_Code_SUCCESS,
+          // ThresholdAnalyzerOutput
+          "min_timestamp_ms: 1 "
+          "max_timestamp_ms: 4 "
+          "config_results: < "
+          "  percent_above_max: 0 "
+          "  percent_below_min: 0 "
+          "  value_outside_threshold: 5 "
+          "  metric_label: \"benchmark_score\""
+          "  regression: false "
+          "  cross_run_config_exercised: true "
+          "> ",
+      },
+      {
+          "regress-current-run-and-regress-history",
+          // ThresholdAnalyzerInput
+          "name: \"ta\""
+          "cross_run_config: < "
+          "  run_info_query_list: < > "
+          "> "
+          "configs: < "
+          "  min: 5 "
+          "  data_filter: < "
+          "    data_type: BENCHMARK_SCORE "
+          "  > "
+          "> ",
+          // AnalyzerInput
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h1\" "
+          "    timestamp_ms: 1 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 6"
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h2\" "
+          "    timestamp_ms: 2 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 5 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h3\" "
+          "    timestamp_ms: 3 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 4 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "run_to_be_analyzed: < "
+          "  run_info: < "
+          "    run_key: \"r4\" "
+          "    timestamp_ms: 4 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 4 "
+          "      > "
+          "    > "
+          "  > "
+          "> ",
+          // want_regression
+          true,
+          // want_status
+          Status_Code_SUCCESS,
+          // ThresholdAnalyzerOutput
+          "min_timestamp_ms: 1 "
+          "max_timestamp_ms: 4 "
+          "config_results: < "
+          "  percent_above_max: 0 "
+          "  percent_below_min: 100 "
+          "  value_outside_threshold: 4.5 "
+          "  metric_label: \"benchmark_score\""
+          "  regression: true "
+          "  cross_run_config_exercised: true "
+          "> ",
+      },
+      {
+          "regress-current-run-skip-min_run_count",
+          // ThresholdAnalyzerInput
+          "name: \"ta\""
+          "cross_run_config: < "
+          "  min_run_count: 3 "
+          "  run_info_query_list: < > "
+          "> "
+          "configs: < "
+          "  min: 5 "
+          "  data_filter: < "
+          "    data_type: BENCHMARK_SCORE "
+          "  > "
+          "> ",
+          // AnalyzerInput
+
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h3\" "
+          "    timestamp_ms: 3 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 4 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "run_to_be_analyzed: < "
+          "  run_info: < "
+          "    run_key: \"r4\" "
+          "    timestamp_ms: 4 "
+          "    aggregate: < "
+          "      run_aggregate: < "
+          "        benchmark_score: 4 "
+          "      > "
+          "    > "
+          "  > "
+          "> ",
+          // want_regression
+          false,
+          // want_status
+          Status_Code_SUCCESS,
+          // ThresholdAnalyzerOutput
+          "min_timestamp_ms: 3 "
+          "max_timestamp_ms: 4 "
+          "config_results: < "
+          "  percent_above_max: 0 "
+          "  percent_below_min: 100 "
+          "  value_outside_threshold: 4 "
+          "  metric_label: \"benchmark_score\""
+          "  regression: false "
+          "  cross_run_config_exercised: true "
+          "> ",
+      },
+      {
+          "regress-metric-samplepoints",
+          // ThresholdAnalyzerInput
+          "name: \"ta\""
+          "cross_run_config: < "
+          "  run_info_query_list: < > "
+          "> "
+          "configs: < "
+          "  min: 5 "
+          "  outlier_percent_max: 35 "
+          "  data_filter: < "
+          "    data_type: METRIC_SAMPLEPOINTS "
+          "    value_key: \"y1\" "
+          "  > "
+          "> ",
+          // AnalyzerInput
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h1\" "
+          "    timestamp_ms: 1 "
+          "  > "
+          "  batch_list: < "
+          "    run_key: \"h1\" "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h2\" "
+          "    timestamp_ms: 2 "
+          "  > "
+          "  batch_list: < "
+          "    run_key: \"h2\" "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h3\" "
+          "    timestamp_ms: 3 "
+          "  > "
+          "  batch_list: < "
+          "    run_key: \"h3\" "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 4 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "run_to_be_analyzed: < "
+          "  run_info: < "
+          "    run_key: \"r4\" "
+          "    timestamp_ms: 4 "
+          "  > "
+          "  batch_list: < "
+          "    run_key: \"r4\" "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 4 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 4 "
+          "      > "
+          "    > "
+          "  > "
+          "> ",
+          // want_regression
+          false,
+          // want_status
+          Status_Code_SUCCESS,
+          // ThresholdAnalyzerOutput
+          "min_timestamp_ms: 1 "
+          "max_timestamp_ms: 4 "
+          "config_results: < "
+          "  percent_above_max: 0 "
+          "  percent_below_min: 30 "
+          "  metric_label: \"y1\""
+          "  regression: false "
+          "  cross_run_config_exercised: true "
+          "> ",
+      },
+      {
+          "regress-metric-samplepoints-regression",
+          // ThresholdAnalyzerInput
+          "name: \"ta\""
+          "cross_run_config: < "
+          "  run_info_query_list: < > "
+          "> "
+          "configs: < "
+          "  min: 5 "
+          "  outlier_percent_max: 35 "
+          "  data_filter: < "
+          "    data_type: METRIC_SAMPLEPOINTS "
+          "    value_key: \"y1\" "
+          "  > "
+          "> ",
+          // AnalyzerInput
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h1\" "
+          "    timestamp_ms: 1 "
+          "  > "
+          "  batch_list: < "
+          "    run_key: \"h1\" "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 4 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h2\" "
+          "    timestamp_ms: 2 "
+          "  > "
+          "  batch_list: < "
+          "    run_key: \"h2\" "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "historical_run_list: < "
+          "  run_info: < "
+          "    run_key: \"h3\" "
+          "    timestamp_ms: 3 "
+          "  > "
+          "  batch_list: < "
+          "    run_key: \"h3\" "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 4 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 6 "
+          "      > "
+          "    > "
+          "  > "
+          "> "
+          "run_to_be_analyzed: < "
+          "  run_info: < "
+          "    run_key: \"r4\" "
+          "    timestamp_ms: 4 "
+          "  > "
+          "  batch_list: < "
+          "    run_key: \"r4\" "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 4 "
+          "      > "
+          "    > "
+          "    sample_point_list: < "
+          "      input_value: 1 "
+          "      metric_value_list: < "
+          "        value_key: \"y1\" "
+          "        value: 4 "
+          "      > "
+          "    > "
+          "  > "
+          "> ",
+          // want_regression
+          true,
+          // want_status
+          Status_Code_SUCCESS,
+          // ThresholdAnalyzerOutput
+          "min_timestamp_ms: 1 "
+          "max_timestamp_ms: 4 "
+          "config_results: < "
+          "  percent_above_max: 0 "
+          "  percent_below_min: 40 "
+          "  metric_label: \"y1\""
+          "  regression: true "
+          "  cross_run_config_exercised: true "
+          "> ",
+      },
+  };
+  for (const Case& c : cases) {
+    SCOPED_TRACE(c.name);
+    LOG(INFO) << "Case: " << c.name;
+    ThresholdAnalyzerInput ctor_in;
+    ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(c.ctor_in, &ctor_in));
+    AnalyzerInput func_in;
+    ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(c.func_in, &func_in));
+    threshold_analyzer::Analyzer ta(ctor_in);
+    AnalyzerOutput got;
+    bool success = ta.Analyze(func_in, &got);
+    LOG(INFO) << "Got:\n" << got.DebugString();
+    ThresholdAnalyzerOutput ta_output;
+    ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(got.output(), &ta_output));
+    EXPECT_EQ(got.regression(), c.want_regression);
+    EXPECT_EQ(got.status().code(), c.want_status);
+    EXPECT_EQ(got.analyzer_type(), ta.analyzer_type());
+    EXPECT_EQ(got.run_key(), func_in.run_to_be_analyzed().run_info().run_key());
+    ThresholdAnalyzerInput parsed_input_config;
+    ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(got.input_config(),
+                                                    &parsed_input_config));
+    // Clear the configs, we don't want to validate them explicitly in this
+    // test.
+    for (auto& config_result : *ta_output.mutable_config_results()) {
+      config_result.clear_config();
+    }
+    EXPECT_THAT(ta_output, EqualsProto(c.threshold_analyzer_output));
+    EXPECT_THAT(parsed_input_config, EqualsProto(ctor_in));
+    if (c.want_status == Status_Code_SUCCESS) {
+      EXPECT_TRUE(success);
+    } else {
+      EXPECT_FALSE(success);
+      continue;
+    }
+  }
+}  // NOLINT(readability/fn_size)
 
 }  // namespace threshold_analyzer
 }  // namespace mako
