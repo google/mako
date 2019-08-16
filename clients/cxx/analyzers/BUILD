@@ -9,6 +9,7 @@ cc_library(
     deps = [
         ":util",
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
+        "//internal/cxx:analyzer_common",
         "//internal/cxx:filter_utils",
         "//spec/cxx:analyzer",
         "//spec/proto:mako_cc_proto",
@@ -26,6 +27,7 @@ cc_test(
         ":threshold_analyzer",
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
         "//spec/proto:mako_cc_proto",
+        "//testing/cxx:protocol-buffer-matchers",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
         "@com_google_protobuf//:protobuf",
