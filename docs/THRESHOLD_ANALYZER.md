@@ -1,7 +1,5 @@
 # Threshold Analyzer
 
-[TOC]
-
 ## Overview
 
 The Threshold analyzer evaluates data that is within expected bounds. For
