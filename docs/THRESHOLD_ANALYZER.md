@@ -1,7 +1,5 @@
 # Threshold Analyzer
 
-[TOC]
-
 ## Overview
 
 The Threshold analyzer evaluates data that is within expected bounds. For
@@ -24,7 +22,7 @@ seconds.
 ## Configuration
 
 The threshold analyzer is configured using
-[threshold_analyzer.proto](https://github.com/google/mako/blob/master/clients/proto/analyzers/threshold_analyzer.proto).
+[threshold_analyzer.proto](../clients/proto/analyzers/threshold_analyzer.proto).
 
 ### Configuring historical context
 
@@ -35,9 +33,9 @@ different modes, configurations, or environments that make them inappropriate
 for comparison. As an example, a benchmark might be set up to use tags to
 separate configurations like "10K requests" vs "1M requests" with tags such as
 "request_size=10K" and "request_size=1M". The
-[historical_context_tags](https://github.com/google/mako/blob/master/clients/proto/analyzers/threshold_analyzer.proto
+[historical_context_tags](../clients/proto/analyzers/threshold_analyzer.proto?q=symbol:historical_context_tags)
 field in the
-[ThresholdAnalyzerInput](https://github.com/google/mako/blob/master/clients/proto/analyzers/threshold_analyzer.proto
+[ThresholdAnalyzerInput](../clients/proto/analyzers/threshold_analyzer.proto?q=symbol:ThresholdAnalyzerInput)
 proto message allows you to specify tags to filter on when graphing the
 historical context.
 

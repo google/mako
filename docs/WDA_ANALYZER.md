@@ -28,7 +28,7 @@ As a user you need to [configure](#configuration):
 ## Configuration
 
 The WDA analyzer is configured using
-[window_deviation.proto](https://github.com/google/mako/blob/master/clients/proto/analyzers/window_deviation.proto).
+[window_deviation.proto](../clients/proto/analyzers/window_deviation.proto).
 The remainder of this page describes how to set the fields therein.
 
 ## Quick Start
