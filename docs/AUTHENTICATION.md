@@ -3,7 +3,7 @@
 The Mako command-line tool and the Mako clients communicate with
 https://mako.dev using the Application Default Credentials (ADC) strategy. You
 can find full documentation of this strategy at
-http://cloud/docs/authentication/production.
+http://cloud.google.com/docs/authentication/production.
 
 When running locally and wanting to authenticate as yourself (as opposed to as a
 service account), the easiest way to set up authentication is using the gcloud
