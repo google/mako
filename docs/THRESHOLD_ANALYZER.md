@@ -40,5 +40,5 @@ proto message allows you to specify tags to filter on when graphing the
 historical context.
 
 ## Implementation/Examples
-* [C++](../mako_examples/cxx_quickstore/example_test.cc)
-* [Go](../mako_examples/go_quickstore/example_test.go)
+* [C++](../examples/cxx_quickstore/example_test.cc)
+* [Go](../examples/go_quickstore/example_test.go)

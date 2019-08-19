@@ -42,7 +42,7 @@ If you’re writing a new performance test that will use a Mako client to store
 results in https://mako.dev and to guard against performance regressions, please
 read [GUIDE.md](docs/GUIDE.md).
 
-There are example performance tests in the [`mako_examples/`](./mako_examples)
+There are example performance tests in the [`examples/`](./examples)
 folder.
 
 ## Accessing Mako data with the storage libaries

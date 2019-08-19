@@ -339,7 +339,7 @@ The typical structure of a Quickstore run is:
    aggregate data.
 7. Call the `Store` method to process the data and upload it to https://mako.dev.
 
-The examples in [`mako_examples/`](../mako_examples/) illustrate these steps.
+The examples in [`examples/`](../examples/) illustrate these steps.
 
 #### Add Regression Detection
 
@@ -350,13 +350,13 @@ your system’s performance, then you should strongly consider integrating
 analyzers.
 
 In
-[`mako_examples/go_quickstore/example_test.go`](../mako_examples/go_quickstore/example_test.go)
+[`examples/go_quickstore/example_test.go`](../examples/go_quickstore/example_test.go)
 we configure a threshold analyzer. This is the simplest analyzer conceptually
 and the easiest to configure. Most tests should start with a threshold analyzer
 and expand from there.
 
 Note that in
-[`mako_examples/go_quickstore/example_test.go`](../mako_examples/go_quickstore/example_test.go)
+[`examples/go_quickstore/example_test.go`](../examples/go_quickstore/example_test.go)
 we fail the test when Quickstore reports an analyzer failure. This allows us to
 treat the performance test like a correctness/functional test regarding how
 failures are reported.
