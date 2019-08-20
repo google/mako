@@ -124,6 +124,11 @@ $ bazel run internal/quickstore_microservice:quickstore_microservice_mako
 
 The Quickstore microservice can also be built into a Docker image:
 
+> **WARNING**:  Docker does not run natively in OSX, so building the image from
+> OSX will require cross-compiling for Linux. We have not yet determined how to
+> configure Bazel accordingly, so for now we recommend only building the
+> microservice in Linux.
+
 ```bash
 $ bazel build internal/quickstore_microservice:quickstore_microservice_mako_image.tar
 ```

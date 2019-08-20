@@ -277,6 +277,11 @@ Skip this step if you are happy with the microservice as a binary.
 To build the microservice into a Docker image that can be loaded locally or
 pushed to a repository:
 
+> **WARNING**:  Docker does not run natively in OSX, so building the image from
+> OSX will require cross-compiling for Linux. We have not yet determined how to
+> configure Bazel accordingly, so for now we recommend only building the
+> microservice in Linux.
+
 ```bash
 $ bazel build internal/quickstore_microservice:quickstore_microservice_mako_image.tar
 ```
