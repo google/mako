@@ -26,7 +26,7 @@
 #include "clients/proto/analyzers/threshold_analyzer.pb.h"
 #include "spec/cxx/fileio.h"
 #include "absl/memory/memory.h"
-#include "quickstore/quickstore.pb.h"
+#include "proto/quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 #include "testing/cxx/protocol-buffer-matchers.h"
 

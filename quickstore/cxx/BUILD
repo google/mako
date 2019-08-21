@@ -14,7 +14,7 @@ cc_library(
         "quickstore.h",
     ],
     deps = [
-        "//quickstore:quickstore_cc_proto",
+        "//proto/quickstore:quickstore_cc_proto",
         "//quickstore/cxx/internal:store",
         "//spec/cxx:storage",
         "//spec/proto:mako_cc_proto",
@@ -27,7 +27,7 @@ cc_library(
     hdrs = ["mock_quickstore.h"],
     deps = [
         ":quickstore",
-        "//quickstore:quickstore_cc_proto",
+        "//proto/quickstore:quickstore_cc_proto",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -50,7 +50,7 @@ cc_test(
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
         "//clients/proto/analyzers:utest_analyzer_cc_proto",
         "//clients/proto/analyzers:window_deviation_cc_proto",
-        "//quickstore:quickstore_cc_proto",
+        "//proto/quickstore:quickstore_cc_proto",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/time",

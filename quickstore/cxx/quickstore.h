@@ -20,7 +20,7 @@
 #include <string>
 
 #include "spec/cxx/storage.h"
-#include "quickstore/quickstore.pb.h"
+#include "proto/quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

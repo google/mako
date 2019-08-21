@@ -26,8 +26,8 @@
 #include "absl/flags/flag.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "proto/quickstore/quickstore.pb.h"
 #include "quickstore/cxx/quickstore.h"
-#include "quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 
 ABSL_FLAG(bool, mako_storage, false,

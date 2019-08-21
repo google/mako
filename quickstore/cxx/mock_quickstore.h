@@ -18,8 +18,8 @@
 #include <string>
 
 #include "gmock/gmock.h"
+#include "proto/quickstore/quickstore.pb.h"
 #include "quickstore/cxx/quickstore.h"
-#include "quickstore/quickstore.pb.h"
 
 namespace mako {
 namespace quickstore {

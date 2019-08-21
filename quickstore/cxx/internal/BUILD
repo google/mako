@@ -1,10 +1,10 @@
 package(default_visibility = [
+    "//go/quickstore:__subpackages__",
     "//helpers/dart/quickstore:__subpackages__",
     "//helpers/py/quickstore:__subpackages__",
     "//internal/quickstore_microservice:__pkg__",
     "//java/com/google/testing/performance/mako/helpers/quickstore:__subpackages__",
     "//quickstore/cxx:__subpackages__",
-    "//quickstore/go:__subpackages__",
 ])
 
 licenses(["notice"])
@@ -26,7 +26,7 @@ cc_library(
         "//clients/proto/analyzers:utest_analyzer_cc_proto",
         "//clients/proto/analyzers:window_deviation_cc_proto",
         "//internal/cxx/load/common:run_analyzers",
-        "//quickstore:quickstore_cc_proto",
+        "//proto/quickstore:quickstore_cc_proto",
         "//spec/cxx:aggregator",
         "//spec/cxx:analyzer",
         "//spec/cxx:downsampler",
@@ -55,7 +55,7 @@ cc_test(
         "//clients/cxx/fileio:memory_fileio",
         "//clients/cxx/storage:fake_google3_storage",
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
-        "//quickstore:quickstore_cc_proto",
+        "//proto/quickstore:quickstore_cc_proto",
         "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",
         "//testing/cxx:protocol-buffer-matchers",
