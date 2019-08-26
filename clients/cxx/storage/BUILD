@@ -14,7 +14,7 @@ cc_library(
         "//internal/cxx/storage_client:retry_strategy",
         "//internal/cxx/storage_client:retrying_storage_request",
         "//internal/cxx/storage_client:transport",
-        "//internal/proto:mako_internal_cc_proto",
+        "//proto/internal:mako_internal_cc_proto",
         "//spec/cxx:storage",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",

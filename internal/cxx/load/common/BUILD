@@ -66,7 +66,7 @@ cc_library(
     deps = [
         "//helpers/cxx/status",
         "//internal/cxx:analyzer_optimizer",
-        "//internal/proto:mako_internal_cc_proto",
+        "//proto/internal:mako_internal_cc_proto",
         "//spec/cxx:aggregator",
         "//spec/cxx:analyzer",
         "//spec/cxx:dashboard",
@@ -90,7 +90,7 @@ cc_test(
         "//clients/cxx/dashboard:standard_dashboard",
         "//clients/cxx/storage:fake_google3_storage",
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
-        "//internal/proto:mako_internal_cc_proto",
+        "//proto/internal:mako_internal_cc_proto",
         "//spec/cxx:analyzer",
         "//spec/cxx:dashboard",
         "//spec/cxx:mock_analyzer",

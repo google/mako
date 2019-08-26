@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "glog/logging.h"
-#include "internal/proto/mako_internal.pb.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/ascii.h"
@@ -29,6 +28,7 @@
 #include "absl/time/time.h"
 #include "internal/cxx/proto_validation.h"
 #include "internal/cxx/storage_client/retrying_storage_request.h"
+#include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 
 ABSL_FLAG(

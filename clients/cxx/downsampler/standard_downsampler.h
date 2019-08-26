@@ -76,12 +76,12 @@
 #include "glog/logging.h"
 #include "src/google/protobuf/io/coded_stream.h"
 #include "clients/cxx/downsampler/metric_set.h"
-#include "internal/proto/mako_internal.pb.h"
 #include "spec/cxx/downsampler.h"
 #include "spec/cxx/fileio.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 #include "internal/cxx/proto_validation.h"
+#include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

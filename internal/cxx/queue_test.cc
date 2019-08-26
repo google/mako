@@ -21,11 +21,11 @@
 #include "benchmark/benchmark.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "internal/proto/mako_internal.pb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
 #include "internal/cxx/load/common/thread_pool_factory.h"
+#include "proto/internal/mako_internal.pb.h"
 #include "testing/cxx/protocol-buffer-matchers.h"
 
 namespace mako {

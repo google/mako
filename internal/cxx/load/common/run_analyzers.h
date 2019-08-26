@@ -19,10 +19,10 @@
 #include <utility>
 #include <vector>
 
-#include "internal/proto/mako_internal.pb.h"
 #include "spec/cxx/analyzer.h"
 #include "spec/cxx/dashboard.h"
 #include "spec/cxx/storage.h"
+#include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

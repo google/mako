@@ -21,13 +21,13 @@
 #include "glog/logging.h"
 #include "src/google/protobuf/map.h"
 #include "src/google/protobuf/message.h"
-#include "internal/proto/mako_internal.pb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "helpers/cxx/status/canonical_errors.h"
 #include "helpers/cxx/status/status.h"
 #include "internal/cxx/storage_client/retry_strategy.h"
 #include "internal/cxx/storage_client/transport.h"
+#include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

@@ -212,7 +212,7 @@ cc_test(
     deps = [
         ":queue",
         "//internal/cxx/load/common:thread_pool_factory",
-        "//internal/proto:mako_internal_cc_proto",
+        "//proto/internal:mako_internal_cc_proto",
         "//testing/cxx:protocol-buffer-matchers",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",

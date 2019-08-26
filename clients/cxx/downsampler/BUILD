@@ -13,7 +13,7 @@ cc_library(
         ":metric_set",
         "//internal/cxx:proto_validation",
         "//internal/cxx/load/common:executor",
-        "//internal/proto:mako_internal_cc_proto",
+        "//proto/internal:mako_internal_cc_proto",
         "//spec/cxx:downsampler",
         "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",

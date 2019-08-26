@@ -71,7 +71,7 @@ cc_library(
         ":retry_strategy",
         ":transport",
         "//helpers/cxx/status",
-        "//internal/proto:mako_internal_cc_proto",
+        "//proto/internal:mako_internal_cc_proto",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
