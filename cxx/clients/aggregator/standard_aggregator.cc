@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#include "clients/cxx/aggregator/standard_aggregator.h"
+#include "cxx/clients/aggregator/standard_aggregator.h"
 
 #include <array>
 

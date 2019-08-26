@@ -2,7 +2,7 @@ package(default_visibility = ["//:internal"])
 
 licenses(["notice"])
 
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_binary", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 go_binary(
     name = "mako",

@@ -68,12 +68,11 @@ cc_library(
     deps = [
         ":base_storage",
         ":google3_storage",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/strings",
         "//helpers/cxx/status:statusor",
         "//internal/cxx/storage_client:google_oauth_fetcher",
         "//internal/cxx/storage_client:http_transport",
-    ] + [
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
     ],
 )
 

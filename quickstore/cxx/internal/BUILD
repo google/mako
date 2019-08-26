@@ -14,7 +14,6 @@ cc_library(
     srcs = ["store.cc"],
     hdrs = ["store.h"],
     deps = [
-        "//clients/cxx/aggregator:standard_aggregator",
         "//clients/cxx/analyzers:threshold_analyzer",
         "//clients/cxx/analyzers:utest_analyzer",
         "//clients/cxx/analyzers:window_deviation",
@@ -25,6 +24,7 @@ cc_library(
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
         "//clients/proto/analyzers:utest_analyzer_cc_proto",
         "//clients/proto/analyzers:window_deviation_cc_proto",
+        "//cxx/clients/aggregator:standard_aggregator",
         "//internal/cxx/load/common:run_analyzers",
         "//proto/quickstore:quickstore_cc_proto",
         "//spec/cxx:aggregator",
@@ -50,11 +50,11 @@ cc_test(
     srcs = ["store_test.cc"],
     deps = [
         ":store",
-        "//clients/cxx/aggregator:standard_aggregator",
         "//clients/cxx/downsampler:standard_downsampler",
         "//clients/cxx/fileio:memory_fileio",
         "//clients/cxx/storage:fake_google3_storage",
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
+        "//cxx/clients/aggregator:standard_aggregator",
         "//proto/quickstore:quickstore_cc_proto",
         "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",

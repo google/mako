@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_
-#define CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_
+#ifndef CXX_CLIENTS_AGGREGATOR_STANDARD_AGGREGATOR_H_
+#define CXX_CLIENTS_AGGREGATOR_STANDARD_AGGREGATOR_H_
 
 #include <functional>
 #include <list>
@@ -22,11 +22,11 @@
 #include <utility>
 #include <vector>
 
-#include "clients/cxx/aggregator/threadsafe_running_stats.h"
 #include "spec/cxx/aggregator.h"
 #include "spec/cxx/fileio.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
+#include "cxx/clients/aggregator/threadsafe_running_stats.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {
@@ -188,4 +188,4 @@ class Aggregator : public mako::Aggregator {
 }  // namespace aggregator
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_AGGREGATOR_STANDARD_AGGREGATOR_H_
+#endif  // CXX_CLIENTS_AGGREGATOR_STANDARD_AGGREGATOR_H_
