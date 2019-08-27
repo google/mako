@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef CLIENTS_CXX_DASHBOARD_STANDARD_DASHBOARD_H_
-#define CLIENTS_CXX_DASHBOARD_STANDARD_DASHBOARD_H_
+#ifndef CXX_CLIENTS_DASHBOARD_STANDARD_DASHBOARD_H_
+#define CXX_CLIENTS_DASHBOARD_STANDARD_DASHBOARD_H_
 
 #include <string>
 
@@ -59,4 +59,4 @@ class Dashboard : public mako::Dashboard {
 }  // namespace standard_dashboard
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_DASHBOARD_STANDARD_DASHBOARD_H_
+#endif  // CXX_CLIENTS_DASHBOARD_STANDARD_DASHBOARD_H_
