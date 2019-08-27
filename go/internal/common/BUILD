@@ -10,5 +10,5 @@ go_library(
     srcs = [
         "common_deps.go",
     ],
-    importpath = "github.com/google/mako/internal/go/common",
+    importpath = "github.com/google/mako/go/internal/common",
 )

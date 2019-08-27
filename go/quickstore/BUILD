@@ -12,7 +12,7 @@ go_library(
     srcs = ["quickstore.go"],
     importpath = "github.com/google/mako/go/quickstore",
     deps = [
-        "//internal/go/common",
+        "//go/internal/common",
         "//internal/quickstore_microservice/proto:quickstore_go_grpc_pb",
         "//internal/quickstore_microservice/proto:quickstore_go_proto",
         "//proto/quickstore:quickstore_go_proto",
