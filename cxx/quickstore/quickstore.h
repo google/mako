@@ -12,8 +12,8 @@
 // see the license for the specific language governing permissions and
 // limitations under the license.
 
-#ifndef HELPERS_CXX_QUICKSTORE_QUICKSTORE_H_
-#define HELPERS_CXX_QUICKSTORE_QUICKSTORE_H_
+#ifndef CXX_QUICKSTORE_QUICKSTORE_H_
+#define CXX_QUICKSTORE_QUICKSTORE_H_
 
 #include <list>
 #include <map>
@@ -180,4 +180,4 @@ class Quickstore {
 }  // namespace quickstore
 }  // namespace mako
 
-#endif  // HELPERS_CXX_QUICKSTORE_QUICKSTORE_H_
+#endif  // CXX_QUICKSTORE_QUICKSTORE_H_

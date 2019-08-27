@@ -18,11 +18,11 @@
 #include "clients/proto/analyzers/threshold_analyzer.pb.h"
 #include "absl/flags/parse.h"
 #include "clients/cxx/analyzers/threshold_analyzer.h"
+#include "cxx/quickstore/quickstore.h"
+#include "examples/cxx_quickstore/perf_data.pb.h"
 #include "helpers/cxx/status/canonical_errors.h"
 #include "helpers/cxx/status/status_matchers.h"
 #include "helpers/cxx/status/statusor.h"
-#include "examples/cxx_quickstore/perf_data.pb.h"
-#include "quickstore/cxx/quickstore.h"
 #include "quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 

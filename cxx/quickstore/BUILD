@@ -14,8 +14,8 @@ cc_library(
         "quickstore.h",
     ],
     deps = [
+        "//cxx/quickstore/internal:store",
         "//proto/quickstore:quickstore_cc_proto",
-        "//quickstore/cxx/internal:store",
         "//spec/cxx:storage",
         "//spec/proto:mako_cc_proto",
         "@com_google_glog//:glog",

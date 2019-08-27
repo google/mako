@@ -1,10 +1,10 @@
 package(default_visibility = [
+    "//cxx/quickstore:__subpackages__",
     "//go/quickstore:__subpackages__",
     "//helpers/dart/quickstore:__subpackages__",
     "//helpers/py/quickstore:__subpackages__",
     "//internal/quickstore_microservice:__pkg__",
     "//java/com/google/testing/performance/mako/helpers/quickstore:__subpackages__",
-    "//quickstore/cxx:__subpackages__",
 ])
 
 licenses(["notice"])

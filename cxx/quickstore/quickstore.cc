@@ -12,14 +12,14 @@
 // see the license for the specific language governing permissions and
 // limitations under the license.
 
-#include "quickstore/cxx/quickstore.h"
+#include "cxx/quickstore/quickstore.h"
 
 #include <utility>
 #include <vector>
 
 #include "glog/logging.h"
 #include "spec/cxx/storage.h"
-#include "quickstore/cxx/internal/store.h"
+#include "cxx/quickstore/internal/store.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

@@ -11,15 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef QUICKSTORE_CXX_MOCK_QUICKSTORE_H_
-#define QUICKSTORE_CXX_MOCK_QUICKSTORE_H_
+#ifndef CXX_QUICKSTORE_MOCK_QUICKSTORE_H_
+#define CXX_QUICKSTORE_MOCK_QUICKSTORE_H_
 
 #include <map>
 #include <string>
 
 #include "gmock/gmock.h"
+#include "cxx/quickstore/quickstore.h"
 #include "proto/quickstore/quickstore.pb.h"
-#include "quickstore/cxx/quickstore.h"
 
 namespace mako {
 namespace quickstore {
@@ -49,4 +49,4 @@ class MockQuickstore : public Quickstore {
 }  // namespace quickstore
 }  // namespace mako
 
-#endif  // QUICKSTORE_CXX_MOCK_QUICKSTORE_H_
+#endif  // CXX_QUICKSTORE_MOCK_QUICKSTORE_H_

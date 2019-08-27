@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef QUICKSTORE_CXX_INTERNAL_STORE_H_
-#define QUICKSTORE_CXX_INTERNAL_STORE_H_
+#ifndef CXX_QUICKSTORE_INTERNAL_STORE_H_
+#define CXX_QUICKSTORE_INTERNAL_STORE_H_
 
 #include <memory>
 #include <string>
@@ -118,4 +118,4 @@ class InternalQuickstore {
 }  // namespace quickstore
 }  // namespace mako
 
-#endif  // QUICKSTORE_CXX_INTERNAL_STORE_H_
+#endif  // CXX_QUICKSTORE_INTERNAL_STORE_H_

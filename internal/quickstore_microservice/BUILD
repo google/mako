@@ -10,12 +10,12 @@ cc_library(
     hdrs = ["quickstore_service.h"],
     deps = [
         "//clients/cxx/storage:mako_client",
+        "//cxx/quickstore/internal:store",
         "//helpers/cxx/status:statusor",
         "//internal/cxx:queue_ifc",
         "//internal/quickstore_microservice/proto:quickstore_cc_grpc_proto",
         "//internal/quickstore_microservice/proto:quickstore_cc_proto",
         "//proto/internal:mako_internal_cc_proto",
-        "//quickstore/cxx/internal:store",
         "//spec/cxx:storage",
         "@com_google_protobuf//:protobuf",
     ],

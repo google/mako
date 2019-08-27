@@ -15,7 +15,7 @@
 // TODO(b/126415270) We'll hold onto 3x - (downsampler removed points) memory
 // during this process. If this becomes a problem we could take a non-const
 // vector to the data and delete as we write to disk.
-#include "quickstore/cxx/internal/store.h"
+#include "cxx/quickstore/internal/store.h"
 
 #include <functional>
 #include <list>
