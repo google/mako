@@ -8,7 +8,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "wrappedstorage",
     srcs = ["wrappedstorage.go"],
-    importpath = "github.com/google/mako/internal/go/wrappedstorage",
+    importpath = "github.com/google/mako/go/internal/wrappedstorage",
     deps = [
         "//spec/proto:mako_go_proto",
     ],

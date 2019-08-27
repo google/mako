@@ -48,8 +48,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	wrap "github.com/google/mako/clients/cxx/storage/go/fakestorage_wrap"
-	"github.com/google/mako/internal/go/wrappedstorage"
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
+	"github.com/google/mako/go/internal/wrappedstorage"
 )
 
 /*

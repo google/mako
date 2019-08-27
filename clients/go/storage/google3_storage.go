@@ -17,7 +17,7 @@ package g3storage
 
 import (
 	wrap "github.com/google/mako/clients/cxx/storage/go/g3storage_wrap"
-	"github.com/google/mako/internal/go/wrappedstorage"
+	"github.com/google/mako/go/internal/wrappedstorage"
 )
 
 // Storage is a Mako storage client. Zero value is not usable. Use New() or NewWithHostname().
