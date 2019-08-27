@@ -1214,5 +1214,52 @@ TEST_F(StandardMetricDownsamplerTest, AuxDataIsRemovedTest) {
   }
 }
 
+TEST_F(StandardMetricDownsamplerTest, UniformSampleEdgeCase) {
+  constexpr int kNumSampleFiles = 16;
+  constexpr int kNumPointsPerFile = 1000;
+  // Use smaller metric count maximum so test can be smaller. Actual value isn't
+  // important, as long as kMetricValueCountMax/2 is not divisible by 3.
+  constexpr int kMetricValueCountMax = 5000;
+
+  std::vector<std::string> file_names;
+  for (int i=0; i < kNumSampleFiles; i++) {
+    std::string file_name = absl::StrCat("file", i);
+    file_names.push_back(file_name);
+    mako::memory_fileio::FileIO fio;
+    ASSERT_TRUE(fio.Open(file_name, fio.kWrite));
+    for (int j=0; j < kNumPointsPerFile; j++) {
+      int index = j*kNumSampleFiles + i;
+      // Each file contains points falling into two metric sets. This makes each
+      // metric set's fair share of metrics kMetricValueCountMax / 2.
+      // One of the points has 3 metrics. Since kMetricValueCountMax / 2 is not
+      // divisible by 3, this means when we begin processing a record, we will
+      // not be at or over quota for that metric set.
+      ASSERT_TRUE(fio.Write(CreateSampleRecord(
+          index, {{"a", index}, {"b", index}, {"c", index}})));
+      ASSERT_TRUE(fio.Write(CreateSampleRecord(index, {{"d", index}})));
+    }
+  }
+  mako::DownsamplerInput in = CreateDownsamplerInput(file_names);
+
+  in.set_metric_value_count_max(kMetricValueCountMax);
+  mako::DownsamplerOutput out;
+  ASSERT_TRUE(d_.Downsample(in, &out).empty());
+
+  double min_input_value = 1.0E99;
+  for (const auto& batch : out.sample_batch_list()) {
+    for (const auto& point : batch.sample_point_list()) {
+      for (const auto& metric : point.metric_value_list()) {
+        if (metric.value_key() == "a") {
+          if (point.input_value() < min_input_value) {
+            min_input_value = point.input_value();
+          }
+          break;
+        }
+      }
+    }
+  }
+  ASSERT_LT(min_input_value, kNumPointsPerFile / 10);
+}
+
 }  // namespace downsampler
 }  // namespace mako

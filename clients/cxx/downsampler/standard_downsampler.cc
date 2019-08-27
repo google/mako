@@ -314,7 +314,8 @@ class RecordManager {
     parsed_slots_ += metric_set.slot_count;
     int saver_parsed_slots = saver->add_parsed_slots();
     if (slot_count_ + metric_set.slot_count > max_slot_count_ &&
-        saver->slots() >= fair_share_slots) {
+
+        saver->slots() + metric_set.slot_count > fair_share_slots) {
       if (!replace_) {
         return kNoError;
       }
