@@ -21,7 +21,7 @@
 %include "swig/go/strings.swig"
 
 %{
-#include "clients/cxx/storage/fake_google3_storage.h"
+#include "cxx/clients/storage/fake_google3_storage.h"
 %}
 
 PROTO_INPUT(
@@ -125,6 +125,6 @@ C_PROTO_VECTOR_INPUT_SLICE(mako::SampleBatch)
 %unignore mako::fake_google3_storage::Storage::FakeStageBatches;
 
 %import "spec/cxx/storage.h"
-%include "clients/cxx/storage/fake_google3_storage.h"
+%include "cxx/clients/storage/fake_google3_storage.h"
 
 %unignoreall

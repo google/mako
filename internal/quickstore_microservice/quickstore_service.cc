@@ -16,7 +16,7 @@
 #include <memory>
 
 #include "src/google/protobuf/repeated_field.h"
-#include "clients/cxx/storage/mako_client.h"
+#include "cxx/clients/storage/mako_client.h"
 #include "cxx/quickstore/internal/store.h"
 #include "helpers/cxx/status/statusor.h"
 #include "internal/cxx/queue_ifc.h"

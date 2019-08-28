@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "clients/cxx/storage/mako_client.h"
+#include "cxx/clients/storage/mako_client.h"
 
-#include "clients/cxx/storage/google3_storage.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
+#include "cxx/clients/storage/google3_storage.h"
 #include "helpers/cxx/status/statusor.h"
 #include "internal/cxx/storage_client/google_oauth_fetcher.h"
 #include "internal/cxx/storage_client/http_transport.h"

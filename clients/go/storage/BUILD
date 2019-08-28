@@ -10,7 +10,7 @@ go_library(
     srcs = ["google3_storage.go"],
     importpath = "github.com/google/mako/clients/go/storage/g3storage",
     deps = [
-        "//clients/cxx/storage/go:g3storage_wrap",
+        "//cxx/clients/storage/go:g3storage_wrap",
         "//go/internal/wrappedstorage",
     ],
 )
@@ -21,7 +21,7 @@ go_library(
     importpath = "github.com/google/mako/clients/go/storage/mako",
     deps = [
         ":g3storage",
-        "//clients/cxx/storage/go:mako_client_wrap",
+        "//cxx/clients/storage/go:mako_client_wrap",
     ],
 )
 
@@ -30,7 +30,7 @@ go_library(
     srcs = ["fake_storage.go"],
     importpath = "github.com/google/mako/clients/go/storage/fakestorage",
     deps = [
-        "//clients/cxx/storage/go:fakestorage_wrap",
+        "//cxx/clients/storage/go:fakestorage_wrap",
         "//go/internal/wrappedstorage",
         "//spec/proto:mako_go_proto",
         "@com_github_golang_protobuf//proto:go_default_library",

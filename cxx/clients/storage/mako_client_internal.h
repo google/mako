@@ -11,14 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef CLIENTS_CXX_STORAGE_MAKO_CLIENT_INTERNAL_H_
-#define CLIENTS_CXX_STORAGE_MAKO_CLIENT_INTERNAL_H_
+#ifndef CXX_CLIENTS_STORAGE_MAKO_CLIENT_INTERNAL_H_
+#define CXX_CLIENTS_STORAGE_MAKO_CLIENT_INTERNAL_H_
 
 #include <memory>
 
-#include "clients/cxx/storage/google3_storage.h"
-#include "clients/cxx/storage/mako_client.h"
 #include "absl/strings/string_view.h"
+#include "cxx/clients/storage/google3_storage.h"
+#include "cxx/clients/storage/mako_client.h"
 #include "helpers/cxx/status/status.h"
 #include "helpers/cxx/status/statusor.h"
 
@@ -42,4 +42,4 @@ NewMakoClientClif(absl::string_view hostname) {
 }  // namespace internal
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_STORAGE_MAKO_CLIENT_INTERNAL_H_
+#endif  // CXX_CLIENTS_STORAGE_MAKO_CLIENT_INTERNAL_H_

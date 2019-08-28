@@ -167,7 +167,7 @@ cc_test(
     srcs = ["analyzer_optimizer_test.cc"],
     deps = [
         ":analyzer_optimizer",
-        "//clients/cxx/storage:fake_google3_storage",
+        "//cxx/clients/storage:fake_google3_storage",
         "//spec/cxx:analyzer",
         "//spec/cxx:mock_analyzer",
         "//spec/cxx:mock_storage",

@@ -87,9 +87,9 @@ cc_test(
     deps = [
         ":run_analyzers",
         "//clients/cxx/analyzers:threshold_analyzer",
-        "//clients/cxx/storage:fake_google3_storage",
         "//clients/proto/analyzers:threshold_analyzer_cc_proto",
         "//cxx/clients/dashboard:standard_dashboard",
+        "//cxx/clients/storage:fake_google3_storage",
         "//proto/internal:mako_internal_cc_proto",
         "//spec/cxx:analyzer",
         "//spec/cxx:dashboard",

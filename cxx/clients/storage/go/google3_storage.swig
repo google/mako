@@ -21,7 +21,7 @@
 %include "swig/go/strings.swig"
 
 %{
-#include "clients/cxx/storage/google3_storage.h"
+#include "cxx/clients/storage/google3_storage.h"
 %}
 
 PROTO_INPUT(
@@ -117,6 +117,6 @@ PROTO_IN_OUT(
 %unignore mako::google3_storage::Storage::last_call_server_elapsed_time;
 
 %import "spec/cxx/storage.h"
-%include "clients/cxx/storage/google3_storage.h"
+%include "cxx/clients/storage/google3_storage.h"
 
 %unignoreall

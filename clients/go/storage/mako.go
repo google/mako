@@ -42,8 +42,8 @@ package mako
 import (
 	"fmt"
 
-	wrap "github.com/google/mako/clients/cxx/storage/go/mako_client_wrap"
 	"github.com/google/mako/clients/go/storage/g3storage"
+	wrap "github.com/google/mako/cxx/clients/storage/go/mako_client_wrap"
 )
 
 const makoAppHostname = "mako.dev"

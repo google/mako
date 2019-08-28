@@ -16,7 +16,7 @@
 package g3storage
 
 import (
-	wrap "github.com/google/mako/clients/cxx/storage/go/g3storage_wrap"
+	wrap "github.com/google/mako/cxx/clients/storage/go/g3storage_wrap"
 	"github.com/google/mako/go/internal/wrappedstorage"
 )
 

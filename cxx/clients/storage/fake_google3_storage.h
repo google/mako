@@ -14,8 +14,8 @@
 
 // Provides an in memory fake of the Mako storage system.
 //
-#ifndef CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
-#define CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
+#ifndef CXX_CLIENTS_STORAGE_FAKE_GOOGLE3_STORAGE_H_
+#define CXX_CLIENTS_STORAGE_FAKE_GOOGLE3_STORAGE_H_
 
 #include <string>
 #include <vector>
@@ -339,4 +339,4 @@ class Storage : public mako::Storage {
 }  // namespace fake_google3_storage
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_STORAGE_FAKE_GOOGLE3_STORAGE_H_
+#endif  // CXX_CLIENTS_STORAGE_FAKE_GOOGLE3_STORAGE_H_

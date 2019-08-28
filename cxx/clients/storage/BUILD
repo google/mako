@@ -80,12 +80,12 @@ cc_library(
     name = "mako_client_internal",
     hdrs = ["mako_client_internal.h"],
     visibility = [
-        "//clients/cxx/storage/go:__pkg__",
-        "//clients/cxx/storage/python:__pkg__",
+        "//cxx/clients/storage/go:__pkg__",
+        "//cxx/clients/storage/python:__pkg__",
     ],
     deps = [
         ":mako_client",
-        "//clients/cxx/storage:google3_storage",
+        "//cxx/clients/storage:google3_storage",
         "//helpers/cxx/status",
         "//helpers/cxx/status:statusor",
         "@com_google_absl//absl/strings",

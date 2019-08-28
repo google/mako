@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#include "clients/cxx/storage/mako_client.h"
+#include "cxx/clients/storage/mako_client.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "clients/cxx/storage/google3_storage.h"
 #include "absl/flags/flag.h"
+#include "cxx/clients/storage/google3_storage.h"
 #include "internal/cxx/storage_client/google_oauth_fetcher.h"
 #include "internal/cxx/storage_client/http_transport.h"
 #include "internal/cxx/storage_client/oauth_token_provider.h"

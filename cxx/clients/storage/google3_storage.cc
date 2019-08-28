@@ -12,7 +12,7 @@
 // see the license for the specific language governing permissions and
 // limitations under the license.
 
-#include "clients/cxx/storage/google3_storage.h"
+#include "cxx/clients/storage/google3_storage.h"
 
 #include <array>
 #include <cstring>

@@ -12,13 +12,13 @@
 // see the license for the specific language governing permissions and
 // limitations under the license.
 
-#ifndef CLIENTS_CXX_STORAGE_MAKO_CLIENT_H_
-#define CLIENTS_CXX_STORAGE_MAKO_CLIENT_H_
+#ifndef CXX_CLIENTS_STORAGE_MAKO_CLIENT_H_
+#define CXX_CLIENTS_STORAGE_MAKO_CLIENT_H_
 
 #include <memory>
 
-#include "clients/cxx/storage/base_storage_client.h"
 #include "absl/strings/string_view.h"
+#include "cxx/clients/storage/base_storage_client.h"
 
 namespace mako {
 
@@ -54,4 +54,4 @@ std::unique_ptr<BaseStorageClient> NewMakoClient(absl::string_view hostname);
 
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_STORAGE_MAKO_CLIENT_H_
+#endif  // CXX_CLIENTS_STORAGE_MAKO_CLIENT_H_

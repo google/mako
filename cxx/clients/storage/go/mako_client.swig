@@ -20,10 +20,10 @@
 %include "swig/base.swig"
 %include "swig/go/protofunc.swig"
 %include "swig/go/strings.swig"
-%import(module="github.com/google/mako/clients/cxx/storage/go/g3storage_wrap") "clients/cxx/storage/go/google3_storage.swig"
+%import(module="github.com/google/mako/cxx/clients/storage/go/g3storage_wrap") "cxx/clients/storage/go/google3_storage.swig"
 
 %{
-#include "clients/cxx/storage/mako_client_internal.h"
+#include "cxx/clients/storage/mako_client_internal.h"
 %}
 
 %newobject mako::internal::NewMakoClient;
@@ -36,4 +36,4 @@
 
 %apply std::string* OUTPUT {std::string *error};
 
-%include "clients/cxx/storage/mako_client_internal.h"
+%include "cxx/clients/storage/mako_client_internal.h"

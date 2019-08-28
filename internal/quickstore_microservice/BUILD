@@ -9,7 +9,7 @@ cc_library(
     srcs = ["quickstore_service.cc"],
     hdrs = ["quickstore_service.h"],
     deps = [
-        "//clients/cxx/storage:mako_client",
+        "//cxx/clients/storage:mako_client",
         "//cxx/quickstore/internal:store",
         "//helpers/cxx/status:statusor",
         "//internal/cxx:queue_ifc",
@@ -27,7 +27,7 @@ cc_test(
     linkstatic = 1,  # TODO(b/138956597) Fix linker error requiring this.
     deps = [
         ":quickstore_service",
-        "//clients/cxx/storage:fake_google3_storage",
+        "//cxx/clients/storage:fake_google3_storage",
         "//internal/cxx:queue",
         "//internal/grpc:grpc++_gce",
         "//internal/quickstore_microservice/proto:quickstore_cc_proto",

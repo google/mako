@@ -11,14 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#include "clients/cxx/storage/fake_google3_storage.h"
+#include "cxx/clients/storage/fake_google3_storage.h"
 
 #include <set>
 
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "testing/cxx/protocol-buffer-matchers.h"
-
 
 namespace mako {
 namespace fake_google3_storage {

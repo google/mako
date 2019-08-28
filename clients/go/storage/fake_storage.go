@@ -47,8 +47,8 @@ import (
 	"runtime"
 
 	"github.com/golang/protobuf/proto"
-	wrap "github.com/google/mako/clients/cxx/storage/go/fakestorage_wrap"
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
+	wrap "github.com/google/mako/cxx/clients/storage/go/fakestorage_wrap"
 	"github.com/google/mako/go/internal/wrappedstorage"
 )
 

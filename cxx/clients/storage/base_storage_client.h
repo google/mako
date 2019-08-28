@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef CLIENTS_CXX_STORAGE_BASE_STORAGE_CLIENT_H_
-#define CLIENTS_CXX_STORAGE_BASE_STORAGE_CLIENT_H_
+#ifndef CXX_CLIENTS_STORAGE_BASE_STORAGE_CLIENT_H_
+#define CXX_CLIENTS_STORAGE_BASE_STORAGE_CLIENT_H_
 
-#include "clients/cxx/storage/google3_storage.h"
+#include "cxx/clients/storage/google3_storage.h"
 
 namespace mako {
 
@@ -25,4 +25,4 @@ using BaseStorageClient = google3_storage::Storage;
 
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_STORAGE_BASE_STORAGE_CLIENT_H_
+#endif  // CXX_CLIENTS_STORAGE_BASE_STORAGE_CLIENT_H_

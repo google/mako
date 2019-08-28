@@ -15,8 +15,8 @@
 //
 // Provides access to the Google3 version of the Mako storage system.
 //
-#ifndef CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_
-#define CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_
+#ifndef CXX_CLIENTS_STORAGE_GOOGLE3_STORAGE_H_
+#define CXX_CLIENTS_STORAGE_GOOGLE3_STORAGE_H_
 
 #include <memory>
 #include <string>
@@ -34,7 +34,7 @@ namespace google3_storage {
 // Mako (go/mako) base storage client.
 //
 // Mako customers (http://mako.dev) should instead use NewMakoClient() in
-// https://github.com/google/mako/blob/master/clients/cxx/storage/mako_client.h.
+// https://github.com/google/mako/blob/master/cxx/clients/storage/mako_client.h .
 //
 // See https://github.com/google/mako/blob/master/spec/cxx/storage.h for more
 // information about interface.
@@ -304,4 +304,4 @@ extern absl::Flag<std::string> FLAGS_mako_internal_sudo_run_as;
 
 extern absl::Flag<std::string> FLAGS_mako_internal_test_pass_id_override;
 extern absl::Flag<std::vector<std::string> > FLAGS_mako_internal_additional_tags;
-#endif  // CLIENTS_CXX_STORAGE_GOOGLE3_STORAGE_H_
+#endif  // CXX_CLIENTS_STORAGE_GOOGLE3_STORAGE_H_
