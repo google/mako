@@ -106,11 +106,11 @@ class Executor {
   }
 
  private:
-  bool Done() EXCLUSIVE_LOCKS_REQUIRED(mutex_) { return count_ == 0; }
+  bool Done() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_) { return count_ == 0; }
 
   std::unique_ptr<mako::internal::ThreadPool> thread_pool_;
   absl::Mutex mutex_;
-  int count_ GUARDED_BY(mutex_) = 0;
+  int count_ ABSL_GUARDED_BY(mutex_) = 0;
   bool did_wait_ = false;
 };
 
