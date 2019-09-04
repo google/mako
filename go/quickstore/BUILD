@@ -13,8 +13,8 @@ go_library(
     importpath = "github.com/google/mako/go/quickstore",
     deps = [
         "//go/internal/common",
-        "//internal/quickstore_microservice/proto:quickstore_go_grpc_pb",
-        "//internal/quickstore_microservice/proto:quickstore_go_proto",
+        "//go/internal/quickstore_microservice/proto:quickstore_go_grpc_pb",
+        "//go/internal/quickstore_microservice/proto:quickstore_go_proto",
         "//proto/quickstore:quickstore_go_proto",
         "//spec/proto:mako_go_proto",
         "@com_github_golang_glog//:go_default_library",

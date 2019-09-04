@@ -11,10 +11,10 @@ cc_library(
     deps = [
         "//cxx/clients/storage:mako_client",
         "//cxx/quickstore/internal:store",
+        "//go/internal/quickstore_microservice/proto:quickstore_cc_grpc_proto",
+        "//go/internal/quickstore_microservice/proto:quickstore_cc_proto",
         "//helpers/cxx/status:statusor",
         "//internal/cxx:queue_ifc",
-        "//internal/quickstore_microservice/proto:quickstore_cc_grpc_proto",
-        "//internal/quickstore_microservice/proto:quickstore_cc_proto",
         "//proto/internal:mako_internal_cc_proto",
         "//spec/cxx:storage",
         "@com_google_protobuf//:protobuf",
@@ -28,9 +28,9 @@ cc_test(
     deps = [
         ":quickstore_service",
         "//cxx/clients/storage:fake_google3_storage",
+        "//go/internal/quickstore_microservice/proto:quickstore_cc_proto",
         "//internal/cxx:queue",
         "//internal/grpc:grpc++_gce",
-        "//internal/quickstore_microservice/proto:quickstore_cc_proto",
         "//proto/quickstore:quickstore_cc_proto",
         "//spec/proto:mako_cc_proto",
         "//testing/cxx:protocol-buffer-matchers",

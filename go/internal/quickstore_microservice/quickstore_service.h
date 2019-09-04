@@ -13,14 +13,14 @@
 // limitations under the License.
 //
 // QuickstoreService exposes an RPC interface for running Quickstore
-#ifndef INTERNAL_QUICKSTORE_MICROSERVICE_QUICKSTORE_SERVICE_H_
-#define INTERNAL_QUICKSTORE_MICROSERVICE_QUICKSTORE_SERVICE_H_
+#ifndef GO_INTERNAL_QUICKSTORE_MICROSERVICE_QUICKSTORE_SERVICE_H_
+#define GO_INTERNAL_QUICKSTORE_MICROSERVICE_QUICKSTORE_SERVICE_H_
 
 #include <memory>
 
-#include "internal/quickstore_microservice/proto/quickstore.grpc.pb.h"
-#include "internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "spec/cxx/storage.h"
+#include "go/internal/quickstore_microservice/proto/quickstore.grpc.pb.h"
+#include "go/internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "helpers/cxx/status/statusor.h"
 #include "internal/cxx/queue_ifc.h"
 #include "proto/internal/mako_internal.pb.h"
@@ -56,4 +56,4 @@ class QuickstoreService : public Quickstore::Service {
 }  // namespace quickstore_microservice
 }  // namespace internal
 }  // namespace mako
-#endif  // INTERNAL_QUICKSTORE_MICROSERVICE_QUICKSTORE_SERVICE_H_
+#endif  // GO_INTERNAL_QUICKSTORE_MICROSERVICE_QUICKSTORE_SERVICE_H_

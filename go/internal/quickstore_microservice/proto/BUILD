@@ -16,7 +16,7 @@ proto_library(
 go_proto_library(
     name = "quickstore_go_proto",
     compilers = ["@io_bazel_rules_go//proto:go_grpc"],
-    importpath = "github.com/google/mako/internal/quickstore_microservice/proto/quickstore_go_proto",
+    importpath = "github.com/google/mako/go/internal/quickstore_microservice/proto/quickstore_go_proto",
     proto = ":quickstore_proto",
     deps = [
         "//proto/quickstore:quickstore_go_proto",
@@ -27,7 +27,7 @@ go_proto_library(
 go_proto_library(
     name = "quickstore_go_grpc_pb",
     compilers = ["@io_bazel_rules_go//proto:go_grpc"],
-    importpath = "github.com/google/mako/internal/quickstore_microservice/proto/quickstore_go_grpc_pb",
+    importpath = "github.com/google/mako/go/internal/quickstore_microservice/proto/quickstore_go_grpc_pb",
     proto = ":quickstore_proto",
     deps = [
         "//proto/quickstore:quickstore_go_proto",

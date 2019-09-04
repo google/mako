@@ -1,9 +1,9 @@
 package(default_visibility = [
     "//cxx/quickstore:__subpackages__",
+    "//go/internal/quickstore_microservice:__pkg__",
     "//go/quickstore:__subpackages__",
     "//helpers/dart/quickstore:__subpackages__",
     "//helpers/py/quickstore:__subpackages__",
-    "//internal/quickstore_microservice:__pkg__",
     "//java/com/google/testing/performance/mako/helpers/quickstore:__subpackages__",
 ])
 

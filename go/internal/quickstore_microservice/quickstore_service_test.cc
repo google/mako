@@ -11,16 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "internal/quickstore_microservice/quickstore_service.h"
+#include "go/internal/quickstore_microservice/quickstore_service.h"
 
 #include "include/grpcpp/security/server_credentials.h"
 #include "include/grpcpp/server_context.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "proto/quickstore/quickstore.pb.h"
-#include "internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "absl/memory/memory.h"
 #include "cxx/clients/storage/fake_google3_storage.h"
+#include "go/internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "internal/cxx/queue.h"
 #include "spec/proto/mako.pb.h"
 #include "testing/cxx/protocol-buffer-matchers.h"
