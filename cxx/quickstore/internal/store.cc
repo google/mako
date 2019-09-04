@@ -30,9 +30,9 @@
 #include "clients/cxx/analyzers/threshold_analyzer.h"
 #include "clients/cxx/analyzers/utest_analyzer.h"
 #include "clients/cxx/analyzers/window_deviation.h"
-#include "clients/cxx/downsampler/standard_downsampler.h"
 #include "clients/cxx/fileio/memory_fileio.h"
 #include "cxx/clients/aggregator/standard_aggregator.h"
+#include "cxx/clients/downsampler/standard_downsampler.h"
 #include "cxx/clients/storage/mako_client.h" // NOLINT
 #include "clients/proto/analyzers/threshold_analyzer.pb.h"
 #include "clients/proto/analyzers/utest_analyzer.pb.h"

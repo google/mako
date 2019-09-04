@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
-#define CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
+#ifndef CXX_CLIENTS_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
+#define CXX_CLIENTS_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
 
 // Downsampler which considers metrics.
 //
@@ -75,11 +75,11 @@
 
 #include "glog/logging.h"
 #include "src/google/protobuf/io/coded_stream.h"
-#include "clients/cxx/downsampler/metric_set.h"
 #include "spec/cxx/downsampler.h"
 #include "spec/cxx/fileio.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
+#include "cxx/clients/downsampler/metric_set.h"
 #include "internal/cxx/proto_validation.h"
 #include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
@@ -97,7 +97,7 @@ ABSL_CONST_INIT extern const int kMaxErrorStringLength;
 // 1MB == 1,000,000).
 //
 // Maximum batch size is defined here:
-// https://github.com/google/mako/blob/master/clients/cxx/storage/google3_storage.cc
+// https://github.com/google/mako/blob/master/cxx/clients/storage/google3_storage.cc
 ABSL_CONST_INIT extern const int kMaxAnnotationsSize;
 
 // Downsampler is an implementation of the Mako Downsampler interface.
@@ -202,4 +202,4 @@ static std::string AddBatch(const std::string& benchmark_key, const std::string&
 }  // namespace downsampler
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_
+#endif  // CXX_CLIENTS_DOWNSAMPLER_STANDARD_DOWNSAMPLER_H_

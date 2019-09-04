@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef CLIENTS_CXX_DOWNSAMPLER_METRIC_SET_H_
-#define CLIENTS_CXX_DOWNSAMPLER_METRIC_SET_H_
+#ifndef CXX_CLIENTS_DOWNSAMPLER_METRIC_SET_H_
+#define CXX_CLIENTS_DOWNSAMPLER_METRIC_SET_H_
 
 #include <stddef.h>
 
@@ -70,4 +70,4 @@ struct HashMetricSet {
 
 }  // namespace downsampler
 }  // namespace mako
-#endif  // CLIENTS_CXX_DOWNSAMPLER_METRIC_SET_H_
+#endif  // CXX_CLIENTS_DOWNSAMPLER_METRIC_SET_H_

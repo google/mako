@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#include "clients/cxx/downsampler/metric_set.h"
+#include "cxx/clients/downsampler/metric_set.h"
 
 #include "gtest/gtest.h"
 

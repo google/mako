@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#include "clients/cxx/downsampler/standard_downsampler.h"
+#include "cxx/clients/downsampler/standard_downsampler.h"
 
 #include <stddef.h>
 
@@ -25,7 +25,6 @@
 #include "src/google/protobuf/io/coded_stream.h"
 #include "src/google/protobuf/descriptor.h"
 #include "src/google/protobuf/repeated_field.h"
-#include "clients/cxx/downsampler/metric_set.h"
 #include "absl/algorithm/container.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
@@ -33,6 +32,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/synchronization/mutex.h"
+#include "cxx/clients/downsampler/metric_set.h"
 #include "internal/cxx/load/common/executor.h"
 #include "internal/cxx/proto_validation.h"
 #include "proto/internal/mako_internal.pb.h"
