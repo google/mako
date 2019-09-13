@@ -23,10 +23,10 @@
 #include "src/google/protobuf/text_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "clients/proto/analyzers/utest_analyzer.pb.h"
 #include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "proto/clients/analyzers/utest_analyzer.pb.h"
 
 namespace mako {
 namespace utest_analyzer {

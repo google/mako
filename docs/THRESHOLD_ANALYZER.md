@@ -22,20 +22,20 @@ seconds.
 ## Configuration
 
 The threshold analyzer is configured using
-[threshold_analyzer.proto](../clients/proto/analyzers/threshold_analyzer.proto).
+[threshold_analyzer.proto](../proto/clients/analyzers/threshold_analyzer.proto).
 
 ### Configuring historical context
 
-When [triaging](ANALYZERS.md#analyzer-triage) a threshold analyzer
-regression, it can be useful to compare the run that triggered the regression
-detection to historical runs. Some historical runs, however, might represent
-different modes, configurations, or environments that make them inappropriate
-for comparison. As an example, a benchmark might be set up to use tags to
-separate configurations like "10K requests" vs "1M requests" with tags such as
-"request_size=10K" and "request_size=1M". The
-[historical_context_tags](../clients/proto/analyzers/threshold_analyzer.proto?q=symbol:historical_context_tags)
+When [triaging](ANALYZERS.md#analyzer-triage) a threshold analyzer regression,
+it can be useful to compare the run that triggered the regression detection to
+historical runs. Some historical runs, however, might represent different modes,
+configurations, or environments that make them inappropriate for comparison. As
+an example, a benchmark might be set up to use tags to separate configurations
+like "10K requests" vs "1M requests" with tags such as "request_size=10K" and
+"request_size=1M". The
+[historical_context_tags](../proto/clients/analyzers/threshold_analyzer.proto?q=symbol:historical_context_tags)
 field in the
-[ThresholdAnalyzerInput](../clients/proto/analyzers/threshold_analyzer.proto?q=symbol:ThresholdAnalyzerInput)
+[ThresholdAnalyzerInput](../proto/clients/analyzers/threshold_analyzer.proto?q=symbol:ThresholdAnalyzerInput)
 proto message allows you to specify tags to filter on when graphing the
 historical context.
 

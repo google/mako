@@ -9,7 +9,7 @@ go_binary(
     srcs = ["mako.go"],
     deps = [
         ":lib",
-        "//clients/go/storage:mako",
+        "//go/clients/storage/mako",
         "@com_github_golang_glog//:go_default_library",
         "@com_github_golang_subcommands//:go_default_library",
     ],
@@ -18,7 +18,7 @@ go_binary(
 go_library(
     name = "lib",
     srcs = ["lib.go"],
-    importpath = "github.com/google/mako/internal/tools/cli/lib",
+    importpath = "github.com/google/mako/cli/lib",
     deps = [
         "//spec/go:mako",
         "//spec/proto:mako_go_proto",
@@ -36,9 +36,9 @@ go_test(
         "//examples/benchmark_info:create_benchmark.config",
     ],
     embed = [":lib"],
-    importpath = "github.com/google/mako/internal/tools/cli/lib_test",
+    importpath = "github.com/google/mako/cli/lib_test",
     deps = [
-        "//clients/go/storage:fakestorage",
+        "//go/clients/storage/fakestorage",
         "//spec/proto:mako_go_proto",
         "@com_github_golang_protobuf//proto:go_default_library",
         "@com_github_golang_subcommands//:go_default_library",

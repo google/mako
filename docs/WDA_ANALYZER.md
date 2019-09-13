@@ -28,8 +28,8 @@ As a user you need to [configure](#configuration):
 ## Configuration
 
 The WDA analyzer is configured using
-[window_deviation.proto](../clients/proto/analyzers/window_deviation.proto).
-The remainder of this page describes how to set the fields therein.
+[window_deviation.proto](../proto/clients/analyzers/window_deviation.proto). The
+remainder of this page describes how to set the fields therein.
 
 ## Quick Start
 
@@ -225,9 +225,9 @@ either `min_timestamp_ms` and `max_timestamp_ms` or `min_build_id` and
 `max_build_id`. The second `RunInfoQuery` should be configured with the `limit`
 value to indicate how many recent samples you want. Then the
 `recent_window_size` in the
-[`ToleranceCheck`](../clients/proto/analyzers/window_deviation.proto)
-should be the same as the `limit` value in the second `RunInfoQuery`, so all
-recent data would be used as "recent".
+[`ToleranceCheck`](../proto/clients/analyzers/window_deviation.proto) should be
+the same as the `limit` value in the second `RunInfoQuery`, so all recent data
+would be used as "recent".
 
 Python example using a time-based window:
 

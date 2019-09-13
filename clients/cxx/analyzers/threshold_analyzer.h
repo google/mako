@@ -15,16 +15,18 @@
 //
 // Threshold analyzer determines if data is within threshold bounds.
 //
-// See docs at https://github.com/google/mako/blob/master/clients/proto/analyzers/threshold_analyzer.proto
-// See interface at: https://github.com/google/mako/blob/master/spec/cxx/analyzer.h
+// See docs at
+// https://github.com/google/mako/blob/master/proto/clients/analyzers/threshold_analyzer.proto
+// See interface at:
+// https://github.com/google/mako/blob/master/spec/cxx/analyzer.h
 #ifndef CLIENTS_CXX_ANALYZERS_THRESHOLD_ANALYZER_H_
 #define CLIENTS_CXX_ANALYZERS_THRESHOLD_ANALYZER_H_
 
 #include <string>
 
-#include "clients/proto/analyzers/threshold_analyzer.pb.h"
 #include "spec/cxx/analyzer.h"
 #include "spec/proto/mako.pb.h"
+#include "proto/clients/analyzers/threshold_analyzer.pb.h"
 
 namespace mako {
 namespace threshold_analyzer {

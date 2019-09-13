@@ -15,7 +15,6 @@
 #include "src/google/protobuf/text_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "clients/proto/analyzers/threshold_analyzer.pb.h"
 #include "absl/flags/parse.h"
 #include "clients/cxx/analyzers/threshold_analyzer.h"
 #include "cxx/quickstore/quickstore.h"
@@ -23,7 +22,8 @@
 #include "helpers/cxx/status/canonical_errors.h"
 #include "helpers/cxx/status/status_matchers.h"
 #include "helpers/cxx/status/statusor.h"
-#include "quickstore/quickstore.pb.h"
+#include "proto/clients/analyzers/threshold_analyzer.pb.h"
+#include "proto/quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 
 namespace {

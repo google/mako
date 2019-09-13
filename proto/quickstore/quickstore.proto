@@ -17,9 +17,9 @@ syntax = "proto2";
 
 package mako.quickstore;
 
-import "clients/proto/analyzers/threshold_analyzer.proto";
-import "clients/proto/analyzers/utest_analyzer.proto";
-import "clients/proto/analyzers/window_deviation.proto";
+import "proto/clients/analyzers/threshold_analyzer.proto";
+import "proto/clients/analyzers/utest_analyzer.proto";
+import "proto/clients/analyzers/window_deviation.proto";
 import "spec/proto/mako.proto";
 
 option java_package = "com.google.testing.performance.mako.helpers";
@@ -76,12 +76,12 @@ message QuickstoreInput {
   // OPTIONAL
   // Analyzers to run after data has been uploaded.
   // See analyzers specific protos for more information.
-  // https://github.com/google/mako/blob/master/clients/proto/analyzers/threshold_analyzer.proto
+  // https://github.com/google/mako/blob/master/proto/clients/analyzers/threshold_analyzer.proto
   repeated mako.analyzers.threshold_analyzer.ThresholdAnalyzerInput
       threshold_inputs = 12;
-  // https://github.com/google/mako/blob/master/clients/proto/analyzers/window_deviation.proto
+  // https://github.com/google/mako/blob/master/proto/clients/analyzers/window_deviation.proto
   repeated mako.window_deviation.WindowDeviationInput wda_inputs = 13;
-  // https://github.com/google/mako/blob/master/clients/proto/analyzers/utest_analyzer.proto
+  // https://github.com/google/mako/blob/master/proto/clients/analyzers/utest_analyzer.proto
   repeated mako.utest_analyzer.UTestAnalyzerInput utest_inputs = 16;
   reserved 15, 19;
   reserved 5;

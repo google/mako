@@ -16,8 +16,8 @@ The U-Test analyzer is appropriate when:
 ## Configuration
 
 The U-Test analyzer is configured using
-[utest_analyzer.proto](../clients/proto/analyzers/utest_analyzer.proto).
-The remainder of this page describes how to set the fields therein.
+[utest_analyzer.proto](../proto/clients/analyzers/utest_analyzer.proto). The
+remainder of this page describes how to set the fields therein.
 
 ### Shift Value or Effect Size
 

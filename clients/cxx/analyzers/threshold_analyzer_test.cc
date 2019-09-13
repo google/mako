@@ -17,8 +17,8 @@
 
 #include "src/google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-#include "clients/proto/analyzers/threshold_analyzer.pb.h"
 #include "absl/strings/str_cat.h"
+#include "proto/clients/analyzers/threshold_analyzer.pb.h"
 #include "spec/proto/mako.pb.h"
 #include "testing/cxx/protocol-buffer-matchers.h"
 

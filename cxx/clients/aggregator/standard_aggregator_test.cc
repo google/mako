@@ -21,10 +21,10 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "clients/cxx/fileio/memory_fileio.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "cxx/clients/fileio/memory_fileio.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

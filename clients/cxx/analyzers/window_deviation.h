@@ -24,9 +24,9 @@
 #include <string>
 #include <vector>
 
-#include "clients/proto/analyzers/window_deviation.pb.h"
 #include "spec/cxx/analyzer.h"
 #include "spec/proto/mako.pb.h"
+#include "proto/clients/analyzers/window_deviation.pb.h"
 
 namespace mako {
 namespace window_deviation {

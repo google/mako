@@ -23,7 +23,6 @@
 #include "glog/logging.h"
 #include "src/google/protobuf/repeated_field.h"
 #include "src/google/protobuf/text_format.h"
-#include "clients/proto/analyzers/window_deviation.pb.h"
 #include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
@@ -32,6 +31,7 @@
 #include "internal/cxx/analyzer_common.h"
 #include "internal/cxx/filter_utils.h"
 #include "internal/cxx/pgmath.h"
+#include "proto/clients/analyzers/window_deviation.pb.h"
 
 namespace mako {
 namespace window_deviation {

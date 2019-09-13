@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef CLIENTS_CXX_FILEIO_MEMORY_FILEIO_H_
-#define CLIENTS_CXX_FILEIO_MEMORY_FILEIO_H_
+#ifndef CXX_CLIENTS_FILEIO_MEMORY_FILEIO_H_
+#define CXX_CLIENTS_FILEIO_MEMORY_FILEIO_H_
 
 #include <stddef.h>
 
@@ -144,4 +144,4 @@ class FileIO : public mako::FileIO {
 }  // namespace memory_fileio
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_FILEIO_MEMORY_FILEIO_H_
+#endif  // CXX_CLIENTS_FILEIO_MEMORY_FILEIO_H_

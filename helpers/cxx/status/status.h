@@ -16,6 +16,7 @@
 #define HELPERS_CXX_STATUS_H_
 
 #include "google/cloud/status.h"
+#include "absl/strings/string_view.h"
 
 namespace mako {
 namespace helpers {
@@ -29,6 +30,8 @@ Status OkStatus();
 std::string StatusToString(const Status& status);
 
 bool HasErrorCode(const Status& status, StatusCode code);
+
+Status Annotate(const Status& status, absl::string_view message);
 
 }  // namespace helpers
 }  // namespace mako

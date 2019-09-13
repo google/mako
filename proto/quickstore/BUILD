@@ -9,9 +9,9 @@ proto_library(
     name = "quickstore_proto",
     srcs = ["quickstore.proto"],
     deps = [
-        "//clients/proto/analyzers:threshold_analyzer_proto",
-        "//clients/proto/analyzers:utest_analyzer_proto",
-        "//clients/proto/analyzers:window_deviation_proto",
+        "//proto/clients/analyzers:threshold_analyzer_proto",
+        "//proto/clients/analyzers:utest_analyzer_proto",
+        "//proto/clients/analyzers:window_deviation_proto",
         "//spec/proto:mako_proto",
     ],
 )
@@ -26,9 +26,9 @@ go_proto_library(
     importpath = "github.com/google/mako/proto/quickstore/quickstore_go_proto",
     proto = ":quickstore_proto",
     deps = [
-        "//clients/proto/analyzers:threshold_analyzer_go_proto",
-        "//clients/proto/analyzers:utest_analyzer_go_proto",
-        "//clients/proto/analyzers:window_deviation_go_proto",
+        "//proto/clients/analyzers:threshold_analyzer_go_proto",
+        "//proto/clients/analyzers:utest_analyzer_go_proto",
+        "//proto/clients/analyzers:window_deviation_go_proto",
         "//spec/proto:mako_go_proto",
     ],
 )

@@ -36,7 +36,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/google/mako/go/quickstore"
 
-	tpb "github.com/google/mako/clients/proto/analyzers/threshold_analyzer_go_proto"
+	tpb "github.com/google/mako/proto/clients/analyzers/threshold_analyzer_go_proto"
 	qpb "github.com/google/mako/proto/quickstore/quickstore_go_proto"
 	mpb "github.com/google/mako/spec/proto/mako_go_proto"
 )

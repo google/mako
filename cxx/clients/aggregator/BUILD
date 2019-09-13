@@ -33,7 +33,7 @@ cc_test(
     ],
     deps = [
         ":standard_aggregator",
-        "//clients/cxx/fileio:memory_fileio",
+        "//cxx/clients/fileio:memory_fileio",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",

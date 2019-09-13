@@ -1,7 +1,7 @@
 # Go wrap of storage clients
 # The test and libraries importing these wrappers:
 #  mako/clients/go/storage:all
-package(default_visibility = ["//clients/go/storage:__pkg__"])
+package(default_visibility = ["//go/clients/storage:__subpackages__"])
 
 licenses(["notice"])
 

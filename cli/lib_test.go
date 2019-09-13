@@ -33,7 +33,7 @@ import (
 
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
 
-	fakeStorage "github.com/google/mako/clients/go/storage/fakestorage"
+	fakeStorage "github.com/google/mako/go/clients/storage/fakestorage"
 )
 
 var ctx context.Context

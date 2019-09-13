@@ -8,9 +8,9 @@ cc_library(
     hdrs = ["threshold_analyzer.h"],
     deps = [
         ":util",
-        "//clients/proto/analyzers:threshold_analyzer_cc_proto",
         "//internal/cxx:analyzer_common",
         "//internal/cxx:filter_utils",
+        "//proto/clients/analyzers:threshold_analyzer_cc_proto",
         "//spec/cxx:analyzer",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
@@ -25,7 +25,7 @@ cc_test(
     srcs = ["threshold_analyzer_test.cc"],
     deps = [
         ":threshold_analyzer",
-        "//clients/proto/analyzers:threshold_analyzer_cc_proto",
+        "//proto/clients/analyzers:threshold_analyzer_cc_proto",
         "//spec/proto:mako_cc_proto",
         "//testing/cxx:protocol-buffer-matchers",
         "@com_google_absl//absl/strings",
@@ -61,9 +61,9 @@ cc_library(
     hdrs = ["utest_analyzer.h"],
     deps = [
         ":util",
-        "//clients/proto/analyzers:utest_analyzer_cc_proto",
         "//internal/cxx:filter_utils",
         "//internal/cxx:pgmath",
+        "//proto/clients/analyzers:utest_analyzer_cc_proto",
         "//spec/cxx:analyzer",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/container:flat_hash_set",
@@ -79,7 +79,7 @@ cc_test(
     srcs = ["utest_analyzer_test.cc"],
     deps = [
         ":utest_analyzer",
-        "//clients/proto/analyzers:utest_analyzer_cc_proto",
+        "//proto/clients/analyzers:utest_analyzer_cc_proto",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_glog//:glog",
@@ -94,11 +94,11 @@ cc_library(
     hdrs = ["window_deviation.h"],
     deps = [
         ":util",
-        "//clients/proto/analyzers:window_deviation_cc_proto",
         "//helpers/cxx/status",
         "//internal/cxx:analyzer_common",
         "//internal/cxx:filter_utils",
         "//internal/cxx:pgmath",
+        "//proto/clients/analyzers:window_deviation_cc_proto",
         "//spec/cxx:analyzer",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
@@ -114,7 +114,7 @@ cc_test(
     srcs = ["window_deviation_test.cc"],
     deps = [
         ":window_deviation",
-        "//clients/proto/analyzers:window_deviation_cc_proto",
+        "//proto/clients/analyzers:window_deviation_cc_proto",
         "//spec/proto:mako_cc_proto",
         "//testing/cxx:protocol-buffer-matchers",
         "@com_google_absl//absl/strings",

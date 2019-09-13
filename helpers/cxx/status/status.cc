@@ -32,6 +32,10 @@ bool HasErrorCode(const Status& status, StatusCode code) {
   return status.code() == code;
 }
 
+Status Annotate(const Status& status, absl::string_view message) {
+  return Status(status.code(), absl::StrCat(status.message(), "; ", message));
+}
+
 }  // namespace helpers
 }  // namespace mako
 

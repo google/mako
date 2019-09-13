@@ -19,7 +19,7 @@ cc_proto_library(
 
 go_proto_library(
     name = "threshold_analyzer_go_proto",
-    importpath = "github.com/google/mako/clients/proto/analyzers/threshold_analyzer_go_proto",
+    importpath = "github.com/google/mako/proto/clients/analyzers/threshold_analyzer_go_proto",
     proto = ":threshold_analyzer_proto",
     deps = ["//spec/proto:mako_go_proto"],
 )
@@ -37,7 +37,7 @@ cc_proto_library(
 
 go_proto_library(
     name = "utest_analyzer_go_proto",
-    importpath = "github.com/google/mako/clients/proto/analyzers/utest_analyzer_go_proto",
+    importpath = "github.com/google/mako/proto/clients/analyzers/utest_analyzer_go_proto",
     proto = ":utest_analyzer_proto",
     deps = ["//spec/proto:mako_go_proto"],
 )
@@ -55,7 +55,7 @@ cc_proto_library(
 
 go_proto_library(
     name = "window_deviation_go_proto",
-    importpath = "github.com/google/mako/clients/proto/analyzers/window_deviation_go_proto",
+    importpath = "github.com/google/mako/proto/clients/analyzers/window_deviation_go_proto",
     proto = ":window_deviation_proto",
     deps = ["//spec/proto:mako_go_proto"],
 )

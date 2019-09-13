@@ -37,9 +37,9 @@ import (
 	"os"
 
 	log "github.com/golang/glog"
-	"github.com/google/mako/clients/go/storage/mako"
-	"github.com/google/mako/internal/tools/cli/lib"
 	"github.com/google/subcommands"
+	"github.com/google/mako/cli/lib"
+	"github.com/google/mako/go/clients/storage/mako"
 )
 
 func main() {

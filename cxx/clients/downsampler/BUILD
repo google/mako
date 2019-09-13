@@ -34,7 +34,7 @@ cc_test(
     srcs = ["standard_downsampler_test.cc"],
     deps = [
         ":standard_downsampler",
-        "//clients/cxx/fileio:memory_fileio",
+        "//cxx/clients/fileio:memory_fileio",
         "//internal/cxx:filter_utils",
         "//internal/cxx:pgmath",
         "//spec/proto:mako_cc_proto",

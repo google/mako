@@ -19,7 +19,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "clients/cxx/analyzers/threshold_analyzer.h"
-#include "clients/proto/analyzers/threshold_analyzer.pb.h"
 #include "spec/cxx/analyzer.h"
 #include "spec/cxx/dashboard.h"
 #include "spec/cxx/mock_analyzer.h"
@@ -28,6 +27,7 @@
 #include "absl/strings/str_format.h"
 #include "cxx/clients/dashboard/standard_dashboard.h"
 #include "cxx/clients/storage/fake_google3_storage.h"
+#include "proto/clients/analyzers/threshold_analyzer.pb.h"
 #include "spec/proto/mako.pb.h"
 #include "testing/cxx/protocol-buffer-matchers.h"
 
