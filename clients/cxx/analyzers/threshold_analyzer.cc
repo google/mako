@@ -22,8 +22,8 @@
 #include "src/google/protobuf/text_format.h"
 #include "absl/strings/str_cat.h"
 #include "clients/cxx/analyzers/util.h"
-#include "internal/cxx/analyzer_common.h"
-#include "internal/cxx/filter_utils.h"
+#include "cxx/internal/analyzer_common.h"
+#include "cxx/internal/filter_utils.h"
 
 namespace mako {
 namespace threshold_analyzer {

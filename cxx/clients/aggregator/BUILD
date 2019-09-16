@@ -10,9 +10,9 @@ cc_library(
         "threadsafe_running_stats.h",
     ],
     deps = [
-        "//internal/cxx:pgmath",
-        "//internal/cxx:proto_validation",
-        "//internal/cxx/load/common:executor",
+        "//cxx/internal:pgmath",
+        "//cxx/internal:proto_validation",
+        "//cxx/internal/load/common:executor",
         "//spec/cxx:aggregator",
         "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",

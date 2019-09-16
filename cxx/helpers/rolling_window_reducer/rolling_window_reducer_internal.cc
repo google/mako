@@ -15,8 +15,8 @@
 
 #include "absl/strings/str_format.h"
 #include "cxx/helpers/rolling_window_reducer/rolling_window_reducer.h"
+#include "cxx/internal/utils/cleanup.h"
 #include "helpers/cxx/status/canonical_errors.h"
-#include "internal/cxx/utils/cleanup.h"
 
 namespace mako {
 namespace helpers {

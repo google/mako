@@ -17,9 +17,9 @@
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "cxx/clients/storage/google3_storage.h"
+#include "cxx/internal/storage_client/google_oauth_fetcher.h"
+#include "cxx/internal/storage_client/http_transport.h"
 #include "helpers/cxx/status/statusor.h"
-#include "internal/cxx/storage_client/google_oauth_fetcher.h"
-#include "internal/cxx/storage_client/http_transport.h"
 
 ABSL_FLAG(bool, mako_auth, true,
           "Whether to attempt to generate an OAuth token and use it to "

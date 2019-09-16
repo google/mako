@@ -22,8 +22,8 @@
 #include "gtest/gtest.h"
 #include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
+#include "cxx/testing/protocol-buffer-matchers.h"
 #include "proto/clients/analyzers/window_deviation.pb.h"
-#include "testing/cxx/protocol-buffer-matchers.h"
 
 using ::testing::HasSubstr;
 

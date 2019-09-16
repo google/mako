@@ -17,10 +17,10 @@
 #include "gtest/gtest.h"
 #include "absl/flags/flag.h"
 #include "cxx/clients/storage/google3_storage.h"
-#include "internal/cxx/storage_client/google_oauth_fetcher.h"
-#include "internal/cxx/storage_client/http_transport.h"
-#include "internal/cxx/storage_client/oauth_token_provider.h"
-#include "internal/cxx/storage_client/transport.h"
+#include "cxx/internal/storage_client/google_oauth_fetcher.h"
+#include "cxx/internal/storage_client/http_transport.h"
+#include "cxx/internal/storage_client/oauth_token_provider.h"
+#include "cxx/internal/storage_client/transport.h"
 
 ABSL_DECLARE_FLAG(bool, mako_auth);
 ABSL_DECLARE_FLAG(std::string, mako_auth_service_account);

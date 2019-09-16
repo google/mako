@@ -27,10 +27,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
 #include "clients/cxx/analyzers/util.h"
+#include "cxx/internal/analyzer_common.h"
+#include "cxx/internal/filter_utils.h"
+#include "cxx/internal/pgmath.h"
 #include "helpers/cxx/status/status.h"
-#include "internal/cxx/analyzer_common.h"
-#include "internal/cxx/filter_utils.h"
-#include "internal/cxx/pgmath.h"
 #include "proto/clients/analyzers/window_deviation.pb.h"
 
 namespace mako {

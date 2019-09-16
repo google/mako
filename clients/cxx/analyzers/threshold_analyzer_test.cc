@@ -18,9 +18,9 @@
 #include "src/google/protobuf/text_format.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
+#include "cxx/testing/protocol-buffer-matchers.h"
 #include "proto/clients/analyzers/threshold_analyzer.pb.h"
 #include "spec/proto/mako.pb.h"
-#include "testing/cxx/protocol-buffer-matchers.h"
 
 using ::mako::EqualsProto;
 

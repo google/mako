@@ -33,8 +33,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/synchronization/mutex.h"
 #include "cxx/clients/downsampler/metric_set.h"
-#include "internal/cxx/load/common/executor.h"
-#include "internal/cxx/proto_validation.h"
+#include "cxx/internal/load/common/executor.h"
+#include "cxx/internal/proto_validation.h"
 #include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 

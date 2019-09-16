@@ -17,7 +17,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "testing/cxx/protocol-buffer-matchers.h"
+#include "cxx/testing/protocol-buffer-matchers.h"
 
 namespace mako {
 namespace fake_google3_storage {

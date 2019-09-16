@@ -23,10 +23,10 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/span.h"
+#include "cxx/internal/utils/cleanup.h"
 #include "helpers/cxx/status/canonical_errors.h"
 #include "helpers/cxx/status/status.h"
 #include "helpers/cxx/status/statusor.h"
-#include "internal/cxx/utils/cleanup.h"
 #include "proto/helpers/rolling_window_reducer/rolling_window_reducer.pb.h"
 #include "spec/proto/mako.pb.h"
 

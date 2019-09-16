@@ -43,7 +43,7 @@
 #include "cxx/clients/downsampler/standard_downsampler.h"
 #include "cxx/clients/fileio/memory_fileio.h"
 #include "cxx/clients/storage/mako_client.h" // NOLINT
-#include "internal/cxx/load/common/run_analyzers.h"
+#include "cxx/internal/load/common/run_analyzers.h"
 #include "proto/clients/analyzers/threshold_analyzer.pb.h"
 #include "proto/clients/analyzers/utest_analyzer.pb.h"
 #include "proto/clients/analyzers/window_deviation.pb.h"

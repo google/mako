@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "internal/cxx/pgmath.h"
+#include "cxx/internal/pgmath.h"
 
 namespace mako {
 namespace aggregator {

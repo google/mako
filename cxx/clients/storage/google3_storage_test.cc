@@ -23,11 +23,11 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "cxx/internal/storage_client/mock_transport.h"
+#include "cxx/testing/protocol-buffer-matchers.h"
 #include "helpers/cxx/status/canonical_errors.h"
 #include "helpers/cxx/status/status.h"
-#include "internal/cxx/storage_client/mock_transport.h"
 #include "proto/internal/mako_internal.pb.h"
-#include "testing/cxx/protocol-buffer-matchers.h"
 
 namespace mako {
 namespace google3_storage {

@@ -80,7 +80,7 @@
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 #include "cxx/clients/downsampler/metric_set.h"
-#include "internal/cxx/proto_validation.h"
+#include "cxx/internal/proto_validation.h"
 #include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 

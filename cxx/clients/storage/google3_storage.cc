@@ -26,8 +26,8 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "internal/cxx/proto_validation.h"
-#include "internal/cxx/storage_client/retrying_storage_request.h"
+#include "cxx/internal/proto_validation.h"
+#include "cxx/internal/storage_client/retrying_storage_request.h"
 #include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 

@@ -25,8 +25,8 @@
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
 #include "cxx/clients/fileio/memory_fileio.h"
-#include "internal/cxx/filter_utils.h"
-#include "internal/cxx/pgmath.h"
+#include "cxx/internal/filter_utils.h"
+#include "cxx/internal/pgmath.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

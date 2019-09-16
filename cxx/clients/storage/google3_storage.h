@@ -24,8 +24,8 @@
 
 #include "spec/cxx/storage.h"
 #include "absl/flags/flag.h"
-#include "internal/cxx/storage_client/retry_strategy.h"
-#include "internal/cxx/storage_client/transport.h"
+#include "cxx/internal/storage_client/retry_strategy.h"
+#include "cxx/internal/storage_client/transport.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

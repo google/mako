@@ -17,9 +17,9 @@
 
 #include "src/google/protobuf/repeated_field.h"
 #include "cxx/clients/storage/mako_client.h"
+#include "cxx/internal/queue_ifc.h"
 #include "cxx/quickstore/internal/store.h"
 #include "helpers/cxx/status/statusor.h"
-#include "internal/cxx/queue_ifc.h"
 
 namespace mako {
 namespace internal {

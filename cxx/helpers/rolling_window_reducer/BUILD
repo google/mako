@@ -9,10 +9,10 @@ cc_library(
     srcs = ["rolling_window_reducer.cc"],
     hdrs = ["rolling_window_reducer.h"],
     deps = [
+        "//cxx/internal:pgmath",
+        "//cxx/internal/utils:cleanup",
         "//helpers/cxx/status",
         "//helpers/cxx/status:statusor",
-        "//internal/cxx:pgmath",
-        "//internal/cxx/utils:cleanup",
         "//proto/helpers/rolling_window_reducer:rolling_window_reducer_cc_proto",
         "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",
@@ -34,9 +34,9 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         ":rolling_window_reducer",
+        "//cxx/internal/utils:cleanup",
         "//helpers/cxx/status",
         "//helpers/cxx/status:statusor",
-        "//internal/cxx/utils:cleanup",
         "//proto/helpers/rolling_window_reducer:rolling_window_reducer_cc_proto",
         "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",

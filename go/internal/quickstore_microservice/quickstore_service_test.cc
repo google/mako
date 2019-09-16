@@ -20,10 +20,10 @@
 #include "proto/quickstore/quickstore.pb.h"
 #include "absl/memory/memory.h"
 #include "cxx/clients/storage/fake_google3_storage.h"
+#include "cxx/internal/queue.h"
+#include "cxx/testing/protocol-buffer-matchers.h"
 #include "go/internal/quickstore_microservice/proto/quickstore.pb.h"
-#include "internal/cxx/queue.h"
 #include "spec/proto/mako.pb.h"
-#include "testing/cxx/protocol-buffer-matchers.h"
 
 namespace mako {
 namespace internal {

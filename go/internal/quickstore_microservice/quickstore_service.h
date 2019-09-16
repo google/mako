@@ -19,10 +19,10 @@
 #include <memory>
 
 #include "spec/cxx/storage.h"
+#include "cxx/internal/queue_ifc.h"
 #include "go/internal/quickstore_microservice/proto/quickstore.grpc.pb.h"
 #include "go/internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "helpers/cxx/status/statusor.h"
-#include "internal/cxx/queue_ifc.h"
 #include "proto/internal/mako_internal.pb.h"
 
 namespace mako {

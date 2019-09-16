@@ -25,10 +25,10 @@
 #include "cxx/clients/downsampler/standard_downsampler.h"
 #include "cxx/clients/fileio/memory_fileio.h"
 #include "cxx/clients/storage/fake_google3_storage.h"
+#include "cxx/testing/protocol-buffer-matchers.h"
 #include "proto/clients/analyzers/threshold_analyzer.pb.h"
 #include "proto/quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
-#include "testing/cxx/protocol-buffer-matchers.h"
 
 namespace mako {
 namespace quickstore {

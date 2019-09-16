@@ -22,9 +22,9 @@
 #include "absl/synchronization/mutex.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "internal/cxx/load/common/executor.h"
-#include "internal/cxx/pgmath.h"
-#include "internal/cxx/proto_validation.h"
+#include "cxx/internal/load/common/executor.h"
+#include "cxx/internal/pgmath.h"
+#include "cxx/internal/proto_validation.h"
 
 namespace mako {
 namespace aggregator {

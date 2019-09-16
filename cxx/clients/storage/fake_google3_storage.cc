@@ -22,7 +22,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
-#include "internal/cxx/proto_validation.h"
+#include "cxx/internal/proto_validation.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

@@ -11,8 +11,8 @@ cc_library(
     hdrs = ["standard_downsampler.h"],
     deps = [
         ":metric_set",
-        "//internal/cxx:proto_validation",
-        "//internal/cxx/load/common:executor",
+        "//cxx/internal:proto_validation",
+        "//cxx/internal/load/common:executor",
         "//proto/internal:mako_internal_cc_proto",
         "//spec/cxx:downsampler",
         "//spec/cxx:fileio",
@@ -35,8 +35,8 @@ cc_test(
     deps = [
         ":standard_downsampler",
         "//cxx/clients/fileio:memory_fileio",
-        "//internal/cxx:filter_utils",
-        "//internal/cxx:pgmath",
+        "//cxx/internal:filter_utils",
+        "//cxx/internal:pgmath",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_glog//:glog",
