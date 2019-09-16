@@ -23,10 +23,10 @@
 #include "src/google/protobuf/message.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
+#include "cxx/helpers/status/canonical_errors.h"
+#include "cxx/helpers/status/status.h"
 #include "cxx/internal/storage_client/retry_strategy.h"
 #include "cxx/internal/storage_client/transport.h"
-#include "helpers/cxx/status/canonical_errors.h"
-#include "helpers/cxx/status/status.h"
 #include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 

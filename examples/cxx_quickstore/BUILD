@@ -10,10 +10,10 @@ cc_test(
     deps = [
         ":perf_data_cc_proto",
         "//clients/cxx/analyzers:threshold_analyzer",
+        "//cxx/helpers/status",
+        "//cxx/helpers/status:status_matchers",
+        "//cxx/helpers/status:statusor",
         "//cxx/quickstore",
-        "//helpers/cxx/status",
-        "//helpers/cxx/status:status_matchers",
-        "//helpers/cxx/status:statusor",
         "//proto/clients/analyzers:threshold_analyzer_cc_proto",
         "//proto/quickstore:quickstore_cc_proto",
         "//spec/proto:mako_cc_proto",

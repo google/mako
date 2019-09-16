@@ -20,7 +20,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "helpers/cxx/status/statusor.h"
+#include "cxx/helpers/status/statusor.h"
 
 namespace mako {
 namespace internal {

@@ -61,8 +61,8 @@ cc_library(
     hdrs = ["analyzer_common.h"],
     deps = [
         ":filter_utils",
-        "//helpers/cxx/status",
-        "//helpers/cxx/status:statusor",
+        "//cxx/helpers/status",
+        "//cxx/helpers/status:statusor",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_glog//:glog",

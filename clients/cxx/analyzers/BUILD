@@ -94,11 +94,11 @@ cc_library(
     hdrs = ["window_deviation.h"],
     deps = [
         ":util",
+        "//cxx/helpers/status",
         "//cxx/internal:analyzer_common",
         "//cxx/internal:filter_utils",
         "//cxx/internal:pgmath",
         "//cxx/spec:analyzer",
-        "//helpers/cxx/status",
         "//proto/clients/analyzers:window_deviation_cc_proto",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",

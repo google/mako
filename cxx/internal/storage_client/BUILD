@@ -8,8 +8,8 @@ cc_library(
     srcs = ["url.cc"],
     hdrs = ["url.h"],
     deps = [
-        "//helpers/cxx/status",
-        "//helpers/cxx/status:statusor",
+        "//cxx/helpers/status",
+        "//cxx/helpers/status:statusor",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
@@ -24,8 +24,8 @@ cc_test(
     srcs = ["url_test.cc"],
     deps = [
         ":url",
-        "//helpers/cxx/status",
-        "//helpers/cxx/status:status_matchers",
+        "//cxx/helpers/status",
+        "//cxx/helpers/status:status_matchers",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest_main",
@@ -57,7 +57,7 @@ cc_library(
     name = "transport",
     hdrs = ["transport.h"],
     deps = [
-        "//helpers/cxx/status",
+        "//cxx/helpers/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_protobuf//:protobuf",
@@ -70,7 +70,7 @@ cc_library(
     deps = [
         ":retry_strategy",
         ":transport",
-        "//helpers/cxx/status",
+        "//cxx/helpers/status",
         "//proto/internal:mako_internal_cc_proto",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
@@ -86,7 +86,7 @@ cc_library(
     hdrs = ["mock_transport.h"],
     deps = [
         ":transport",
-        "//helpers/cxx/status",
+        "//cxx/helpers/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
@@ -103,8 +103,8 @@ cc_library(
         ":oauth_token_provider",
         ":transport",
         ":url",
-        "//helpers/cxx/status",
-        "//helpers/cxx/status:statusor",
+        "//cxx/helpers/status",
+        "//cxx/helpers/status:statusor",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
@@ -120,8 +120,8 @@ cc_library(
     hdrs = ["google_oauth_fetcher.h"],
     deps = [
         ":oauth_token_provider",
-        "//helpers/cxx/status",
-        "//helpers/cxx/status:statusor",
+        "//cxx/helpers/status",
+        "//cxx/helpers/status:statusor",
         "@com_github_googleapis_google_cloud_cpp//google/cloud:google_cloud_cpp_common",
         "@com_github_googleapis_google_cloud_cpp//google/cloud/storage:storage_client",
         "@com_google_absl//absl/strings",
@@ -138,7 +138,7 @@ cc_test(
     srcs = ["google_oauth_fetcher_test.cc"],
     deps = [
         ":google_oauth_fetcher",
-        "//helpers/cxx/status:status_matchers",
+        "//cxx/helpers/status:status_matchers",
         "@com_github_googleapis_google_cloud_cpp//google/cloud:google_cloud_cpp_common",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
@@ -150,11 +150,11 @@ cc_library(
     srcs = ["http_client.cc"],
     hdrs = ["http_client.h"],
     deps = [
+        "//cxx/helpers/status",
+        "//cxx/helpers/status:statusor",
         "//cxx/internal/utils:cleanup",
         "//cxx/internal/utils:googleinit",
         "//cxx/internal/utils:stringutil",
-        "//helpers/cxx/status",
-        "//helpers/cxx/status:statusor",
         "@com_github_curl_curl//:curl",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
@@ -165,5 +165,5 @@ cc_library(
 cc_library(
     name = "oauth_token_provider",
     hdrs = ["oauth_token_provider.h"],
-    deps = ["//helpers/cxx/status:statusor"],
+    deps = ["//cxx/helpers/status:statusor"],
 )

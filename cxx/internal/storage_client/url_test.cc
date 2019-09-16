@@ -17,8 +17,8 @@
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-#include "helpers/cxx/status/status.h"
-#include "helpers/cxx/status/status_matchers.h"
+#include "cxx/helpers/status/status.h"
+#include "cxx/helpers/status/status_matchers.h"
 
 namespace mako {
 namespace internal {

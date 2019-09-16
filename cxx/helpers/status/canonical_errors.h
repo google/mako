@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_
-#define HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_
+#ifndef CXX_HELPERS_STATUS_CANONICAL_ERRORS_H_
+#define CXX_HELPERS_STATUS_CANONICAL_ERRORS_H_
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
-#include "helpers/cxx/status/status.h"
+#include "cxx/helpers/status/status.h"
 
 namespace mako {
 namespace helpers {
@@ -68,4 +68,4 @@ ABSL_MUST_USE_RESULT bool IsUnknown(const Status& status);
 }  // namespace helpers
 }  // namespace mako
 
-#endif  // HELPERS_CXX_STATUS_CANONICAL_ERRORS_H_
+#endif  // CXX_HELPERS_STATUS_CANONICAL_ERRORS_H_

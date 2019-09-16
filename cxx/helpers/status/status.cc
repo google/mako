@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "helpers/cxx/status/status.h"
+#include "cxx/helpers/status/status.h"
+
 #include <string>
 
 #include "absl/strings/str_cat.h"

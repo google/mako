@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "helpers/cxx/status/statusor.h"
+#include "cxx/helpers/status/statusor.h"
 
 namespace mako {
 namespace internal {

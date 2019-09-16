@@ -22,8 +22,8 @@
 #include "absl/strings/str_format.h"
 #include "cxx/clients/fileio/memory_fileio.h"
 #include "cxx/helpers/rolling_window_reducer/rolling_window_reducer_internal.h"
-#include "helpers/cxx/status/canonical_errors.h"
-#include "helpers/cxx/status/status_matchers.h"
+#include "cxx/helpers/status/canonical_errors.h"
+#include "cxx/helpers/status/status_matchers.h"
 #include "proto/helpers/rolling_window_reducer/rolling_window_reducer.pb.h"
 #include "spec/proto/mako.pb.h"
 

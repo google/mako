@@ -12,18 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef HELPERS_CXX_STATUS_STATUS_OR_H_
-#define HELPERS_CXX_STATUS_STATUS_OR_H_
+#ifndef CXX_HELPERS_STATUS_H_
+#define CXX_HELPERS_STATUS_H_
 
-#include "google/cloud/status_or.h"
+#include "google/cloud/status.h"
+#include "absl/strings/string_view.h"
 
 namespace mako {
 namespace helpers {
 
-template<typename T>
-using StatusOr = ::google::cloud::StatusOr<T>;
+using ::google::cloud::StatusCode;
+using ::google::cloud::StatusCodeToString;
+using ::google::cloud::Status;
+// Returns an OK status, equivalent to a default constructed instance.
+Status OkStatus();
+
+std::string StatusToString(const Status& status);
+
+bool HasErrorCode(const Status& status, StatusCode code);
+
+Status Annotate(const Status& status, absl::string_view message);
 
 }  // namespace helpers
 }  // namespace mako
 
-#endif  // HELPERS_CXX_STATUS_STATUS_OR_H_
+#endif  // CXX_HELPERS_STATUS_H_

@@ -68,9 +68,9 @@ cc_library(
     deps = [
         ":base_storage",
         ":google3_storage",
+        "//cxx/helpers/status:statusor",
         "//cxx/internal/storage_client:google_oauth_fetcher",
         "//cxx/internal/storage_client:http_transport",
-        "//helpers/cxx/status:statusor",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
     ],
@@ -86,8 +86,8 @@ cc_library(
     deps = [
         ":mako_client",
         "//cxx/clients/storage:google3_storage",
-        "//helpers/cxx/status",
-        "//helpers/cxx/status:statusor",
+        "//cxx/helpers/status",
+        "//cxx/helpers/status:statusor",
         "@com_google_absl//absl/strings",
     ],
 )

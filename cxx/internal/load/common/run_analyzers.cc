@@ -26,8 +26,8 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "cxx/helpers/status/status.h"
 #include "cxx/internal/analyzer_optimizer.h"
-#include "helpers/cxx/status/status.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

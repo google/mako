@@ -29,10 +29,10 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "curl/curl.h"
+#include "cxx/helpers/status/canonical_errors.h"
 #include "cxx/internal/utils/cleanup.h"
 #include "cxx/internal/utils/googleinit.h"
 #include "cxx/internal/utils/stringutil.h"
-#include "helpers/cxx/status/canonical_errors.h"
 
 MAKO_MODULE_INITIALIZER(libcurlinit, {
   // Since libcurl's global initialization is not thread-safe, libcurl docs

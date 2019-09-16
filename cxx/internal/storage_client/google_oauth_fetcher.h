@@ -21,8 +21,8 @@
 #include "google/cloud/status.h"
 #include "google/cloud/status_or.h"
 #include "google/cloud/storage/oauth2/credentials.h"
+#include "cxx/helpers/status/statusor.h"
 #include "cxx/internal/storage_client/oauth_token_provider.h"
-#include "helpers/cxx/status/statusor.h"
 
 namespace mako {
 namespace internal {

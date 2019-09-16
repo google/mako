@@ -23,7 +23,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "helpers/cxx/status/canonical_errors.h"
+#include "cxx/helpers/status/canonical_errors.h"
 #include "re2/re2.h"
 
 namespace mako {

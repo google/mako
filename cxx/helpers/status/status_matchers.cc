@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "helpers/cxx/status/status_matchers.h"
+#include "cxx/helpers/status/status_matchers.h"
 
 #include "absl/strings/str_cat.h"
-#include "helpers/cxx/status/status.h"
+#include "cxx/helpers/status/status.h"
 
 namespace mako {
 namespace helpers {

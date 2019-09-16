@@ -64,8 +64,8 @@ cc_library(
     srcs = ["run_analyzers.cc"],
     hdrs = ["run_analyzers.h"],
     deps = [
+        "//cxx/helpers/status",
         "//cxx/internal:analyzer_optimizer",
-        "//helpers/cxx/status",
         "//proto/internal:mako_internal_cc_proto",
         "//spec/cxx:aggregator",
         "//spec/cxx:analyzer",

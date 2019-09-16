@@ -104,16 +104,16 @@
 //     EXPECT_THAT(maybe_name, IsOk());
 //     Status s = ...;
 //     EXPECT_THAT(s, IsOk());
-#ifndef HELPERS_CXX_STATUS_STATUS_MATCHERS_H_
-#define HELPERS_CXX_STATUS_STATUS_MATCHERS_H_
+#ifndef CXX_HELPERS_STATUS_STATUS_MATCHERS_H_
+#define CXX_HELPERS_STATUS_STATUS_MATCHERS_H_
 
 #include <ostream>  // NOLINT
 #include <string>
 #include <type_traits>
 
 #include "gmock/gmock.h"
-#include "helpers/cxx/status/status.h"
-#include "helpers/cxx/status/statusor.h"
+#include "cxx/helpers/status/status.h"
+#include "cxx/helpers/status/statusor.h"
 
 namespace mako {
 namespace helpers {
@@ -414,4 +414,4 @@ inline internal_status::IsOkMatcher IsOk() {
 }  // namespace helpers
 }  // namespace mako
 
-#endif  // HELPERS_CXX_STATUS_STATUS_MATCHERS_H_
+#endif  // CXX_HELPERS_STATUS_STATUS_MATCHERS_H_

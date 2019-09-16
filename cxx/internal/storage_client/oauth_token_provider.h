@@ -16,7 +16,7 @@
 
 #include <string>
 
-#include "helpers/cxx/status/statusor.h"
+#include "cxx/helpers/status/statusor.h"
 
 // A means of obtaining an OAuth2 Bearer token.
 class OAuthTokenProvider {

@@ -15,7 +15,7 @@
 #define CXX_INTERNAL_ANALYZER_COMMON_H_
 
 #include "spec/proto/mako.pb.h"
-#include "helpers/cxx/status/statusor.h"
+#include "cxx/helpers/status/statusor.h"
 
 namespace mako {
 namespace internal {

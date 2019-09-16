@@ -22,10 +22,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "cxx/helpers/status/canonical_errors.h"
+#include "cxx/helpers/status/status.h"
+#include "cxx/helpers/status/statusor.h"
 #include "cxx/internal/storage_client/url.h"
-#include "helpers/cxx/status/canonical_errors.h"
-#include "helpers/cxx/status/status.h"
-#include "helpers/cxx/status/statusor.h"
 
 // TODO(b/124472003): Remove this when we fix our HTTP Client's handling of
 // Expect: 100-continue.

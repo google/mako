@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#include "helpers/cxx/status/status_matchers.h"
+#include "cxx/helpers/status/status_matchers.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "helpers/cxx/status/canonical_errors.h"
-#include "helpers/cxx/status/status.h"
-#include "helpers/cxx/status/statusor.h"
+#include "cxx/helpers/status/canonical_errors.h"
+#include "cxx/helpers/status/status.h"
+#include "cxx/helpers/status/statusor.h"
 
 namespace mako {
 namespace helpers {

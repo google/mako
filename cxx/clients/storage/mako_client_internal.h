@@ -19,8 +19,8 @@
 #include "absl/strings/string_view.h"
 #include "cxx/clients/storage/google3_storage.h"
 #include "cxx/clients/storage/mako_client.h"
-#include "helpers/cxx/status/status.h"
-#include "helpers/cxx/status/statusor.h"
+#include "cxx/helpers/status/status.h"
+#include "cxx/helpers/status/statusor.h"
 
 namespace mako {
 namespace internal {

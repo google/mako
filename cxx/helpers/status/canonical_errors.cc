@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "helpers/cxx/status/canonical_errors.h"
+#include "cxx/helpers/status/canonical_errors.h"
 
 #include "absl/strings/string_view.h"
-#include "helpers/cxx/status/status.h"
+#include "cxx/helpers/status/status.h"
 
 namespace mako {
 namespace helpers {

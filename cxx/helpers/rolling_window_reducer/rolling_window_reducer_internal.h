@@ -15,9 +15,9 @@
 #define CXX_HELPERS_ROLLING_WINDOW_REDUCER_ROLLING_WINDOW_REDUCER_INTERNAL_H_
 
 #include "absl/strings/string_view.h"
+#include "cxx/helpers/status/status.h"
+#include "cxx/helpers/status/statusor.h"
 #include "cxx/spec/fileio.h"
-#include "helpers/cxx/status/status.h"
-#include "helpers/cxx/status/statusor.h"
 #include "proto/helpers/rolling_window_reducer/rolling_window_reducer.pb.h"
 #include "spec/proto/mako.pb.h"
 namespace mako {

@@ -20,7 +20,7 @@
 #include "google/cloud/status.h"
 #include "google/cloud/storage/oauth2/credentials.h"
 #include "google/cloud/storage/oauth2/google_credentials.h"
-#include "helpers/cxx/status/canonical_errors.h"
+#include "cxx/helpers/status/canonical_errors.h"
 #include "re2/re2.h"
 
 namespace mako {
