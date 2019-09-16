@@ -17,15 +17,15 @@
 // For detailed information on usage, see go/mako-wda
 //
 // For more information about the interface see
-// https://github.com/google/mako/blob/master/spec/cxx/analyzer.h
+// https://github.com/google/mako/blob/master/cxx/spec/analyzer.h
 #ifndef CLIENTS_CXX_ANALYZERS_WINDOW_DEVIATION_H_
 #define CLIENTS_CXX_ANALYZERS_WINDOW_DEVIATION_H_
 
 #include <string>
 #include <vector>
 
-#include "spec/cxx/analyzer.h"
 #include "spec/proto/mako.pb.h"
+#include "cxx/spec/analyzer.h"
 #include "proto/clients/analyzers/window_deviation.pb.h"
 
 namespace mako {

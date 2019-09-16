@@ -7,7 +7,7 @@ cc_library(
     srcs = ["memory_fileio.cc"],
     hdrs = ["memory_fileio.h"],
     deps = [
-        "//spec/cxx:fileio",
+        "//cxx/spec:fileio",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",

@@ -14,8 +14,8 @@ cc_library(
         "//cxx/internal/storage_client:retry_strategy",
         "//cxx/internal/storage_client:retrying_storage_request",
         "//cxx/internal/storage_client:transport",
+        "//cxx/spec:storage",
         "//proto/internal:mako_internal_cc_proto",
-        "//spec/cxx:storage",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/flags:flag",
@@ -40,7 +40,7 @@ cc_library(
     hdrs = ["fake_google3_storage.h"],
     deps = [
         "//cxx/internal:proto_validation",
-        "//spec/cxx:storage",
+        "//cxx/spec:storage",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",

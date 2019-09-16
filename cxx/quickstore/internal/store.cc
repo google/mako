@@ -27,7 +27,6 @@
 
 #include "glog/logging.h"
 #include "src/google/protobuf/map.h"
-#include "spec/cxx/analyzer.h"
 #include "absl/base/const_init.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
@@ -44,6 +43,7 @@
 #include "cxx/clients/fileio/memory_fileio.h"
 #include "cxx/clients/storage/mako_client.h" // NOLINT
 #include "cxx/internal/load/common/run_analyzers.h"
+#include "cxx/spec/analyzer.h"
 #include "proto/clients/analyzers/threshold_analyzer.pb.h"
 #include "proto/clients/analyzers/utest_analyzer.pb.h"
 #include "proto/clients/analyzers/window_deviation.pb.h"

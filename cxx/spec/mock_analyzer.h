@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef SPEC_CXX_MOCK_ANALYZER_H_
-#define SPEC_CXX_MOCK_ANALYZER_H_
+#ifndef CXX_SPEC_MOCK_ANALYZER_H_
+#define CXX_SPEC_MOCK_ANALYZER_H_
 
 #include "gmock/gmock.h"
-#include "spec/cxx/analyzer.h"
+#include "cxx/spec/analyzer.h"
 
 namespace mako {
 class MockAnalyzer : public Analyzer {
@@ -36,4 +36,4 @@ class MockAnalyzer : public Analyzer {
 };
 }  // namespace mako
 
-#endif  // SPEC_CXX_MOCK_ANALYZER_H_
+#endif  // CXX_SPEC_MOCK_ANALYZER_H_

@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-#include "spec/cxx/analyzer.h"
 #include "spec/proto/mako.pb.h"
+#include "cxx/spec/analyzer.h"
 #include "proto/clients/analyzers/utest_analyzer.pb.h"
 
 namespace mako {

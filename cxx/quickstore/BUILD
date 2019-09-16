@@ -15,8 +15,8 @@ cc_library(
     ],
     deps = [
         "//cxx/quickstore/internal:store",
+        "//cxx/spec:storage",
         "//proto/quickstore:quickstore_cc_proto",
-        "//spec/cxx:storage",
         "//spec/proto:mako_cc_proto",
         "@com_google_glog//:glog",
     ],

@@ -22,10 +22,10 @@
 #include <string>
 #include <vector>
 
-#include "spec/cxx/storage.h"
 #include "absl/flags/flag.h"
 #include "cxx/internal/storage_client/retry_strategy.h"
 #include "cxx/internal/storage_client/transport.h"
+#include "cxx/spec/storage.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {
@@ -36,7 +36,7 @@ namespace google3_storage {
 // Mako customers (http://mako.dev) should instead use NewMakoClient() in
 // https://github.com/google/mako/blob/master/cxx/clients/storage/mako_client.h .
 //
-// See https://github.com/google/mako/blob/master/spec/cxx/storage.h for more
+// See https://github.com/google/mako/blob/master/cxx/spec/storage.h for more
 // information about interface.
 //
 // See https://github.com/google/mako/blob/master/spec/proto/mako.proto for

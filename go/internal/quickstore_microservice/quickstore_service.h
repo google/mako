@@ -18,8 +18,8 @@
 
 #include <memory>
 
-#include "spec/cxx/storage.h"
 #include "cxx/internal/queue_ifc.h"
+#include "cxx/spec/storage.h"
 #include "go/internal/quickstore_microservice/proto/quickstore.grpc.pb.h"
 #include "go/internal/quickstore_microservice/proto/quickstore.pb.h"
 #include "helpers/cxx/status/statusor.h"

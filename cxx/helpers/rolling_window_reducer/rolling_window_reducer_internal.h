@@ -14,8 +14,8 @@
 #ifndef CXX_HELPERS_ROLLING_WINDOW_REDUCER_ROLLING_WINDOW_REDUCER_INTERNAL_H_
 #define CXX_HELPERS_ROLLING_WINDOW_REDUCER_ROLLING_WINDOW_REDUCER_INTERNAL_H_
 
-#include "spec/cxx/fileio.h"
 #include "absl/strings/string_view.h"
+#include "cxx/spec/fileio.h"
 #include "helpers/cxx/status/status.h"
 #include "helpers/cxx/status/statusor.h"
 #include "proto/helpers/rolling_window_reducer/rolling_window_reducer.pb.h"

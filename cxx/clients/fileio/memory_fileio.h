@@ -21,9 +21,9 @@
 #include <vector>
 
 #include "src/google/protobuf/message.h"
-#include "spec/cxx/fileio.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
+#include "cxx/spec/fileio.h"
 
 namespace mako {
 namespace memory_fileio {

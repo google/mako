@@ -124,7 +124,7 @@ C_PROTO_VECTOR_INPUT_SLICE(mako::SampleBatch)
 %unignore mako::fake_google3_storage::Storage::FakeStageRuns;
 %unignore mako::fake_google3_storage::Storage::FakeStageBatches;
 
-%import "spec/cxx/storage.h"
+%import "cxx/spec/storage.h"
 %include "cxx/clients/storage/fake_google3_storage.h"
 
 %unignoreall

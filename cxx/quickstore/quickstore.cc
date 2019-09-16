@@ -18,8 +18,8 @@
 #include <vector>
 
 #include "glog/logging.h"
-#include "spec/cxx/storage.h"
 #include "cxx/quickstore/internal/store.h"
+#include "cxx/spec/storage.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

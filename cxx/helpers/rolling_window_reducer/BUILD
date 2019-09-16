@@ -11,10 +11,10 @@ cc_library(
     deps = [
         "//cxx/internal:pgmath",
         "//cxx/internal/utils:cleanup",
+        "//cxx/spec:fileio",
         "//helpers/cxx/status",
         "//helpers/cxx/status:statusor",
         "//proto/helpers/rolling_window_reducer:rolling_window_reducer_cc_proto",
-        "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/container:node_hash_map",
         "@com_google_absl//absl/memory",
@@ -35,10 +35,10 @@ cc_library(
     deps = [
         ":rolling_window_reducer",
         "//cxx/internal/utils:cleanup",
+        "//cxx/spec:fileio",
         "//helpers/cxx/status",
         "//helpers/cxx/status:statusor",
         "//proto/helpers/rolling_window_reducer:rolling_window_reducer_cc_proto",
-        "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",

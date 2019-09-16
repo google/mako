@@ -12,7 +12,7 @@ mako_go_wrap_cc(
     srcs = ["google3_storage.swig"],
     cdeps = [
         "//cxx/clients/storage:google3_storage",
-        "//spec/cxx:storage",
+        "//cxx/spec:storage",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
     ],
@@ -32,7 +32,7 @@ mako_go_wrap_cc(
     srcs = ["mako_client.swig"],
     cdeps = [
         "//cxx/clients/storage:google3_storage",
-        "//spec/cxx:storage",
+        "//cxx/spec:storage",
         "//cxx/clients/storage:mako_client_internal",
     ],
     godeps = [

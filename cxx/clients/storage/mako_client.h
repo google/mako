@@ -24,7 +24,7 @@ namespace mako {
 
 // Create a new Mako storage client connected to https://mako.dev.
 //
-// See https://github.com/google/mako/blob/master/spec/cxx/storage.h for more
+// See https://github.com/google/mako/blob/master/cxx/spec/storage.h for more
 // information about interface.
 //
 // See https://github.com/google/mako/blob/master/spec/proto/mako.proto for

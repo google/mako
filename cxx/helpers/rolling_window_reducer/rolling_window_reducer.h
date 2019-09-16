@@ -28,10 +28,10 @@
 #include <vector>
 
 #include "src/google/protobuf/repeated_field.h"
-#include "spec/cxx/fileio.h"
 #include "absl/container/node_hash_map.h"
 #include "absl/strings/string_view.h"
 #include "cxx/internal/pgmath.h"
+#include "cxx/spec/fileio.h"
 #include "helpers/cxx/status/status.h"
 #include "helpers/cxx/status/statusor.h"
 #include "proto/helpers/rolling_window_reducer/rolling_window_reducer.pb.h"

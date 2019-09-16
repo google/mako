@@ -19,11 +19,11 @@
 #include <utility>
 #include <vector>
 
-#include "spec/cxx/aggregator.h"
-#include "spec/cxx/downsampler.h"
-#include "spec/cxx/fileio.h"
-#include "spec/cxx/storage.h"
 #include "cxx/clients/dashboard/standard_dashboard.h"
+#include "cxx/spec/aggregator.h"
+#include "cxx/spec/downsampler.h"
+#include "cxx/spec/fileio.h"
+#include "cxx/spec/storage.h"
 #include "proto/quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 

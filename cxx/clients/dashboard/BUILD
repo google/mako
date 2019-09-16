@@ -8,7 +8,7 @@ cc_library(
     srcs = ["standard_dashboard.cc"],
     hdrs = ["standard_dashboard.h"],
     deps = [
-        "//spec/cxx:dashboard",
+        "//cxx/spec:dashboard",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/base",
         "@com_google_absl//absl/strings",

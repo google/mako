@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 
-#include "spec/cxx/storage.h"
 #include "absl/strings/string_view.h"
+#include "cxx/spec/storage.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {
@@ -29,7 +29,7 @@ namespace fake_google3_storage {
 
 // Fake Google3 version of Mako (go/mako) storage system.
 //
-// See https://github.com/google/mako/blob/master/spec/cxx/storage.h for more
+// See https://github.com/google/mako/blob/master/cxx/spec/storage.h for more
 // information about interface.
 //
 // See https://github.com/google/mako/blob/master/spec/proto/mako.proto for

@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef SPEC_CXX_DASHBOARD_H_
-#define SPEC_CXX_DASHBOARD_H_
+#ifndef CXX_SPEC_DASHBOARD_H_
+#define CXX_SPEC_DASHBOARD_H_
 
 #include <string>
 
@@ -79,4 +79,4 @@ class Dashboard {
 
 }  // namespace mako
 
-#endif  // SPEC_CXX_DASHBOARD_H_
+#endif  // CXX_SPEC_DASHBOARD_H_

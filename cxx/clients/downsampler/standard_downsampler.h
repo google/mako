@@ -75,12 +75,12 @@
 
 #include "glog/logging.h"
 #include "src/google/protobuf/io/coded_stream.h"
-#include "spec/cxx/downsampler.h"
-#include "spec/cxx/fileio.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 #include "cxx/clients/downsampler/metric_set.h"
 #include "cxx/internal/proto_validation.h"
+#include "cxx/spec/downsampler.h"
+#include "cxx/spec/fileio.h"
 #include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 

@@ -116,7 +116,7 @@ PROTO_IN_OUT(
 
 %unignore mako::google3_storage::Storage::last_call_server_elapsed_time;
 
-%import "spec/cxx/storage.h"
+%import "cxx/spec/storage.h"
 %include "cxx/clients/storage/google3_storage.h"
 
 %unignoreall

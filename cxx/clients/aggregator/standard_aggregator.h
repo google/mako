@@ -22,11 +22,11 @@
 #include <utility>
 #include <vector>
 
-#include "spec/cxx/aggregator.h"
-#include "spec/cxx/fileio.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
 #include "cxx/clients/aggregator/threadsafe_running_stats.h"
+#include "cxx/spec/aggregator.h"
+#include "cxx/spec/fileio.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {
@@ -44,7 +44,7 @@ const int kDefaultMaxThreads = 8;
 //
 // This is implementation parallelizes aggregation across multiple threads.
 //
-// See interface at https://github.com/google/mako/blob/master/spec/cxx/aggregator.h
+// See interface at https://github.com/google/mako/blob/master/cxx/spec/aggregator.h
 class Aggregator : public mako::Aggregator {
  public:
   // Default constructor

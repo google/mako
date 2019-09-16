@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef SPEC_CXX_MOCK_STORAGE_H_
-#define SPEC_CXX_MOCK_STORAGE_H_
+#ifndef CXX_SPEC_MOCK_STORAGE_H_
+#define CXX_SPEC_MOCK_STORAGE_H_
 
 #include "gmock/gmock.h"
-#include "spec/cxx/storage.h"
+#include "cxx/spec/storage.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {
@@ -60,4 +60,4 @@ class MockStorage : public mako::Storage {
 
 }  // namespace mako
 
-#endif  // SPEC_CXX_MOCK_STORAGE_H_
+#endif  // CXX_SPEC_MOCK_STORAGE_H_

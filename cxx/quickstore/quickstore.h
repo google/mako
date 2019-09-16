@@ -19,7 +19,7 @@
 #include <map>
 #include <string>
 
-#include "spec/cxx/storage.h"
+#include "cxx/spec/storage.h"
 #include "proto/quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 

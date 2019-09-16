@@ -16,9 +16,9 @@
 
 #include <string>
 
-#include "spec/cxx/dashboard.h"
-#include "spec/proto/mako.pb.h"
 #include "absl/strings/string_view.h"
+#include "cxx/spec/dashboard.h"
+#include "spec/proto/mako.pb.h"
 
 namespace mako {
 namespace standard_dashboard {

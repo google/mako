@@ -12,11 +12,11 @@ cc_library(
         "//cxx/clients/storage:mako_client",
         "//cxx/internal:queue_ifc",
         "//cxx/quickstore/internal:store",
+        "//cxx/spec:storage",
         "//go/internal/quickstore_microservice/proto:quickstore_cc_grpc_proto",
         "//go/internal/quickstore_microservice/proto:quickstore_cc_proto",
         "//helpers/cxx/status:statusor",
         "//proto/internal:mako_internal_cc_proto",
-        "//spec/cxx:storage",
         "@com_google_protobuf//:protobuf",
     ],
 )

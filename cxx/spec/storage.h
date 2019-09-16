@@ -14,8 +14,8 @@
 //
 // For more information about Mako see: go/mako.
 
-#ifndef SPEC_CXX_STORAGE_H_
-#define SPEC_CXX_STORAGE_H_
+#ifndef CXX_SPEC_STORAGE_H_
+#define CXX_SPEC_STORAGE_H_
 
 #include <string>
 
@@ -271,4 +271,4 @@ class Storage {
 };
 
 }  // namespace mako
-#endif  // SPEC_CXX_STORAGE_H_
+#endif  // CXX_SPEC_STORAGE_H_

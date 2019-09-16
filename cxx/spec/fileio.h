@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#ifndef SPEC_CXX_FILEIO_H_
-#define SPEC_CXX_FILEIO_H_
+#ifndef CXX_SPEC_FILEIO_H_
+#define CXX_SPEC_FILEIO_H_
 
 #include <stddef.h>
 #include <memory>
@@ -137,4 +137,4 @@ class FileIO {
 
 }  // namespace mako
 
-#endif  // SPEC_CXX_FILEIO_H_
+#endif  // CXX_SPEC_FILEIO_H_

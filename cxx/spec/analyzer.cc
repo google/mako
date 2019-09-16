@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // see the license for the specific language governing permissions and
 // limitations under the license.
-#include "spec/cxx/analyzer.h"
+#include "cxx/spec/analyzer.h"
 
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
