@@ -15,7 +15,7 @@
 #ifndef CXX_INTERNAL_CLOCK_H_
 #define CXX_INTERNAL_CLOCK_H_
 
-#include "internal/cxx/clock_external.h"
+#include "cxx/internal/clock_external.h"
 
 namespace mako {
 namespace helpers {

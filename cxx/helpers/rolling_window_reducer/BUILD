@@ -52,7 +52,7 @@ cc_test(
     deps = [
         ":rolling_window_reducer",
         ":rolling_window_reducer_internal",
-        "//clients/cxx/fileio:memory_fileio",
+        "//cxx/clients/fileio:memory_fileio",
         "//helpers/cxx/status",
         "//helpers/cxx/status:status_matchers",
         "//proto/helpers/rolling_window_reducer:rolling_window_reducer_cc_proto",
