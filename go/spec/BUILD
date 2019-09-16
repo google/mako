@@ -10,7 +10,7 @@ go_library(
     srcs = [
         "storage.go",
     ],
-    importpath = "github.com/google/mako/spec/go/mako",
+    importpath = "github.com/google/mako/go/spec/mako",
     deps = [
         "//spec/proto:mako_go_proto",
         "@com_github_golang_protobuf//proto:go_default_library",

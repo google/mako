@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/google/mako/spec/go/mako"
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
+	"github.com/google/mako/go/spec/mako"
 )
 
 func TestCreateThenLookup(t *testing.T) {

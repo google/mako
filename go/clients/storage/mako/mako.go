@@ -16,7 +16,7 @@
 // externalized Mako (Mako) service at the default hostname,
 // 'makoperf.appspot.com', or a user provided hostname.
 //
-// See https://github.com/google/mako/blob/master/spec/go/storage.go for more
+// See https://github.com/google/mako/blob/master/go/spec/storage.go for more
 // information about interface.
 //
 // Calling this storage client's methods isn't needed when using the normal flow

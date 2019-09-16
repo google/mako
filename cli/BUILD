@@ -20,7 +20,7 @@ go_library(
     srcs = ["lib.go"],
     importpath = "github.com/google/mako/cli/lib",
     deps = [
-        "//spec/go:mako",
+        "//go/spec:mako",
         "//spec/proto:mako_go_proto",
         "@com_github_golang_glog//:go_default_library",
         "@com_github_golang_protobuf//proto:go_default_library",

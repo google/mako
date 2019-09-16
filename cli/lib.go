@@ -49,7 +49,7 @@ import (
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
 	"github.com/google/subcommands"
 
-	"github.com/google/mako/spec/go/mako"
+	"github.com/google/mako/go/spec/mako"
 )
 
 var (

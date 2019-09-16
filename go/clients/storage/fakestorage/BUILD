@@ -23,7 +23,7 @@ go_test(
     embed = [":fakestorage"],
     importpath = "github.com/google/mako/go/clients/storage/fakestorage_test",
     deps = [
-        "//spec/go:mako",
+        "//go/spec:mako",
         "//spec/proto:mako_go_proto",
         "@com_github_golang_protobuf//proto:go_default_library",
     ],

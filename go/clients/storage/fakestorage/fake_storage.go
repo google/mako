@@ -29,7 +29,7 @@ and these functions can be used as test helper functions.
 
 For more information about mako see go/mako.
 
-For more information about the interface see https://github.com/google/mako/blob/master/spec/go/storage.go
+For more information about the interface see https://github.com/google/mako/blob/master/go/spec/storage.go
 
 This package defers work to SWIG wrapping of the fake C++ Mako client.
 
@@ -57,7 +57,7 @@ FakeStorage provides access mako storage via the mako Storage
 interface.
 
 More information about the interface can be found at go/mako and
-https://github.com/google/mako/blob/master/spec/go/storage.go
+https://github.com/google/mako/blob/master/go/spec/storage.go
 
 The zero value of this struct is not usable, please use New.*
 functions below.
