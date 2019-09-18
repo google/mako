@@ -18,13 +18,13 @@
 #include "glog/logging.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "spec/cxx/analyzer.h"
-#include "spec/cxx/mock_analyzer.h"
-#include "spec/cxx/mock_storage.h"
-#include "spec/cxx/storage.h"
 #include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
 #include "cxx/clients/storage/fake_google3_storage.h"
+#include "cxx/spec/analyzer.h"
+#include "cxx/spec/mock_analyzer.h"
+#include "cxx/spec/mock_storage.h"
+#include "cxx/spec/storage.h"
 #include "cxx/testing/protocol-buffer-matchers.h"
 
 namespace mako {

@@ -19,9 +19,9 @@
 #include <utility>
 #include <vector>
 
-#include "spec/cxx/analyzer.h"
-#include "spec/cxx/dashboard.h"
-#include "spec/cxx/storage.h"
+#include "cxx/spec/analyzer.h"
+#include "cxx/spec/dashboard.h"
+#include "cxx/spec/storage.h"
 #include "proto/internal/mako_internal.pb.h"
 #include "spec/proto/mako.pb.h"
 

@@ -15,11 +15,9 @@
 #include <cstdlib>
 
 #include "glog/logging.h"
-#include "include/grpcpp/security/server_credentials.h"
-#include "include/grpcpp/server_builder.h"
-#include "include/grpcpp/server_context.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "cxx/internal/grpc/grpc.h"
 #include "cxx/internal/queue.h"
 #include "go/internal/quickstore_microservice/quickstore_service.h"
 

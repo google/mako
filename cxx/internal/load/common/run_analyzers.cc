@@ -21,13 +21,13 @@
 
 #include "glog/logging.h"
 #include "src/google/protobuf/map.h"
-#include "spec/cxx/aggregator.h"
-#include "spec/cxx/storage.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "cxx/helpers/status/status.h"
 #include "cxx/internal/analyzer_optimizer.h"
+#include "cxx/spec/aggregator.h"
+#include "cxx/spec/storage.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {

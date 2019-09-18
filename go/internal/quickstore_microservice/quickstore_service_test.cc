@@ -13,13 +13,12 @@
 // limitations under the License.
 #include "go/internal/quickstore_microservice/quickstore_service.h"
 
-#include "include/grpcpp/security/server_credentials.h"
-#include "include/grpcpp/server_context.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "proto/quickstore/quickstore.pb.h"
 #include "absl/memory/memory.h"
 #include "cxx/clients/storage/fake_google3_storage.h"
+#include "cxx/internal/grpc/grpc.h"
 #include "cxx/internal/queue.h"
 #include "cxx/testing/protocol-buffer-matchers.h"
 #include "go/internal/quickstore_microservice/proto/quickstore.pb.h"
