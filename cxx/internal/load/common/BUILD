@@ -86,7 +86,7 @@ cc_test(
     srcs = ["run_analyzers_test.cc"],
     deps = [
         ":run_analyzers",
-        "//clients/cxx/analyzers:threshold_analyzer",
+        "//cxx/clients/analyzers:threshold_analyzer",
         "//cxx/clients/dashboard:standard_dashboard",
         "//cxx/clients/storage:fake_google3_storage",
         "//cxx/spec:analyzer",

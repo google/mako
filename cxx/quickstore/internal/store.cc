@@ -35,10 +35,10 @@
 #include "absl/synchronization/mutex.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "clients/cxx/analyzers/threshold_analyzer.h"
-#include "clients/cxx/analyzers/utest_analyzer.h"
-#include "clients/cxx/analyzers/window_deviation.h"
 #include "cxx/clients/aggregator/standard_aggregator.h"
+#include "cxx/clients/analyzers/threshold_analyzer.h"
+#include "cxx/clients/analyzers/utest_analyzer.h"
+#include "cxx/clients/analyzers/window_deviation.h"
 #include "cxx/clients/downsampler/standard_downsampler.h"
 #include "cxx/clients/fileio/memory_fileio.h"
 #include "cxx/clients/storage/mako_client.h" // NOLINT

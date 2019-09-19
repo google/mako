@@ -18,8 +18,8 @@
 //
 // For more information about the interface see
 // https://github.com/google/mako/blob/master/cxx/spec/analyzer.h
-#ifndef CLIENTS_CXX_ANALYZERS_WINDOW_DEVIATION_H_
-#define CLIENTS_CXX_ANALYZERS_WINDOW_DEVIATION_H_
+#ifndef CXX_CLIENTS_ANALYZERS_WINDOW_DEVIATION_H_
+#define CXX_CLIENTS_ANALYZERS_WINDOW_DEVIATION_H_
 
 #include <string>
 #include <vector>
@@ -70,4 +70,4 @@ class Analyzer : public mako::Analyzer {
 }  // namespace window_deviation
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_ANALYZERS_WINDOW_DEVIATION_H_
+#endif  // CXX_CLIENTS_ANALYZERS_WINDOW_DEVIATION_H_

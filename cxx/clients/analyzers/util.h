@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef CLIENTS_CXX_ANALYZERS_UTIL_H_
-#define CLIENTS_CXX_ANALYZERS_UTIL_H_
+#ifndef CXX_CLIENTS_ANALYZERS_UTIL_H_
+#define CXX_CLIENTS_ANALYZERS_UTIL_H_
 
 #include <string>
 
@@ -33,4 +33,4 @@ std::string GetHumanFriendlyDataFilterString(
 }  // namespace analyzer_util
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_ANALYZERS_UTIL_H_
+#endif  // CXX_CLIENTS_ANALYZERS_UTIL_H_

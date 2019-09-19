@@ -14,10 +14,10 @@ cc_library(
     srcs = ["store.cc"],
     hdrs = ["store.h"],
     deps = [
-        "//clients/cxx/analyzers:threshold_analyzer",
-        "//clients/cxx/analyzers:utest_analyzer",
-        "//clients/cxx/analyzers:window_deviation",
         "//cxx/clients/aggregator:standard_aggregator",
+        "//cxx/clients/analyzers:threshold_analyzer",
+        "//cxx/clients/analyzers:utest_analyzer",
+        "//cxx/clients/analyzers:window_deviation",
         "//cxx/clients/dashboard:standard_dashboard",
         "//cxx/clients/downsampler:standard_downsampler",
         "//cxx/clients/fileio:memory_fileio",

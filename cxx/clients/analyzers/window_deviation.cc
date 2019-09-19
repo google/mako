@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "clients/cxx/analyzers/window_deviation.h"
+#include "cxx/clients/analyzers/window_deviation.h"
 
 #include <algorithm>
 #include <cmath>
@@ -26,7 +26,7 @@
 #include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
-#include "clients/cxx/analyzers/util.h"
+#include "cxx/clients/analyzers/util.h"
 #include "cxx/helpers/status/status.h"
 #include "cxx/internal/analyzer_common.h"
 #include "cxx/internal/filter_utils.h"

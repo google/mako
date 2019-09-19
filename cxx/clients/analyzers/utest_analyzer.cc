@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "clients/cxx/analyzers/utest_analyzer.h"
+#include "cxx/clients/analyzers/utest_analyzer.h"
 
 #include <algorithm>
 #include <cmath>
@@ -30,7 +30,7 @@
 #include "spec/proto/mako.pb.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
-#include "clients/cxx/analyzers/util.h"
+#include "cxx/clients/analyzers/util.h"
 #include "cxx/internal/filter_utils.h"
 #include "cxx/internal/pgmath.h"
 #include "proto/clients/analyzers/utest_analyzer.pb.h"

@@ -9,7 +9,7 @@ cc_test(
     ],
     deps = [
         ":perf_data_cc_proto",
-        "//clients/cxx/analyzers:threshold_analyzer",
+        "//cxx/clients/analyzers:threshold_analyzer",
         "//cxx/helpers/status",
         "//cxx/helpers/status:status_matchers",
         "//cxx/helpers/status:statusor",

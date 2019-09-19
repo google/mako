@@ -20,7 +20,7 @@
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
-#include "clients/cxx/analyzers/threshold_analyzer.h"
+#include "cxx/clients/analyzers/threshold_analyzer.h"
 #include "cxx/clients/dashboard/standard_dashboard.h"
 #include "cxx/clients/storage/fake_google3_storage.h"
 #include "cxx/spec/analyzer.h"

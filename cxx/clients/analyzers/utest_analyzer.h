@@ -18,8 +18,8 @@
 //
 // For more information about the interface see
 // mako/spec/py/analyzer.h
-#ifndef CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_
-#define CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_
+#ifndef CXX_CLIENTS_ANALYZERS_UTEST_ANALYZER_H_
+#define CXX_CLIENTS_ANALYZERS_UTEST_ANALYZER_H_
 
 #include <memory>
 #include <string>
@@ -83,4 +83,4 @@ class Analyzer : public mako::Analyzer {
 }  // namespace utest_analyzer
 }  // namespace mako
 
-#endif  // CLIENTS_CXX_ANALYZERS_UTEST_ANALYZER_H_
+#endif  // CXX_CLIENTS_ANALYZERS_UTEST_ANALYZER_H_

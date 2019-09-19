@@ -16,7 +16,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/flags/parse.h"
-#include "clients/cxx/analyzers/threshold_analyzer.h"
+#include "cxx/clients/analyzers/threshold_analyzer.h"
 #include "cxx/helpers/status/canonical_errors.h"
 #include "cxx/helpers/status/status_matchers.h"
 #include "cxx/helpers/status/statusor.h"
