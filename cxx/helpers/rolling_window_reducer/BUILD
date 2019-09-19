@@ -31,7 +31,7 @@ cc_library(
     name = "rolling_window_reducer_internal",
     srcs = ["rolling_window_reducer_internal.cc"],
     hdrs = ["rolling_window_reducer_internal.h"],
-    visibility = ["//visibility:private"],
+    visibility = ["//cxx/quickstore/internal:__pkg__"],
     deps = [
         ":rolling_window_reducer",
         "//cxx/helpers/status",

@@ -19,6 +19,8 @@
 #include "glog/logging.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "spec/cxx/fileio.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
 #include "cxx/clients/aggregator/standard_aggregator.h"
 #include "cxx/clients/downsampler/standard_downsampler.h"
@@ -27,6 +29,7 @@
 #include "cxx/spec/fileio.h"
 #include "cxx/testing/protocol-buffer-matchers.h"
 #include "proto/clients/analyzers/threshold_analyzer.pb.h"
+#include "proto/helpers/rolling_window_reducer/rolling_window_reducer.pb.h"
 #include "proto/quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 
@@ -38,6 +41,7 @@ namespace {
 constexpr char kM1[] = "m1";
 constexpr char kM2[] = "m2";
 constexpr char kM3[] = "m3";
+constexpr char kRwrOutputKey[] = "rwrOutput";
 constexpr char kC1[] = "c1";
 constexpr char kSampleErrorString[] = "Some Error";
 constexpr double kM3Mean = 2;
@@ -49,6 +53,7 @@ using ::mako::analyzers::threshold_analyzer::ThresholdAnalyzerInput;
 using ::mako::analyzers::threshold_analyzer::ThresholdConfig;
 using ::mako::quickstore::QuickstoreInput;
 using ::mako::quickstore::QuickstoreOutput;
+using ::testing::Eq;
 using ::testing::IsEmpty;
 using ::testing::UnorderedPointwise;
 
@@ -205,6 +210,29 @@ TEST_F(StoreTest, InvalidMetricAggregates) {
 TEST_F(StoreTest, PointsOnly) {
   QuickstoreOutput output = Call(input_, points_, {}, {}, {}, {}, {});
   ASSERT_EQ(QuickstoreOutput::SUCCESS, output.status());
+}
+
+TEST_F(StoreTest, PointsAndRWR) {
+  auto* rwr_config = input_.add_rwr_configs();
+  rwr_config->add_input_metric_keys(kM1);
+  rwr_config->set_output_metric_key(kRwrOutputKey);
+  rwr_config->set_steps_per_window(1);
+  rwr_config->set_window_size(100);
+  rwr_config->set_window_operation(mako::helpers::RWRConfig::COUNT);
+  rwr_config->set_zero_for_empty_window(true);
+
+  QuickstoreOutput output = Call(input_, points_, {}, {}, {}, {}, {});
+  ASSERT_EQ(QuickstoreOutput::SUCCESS, output.status())
+      << output.summary_output();
+
+  auto runs = GetRuns(output.run_key());
+  ASSERT_THAT(runs, testing::SizeIs(Eq(1)));
+
+  absl::flat_hash_set<absl::string_view> metrics;
+  for (const auto& metric : runs[0].aggregate().metric_aggregate_list()) {
+    metrics.insert(metric.metric_key());
+  }
+  EXPECT_TRUE(metrics.contains(kRwrOutputKey));
 }
 
 TEST_F(StoreTest, ErrorsOnly) {

@@ -37,6 +37,7 @@ import (
 	"github.com/google/mako/go/quickstore"
 
 	tpb "github.com/google/mako/proto/clients/analyzers/threshold_analyzer_go_proto"
+	rpb "github.com/google/mako/proto/helpers/rolling_window_reducer/rolling_window_reducer_go_proto"
 	qpb "github.com/google/mako/proto/quickstore/quickstore_go_proto"
 	mpb "github.com/google/mako/spec/proto/mako_go_proto"
 )
@@ -92,6 +93,18 @@ func TestPerformance(t *testing.T) {
 		HoverText:      proto.String(data.Metadata.GitHash),
 		Tags:           data.Metadata.Tags,
 		TimestampMs:    proto.Float64(float64(data.Metadata.RunTimestamp)), // Mako will insert current time if left blank.
+		RwrConfigs: []*rpb.RWRConfig{
+			{
+				// Add a Rolling Window Reducer config to calculate the QPS of the wl metric
+				// Read more about the Rolling Window Reducer at https://github.com/google/mako/blob/master/proto/helpers/rolling_window_reducer/rolling_window_reducer.proto
+				InputMetricKeys:    []string{"wl"},
+				OutputMetricKey:    proto.String("wl_qps"),
+				WindowOperation:    rpb.RWRConfig_COUNT.Enum(),
+				WindowSize:         proto.Float64(1000),
+				StepsPerWindow:     proto.Int32(1),
+				ZeroForEmptyWindow: proto.Bool(true),
+			},
+		},
 	}
 
 	// STEP 3: Configure an analyzer.

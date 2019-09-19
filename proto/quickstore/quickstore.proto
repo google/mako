@@ -20,11 +20,12 @@ package mako.quickstore;
 import "proto/clients/analyzers/threshold_analyzer.proto";
 import "proto/clients/analyzers/utest_analyzer.proto";
 import "proto/clients/analyzers/window_deviation.proto";
+import "proto/helpers/rolling_window_reducer/rolling_window_reducer.proto";
 import "spec/proto/mako.proto";
 
 option java_package = "com.google.testing.performance.mako.helpers";
 
-// NEXT_ID: 23
+// NEXT_ID: 24
 message QuickstoreInput {
   // REQUIRED
   // Associates this data with a benchmark.
@@ -72,6 +73,12 @@ message QuickstoreInput {
   // OPTIONAL
   // Applied to the run only when analysis fails.
   optional ConditionalFields analysis_fail = 11;
+
+  // OPTIONAL
+  // Configures the Rolling Window Reducer.
+  // See the Rolling Window Reducer proto for more information.
+  // https://github.com/google/mako/blob/master/proto/helpers/rolling_window_reducer/rolling_window_reducer.proto
+  repeated mako.helpers.RWRConfig rwr_configs = 23;
 
   // OPTIONAL
   // Analyzers to run after data has been uploaded.

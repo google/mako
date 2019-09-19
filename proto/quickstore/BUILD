@@ -12,6 +12,7 @@ proto_library(
         "//proto/clients/analyzers:threshold_analyzer_proto",
         "//proto/clients/analyzers:utest_analyzer_proto",
         "//proto/clients/analyzers:window_deviation_proto",
+        "//proto/helpers/rolling_window_reducer:rolling_window_reducer_proto",
         "//spec/proto:mako_proto",
     ],
 )
@@ -29,6 +30,7 @@ go_proto_library(
         "//proto/clients/analyzers:threshold_analyzer_go_proto",
         "//proto/clients/analyzers:utest_analyzer_go_proto",
         "//proto/clients/analyzers:window_deviation_go_proto",
+        "//proto/helpers/rolling_window_reducer:rolling_window_reducer_go_proto",
         "//spec/proto:mako_go_proto",
     ],
 )

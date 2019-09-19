@@ -42,6 +42,8 @@
 #include "cxx/clients/downsampler/standard_downsampler.h"
 #include "cxx/clients/fileio/memory_fileio.h"
 #include "cxx/clients/storage/mako_client.h" // NOLINT
+#include "cxx/helpers/rolling_window_reducer/rolling_window_reducer_internal.h"
+#include "cxx/helpers/status/status.h"
 #include "cxx/internal/load/common/run_analyzers.h"
 #include "cxx/spec/analyzer.h"
 #include "proto/clients/analyzers/threshold_analyzer.pb.h"
@@ -84,8 +86,10 @@ QuickstoreOutput InternalQuickstore::Save() {
   const std::string& par_dir = input_.has_temp_dir() ? input_.temp_dir() : "/tmp";
   {
     absl::MutexLock lock(&count_mutex);
-    tmp_dir_ = JoinPath(par_dir, absl::StrCat("quickstore.", count++, ".",
-                                              absl::Uniform<uint64_t>(*gen)));
+    std::string tmp_dir = JoinPath(
+        par_dir,
+        absl::StrCat("quickstore.", count++, ".", absl::Uniform<uint64_t>(*gen)));
+    file_path_ = JoinPath(tmp_dir, "sample_file");
   }
 
   if (!input_.has_benchmark_key() || input_.benchmark_key().empty()) {
@@ -98,6 +102,7 @@ QuickstoreOutput InternalQuickstore::Save() {
   steps.push_back([this] { return QueryBenchmarkInfo(); });
   steps.push_back([this] { return CreateAndUpdateRunInfo(); });
   steps.push_back([this] { return WriteSampleFile(); });
+  steps.push_back([this] { return Reduce(); });
   steps.push_back([this] { return Aggregate(); });
   steps.push_back([this] { return UpdateMetricAggregates(); });
   steps.push_back([this] { return UpdateRunAggregates(); });
@@ -311,12 +316,11 @@ std::string InternalQuickstore::UpdateMetricAggregates() {
 
 std::string InternalQuickstore::WriteSampleFile() {
   std::string err;
-  std::string file_path = JoinPath(tmp_dir_, "sample_file");
-  sample_file_.set_file_path(file_path);
+  sample_file_.set_file_path(file_path_);
   sample_file_.set_sampler_name("quickstore");
-  if (!fileio_->Open(file_path, mako::FileIO::AccessMode::kWrite)) {
+  if (!fileio_->Open(file_path_, mako::FileIO::AccessMode::kWrite)) {
     fileio_->Close();
-    err = absl::StrCat("Could not open path: ", file_path,
+    err = absl::StrCat("Could not open path: ", file_path_,
                        " for writing. Error: ", fileio_->Error());
     LOG(ERROR) << err;
     return err;
@@ -326,7 +330,7 @@ std::string InternalQuickstore::WriteSampleFile() {
     *sample_record.mutable_sample_point() = point;
     if (!fileio_->Write(sample_record)) {
       fileio_->Close();
-      err = absl::StrCat("Could not write point to path: ", file_path,
+      err = absl::StrCat("Could not write point to path: ", file_path_,
                          ". Error: ", fileio_->Error());
       LOG(ERROR) << err;
       return err;
@@ -340,7 +344,7 @@ std::string InternalQuickstore::WriteSampleFile() {
     }
     if (!fileio_->Write(sample_record)) {
       fileio_->Close();
-      err = absl::StrCat("Could not write error to path: ", file_path,
+      err = absl::StrCat("Could not write error to path: ", file_path_,
                          ". Error: ", fileio_->Error());
       LOG(ERROR) << err;
       return err;
@@ -349,11 +353,24 @@ std::string InternalQuickstore::WriteSampleFile() {
 
   // Close to flush the buffer.
   if (!fileio_->Close()) {
-    LOG(WARNING) << absl::StrCat("Could not close path: ", file_path,
+    LOG(WARNING) << absl::StrCat("Could not close path: ", file_path_,
                                  ". Error: ", fileio_->Error());
   }
 
   return kNoError;
+}
+
+std::string InternalQuickstore::Reduce() {
+  if (input_.rwr_configs_size() == 0) {
+    return kNoError;
+  }
+  auto status = mako::helpers::Reduce(
+      file_path_, {input_.rwr_configs().begin(), input_.rwr_configs().end()},
+      fileio_.get());
+  if (status.ok()) {
+    return kNoError;
+  }
+  return helpers::StatusToString(status);
 }
 
 std::string InternalQuickstore::Aggregate() {

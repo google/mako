@@ -84,6 +84,7 @@ class InternalQuickstore {
   std::string CreateAndUpdateRunInfo();
   std::string UpdateMetricAggregates();
   std::string WriteSampleFile();
+  std::string Reduce();
   std::string Aggregate();
   std::string Downsample();
   std::string Analyze();
@@ -107,7 +108,7 @@ class InternalQuickstore {
   const std::vector<std::string>& aggregate_value_keys_;
   const std::vector<std::string>& aggregate_types_;
   const std::vector<double>& aggregate_values_;
-  std::string tmp_dir_;
+  std::string file_path_;
   mako::BenchmarkInfo benchmark_info_;
   mako::RunInfo run_info_;
   mako::SampleFile sample_file_;
