@@ -186,7 +186,7 @@ bool UploadRunInfo(
   // Look for mako_internal_additional_tags in both flags and environment
   // variables.  If found in both places, prefer the value from the flags.
   const char* env_var_additional_tags =
-      std::getenv("mako_internal_additional_tags");
+      std::getenv("MAKO_INTERNAL_ADDITIONAL_TAGS");
   std::vector<std::string> additional_tags =
       absl::GetFlag(FLAGS_mako_internal_additional_tags);
   if (additional_tags.empty() && env_var_additional_tags) {
@@ -197,7 +197,7 @@ bool UploadRunInfo(
   // environment variables.  If found in both places, prefer the value from the
   // flags.
   const char* env_var_test_pass_id_override =
-      std::getenv("mako_internal_test_pass_id_override");
+      std::getenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE");
   std::string test_pass_id_override =
       absl::GetFlag(FLAGS_mako_internal_test_pass_id_override);
   if (test_pass_id_override.empty() && env_var_test_pass_id_override) {

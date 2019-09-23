@@ -219,7 +219,7 @@ TEST_F(StorageTest, RunCreationAddlTagsEnv) {
   mock_response.set_key("122344");  // this is an arbitrary number
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  setenv("mako_internal_additional_tags", "test1=val1,test2=val2", 1);
+  setenv("MAKO_INTERNAL_ADDITIONAL_TAGS", "test1=val1,test2=val2", 1);
   RunInfo run_info;
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
 
@@ -236,7 +236,7 @@ TEST_F(StorageTest, RunCreationAddlTagsEnv) {
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
-  unsetenv("mako_internal_additional_tags");
+  unsetenv("MAKO_INTERNAL_ADDITIONAL_TAGS");
 }
 
 TEST_F(StorageTest, RunCreationTestPassOverride) {
@@ -268,7 +268,7 @@ TEST_F(StorageTest, RunCreationTestPassOverrideEnv) {
   mock_response.set_key("122344");  // this is an arbitrary number
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  setenv("mako_internal_test_pass_id_override", "1234", 1);
+  setenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE", "1234", 1);
   RunInfo run_info;
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
   run_info.set_test_pass_id("4567");
@@ -285,7 +285,7 @@ TEST_F(StorageTest, RunCreationTestPassOverrideEnv) {
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
-  unsetenv("mako_internal_test_pass_id_override");
+  unsetenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE");
 }
 
 TEST_F(StorageTest, RunCreationTestPassOverrideEnvAndFlag) {
@@ -294,7 +294,7 @@ TEST_F(StorageTest, RunCreationTestPassOverrideEnvAndFlag) {
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
   absl::SetFlag(&FLAGS_mako_internal_test_pass_id_override, "12345");
-  setenv("mako_internal_test_pass_id_override", "1234", 1);
+  setenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE", "1234", 1);
   RunInfo run_info;
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
   run_info.set_test_pass_id("4567");
@@ -311,7 +311,7 @@ TEST_F(StorageTest, RunCreationTestPassOverrideEnvAndFlag) {
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
-  unsetenv("mako_internal_test_pass_id_override");
+  unsetenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE");
 }
 
 TEST_F(StorageTest, RunQuery) {
@@ -380,7 +380,7 @@ TEST_F(StorageTest, RunUpdateTestPassOverrideEnv) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  setenv("mako_internal_test_pass_id_override", "new", 1);
+  setenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE", "new", 1);
   RunInfo run_info;
   run_info.set_run_key("123");
   run_info.set_test_pass_id("original");
@@ -397,7 +397,7 @@ TEST_F(StorageTest, RunUpdateTestPassOverrideEnv) {
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
-  unsetenv("mako_internal_test_pass_id_override");
+  unsetenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE");
 }
 
 TEST_F(StorageTest, RunUpdateTestPassOverrideEnvAndFlag) {
@@ -406,7 +406,7 @@ TEST_F(StorageTest, RunUpdateTestPassOverrideEnvAndFlag) {
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
   absl::SetFlag(&FLAGS_mako_internal_test_pass_id_override, "new");
-  setenv("mako_internal_test_pass_id_override", "newer", 1);
+  setenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE", "newer", 1);
   RunInfo run_info;
   run_info.set_run_key("123");
   run_info.set_test_pass_id("original");
@@ -423,7 +423,7 @@ TEST_F(StorageTest, RunUpdateTestPassOverrideEnvAndFlag) {
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
-  unsetenv("mako_internal_test_pass_id_override");
+  unsetenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE");
 }
 
 TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlag) {
@@ -465,7 +465,7 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsEnv) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  setenv("mako_internal_additional_tags",
+  setenv("MAKO_INTERNAL_ADDITIONAL_TAGS",
          "tag1=val1,tag2=val2,tag3=val3,tag4=val4", 1);
   RunInfo run_info;
   run_info.set_run_key("123");
@@ -491,7 +491,7 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsEnv) {
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
-  unsetenv("mako_internal_additional_tags");
+  unsetenv("MAKO_INTERNAL_ADDITIONAL_TAGS");
 }
 
 TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagWhitespace) {
@@ -533,7 +533,7 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsEnvWhitespace) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  setenv("mako_internal_additional_tags",
+  setenv("MAKO_INTERNAL_ADDITIONAL_TAGS",
          "tag1=val1,tag2=val2,   tag3=val3  \t \n,tag4=val4", 1);
   RunInfo run_info;
   run_info.set_run_key("123");
@@ -559,7 +559,7 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsEnvWhitespace) {
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
-  unsetenv("mako_internal_additional_tags");
+  unsetenv("MAKO_INTERNAL_ADDITIONAL_TAGS");
 }
 
 TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagAndEnv) {
@@ -570,7 +570,7 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagAndEnv) {
   std::vector<std::string> flag_tags =
       {"tag1=val1", "tag2=val2", "tag3=val3", "tag4=val4"};
   absl::SetFlag(&FLAGS_mako_internal_additional_tags, flag_tags);
-  setenv("mako_internal_additional_tags",
+  setenv("MAKO_INTERNAL_ADDITIONAL_TAGS",
          "tag1=val1,tag2=val2,tag3=val3,tag6=val6", 1);
   RunInfo run_info;
   run_info.set_run_key("123");
@@ -596,7 +596,7 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagAndEnv) {
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
-  unsetenv("mako_internal_additional_tags");
+  unsetenv("MAKO_INTERNAL_ADDITIONAL_TAGS");
 }
 
 TEST_F(StorageTest, RunDelete) {
