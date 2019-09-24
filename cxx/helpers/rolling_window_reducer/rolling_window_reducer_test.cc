@@ -19,11 +19,13 @@
 #include "glog/logging.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "cxx/clients/fileio/memory_fileio.h"
 #include "cxx/helpers/rolling_window_reducer/rolling_window_reducer_internal.h"
 #include "cxx/helpers/status/canonical_errors.h"
 #include "cxx/helpers/status/status_matchers.h"
+#include "cxx/testing/protocol-buffer-matchers.h"
 #include "proto/helpers/rolling_window_reducer/rolling_window_reducer.pb.h"
 #include "spec/proto/mako.pb.h"
 
@@ -31,7 +33,15 @@ namespace mako {
 namespace helpers {
 namespace {
 
+using ::testing::Contains;
+using ::testing::DescribeMatcher;
 using ::testing::HasSubstr;
+using ::testing::Matches;
+using ::testing::Not;
+using ::testing::UnorderedElementsAreArray;
+
+using SamplePointMatcher = ::testing::Matcher<const SamplePoint&>;
+using KeyedValueMatcher = ::testing::Matcher<const KeyedValue&>;
 
 constexpr char kInputKey[] = "InputKey";
 constexpr char kOutputKey[] = "OutputKey";
@@ -145,55 +155,68 @@ RWRAddPointsInput HelperCreateRWRAddPointsInputs(
   return input;
 }
 
-bool HelperDoubleNear(double expected, double actual) {
-  if (std::isnan(expected) && std::isnan(actual)) {
+// TODO(b/141503378): Delete this and use testing::DoubleNear.
+MATCHER_P(HelperDoubleNear, expected,
+          absl::StrCat("is approximately ", expected)) {
+  if (std::isnan(expected) && std::isnan(arg)) {
     return true;
   }
-  if (std::isinf(expected) && std::isinf(actual)) {
+  if (std::isinf(expected) && std::isinf(arg)) {
     // Verify signage matches (-inf != +inf)
-    return (expected * actual) == std::numeric_limits<double>::infinity();
+    return (expected * arg) == std::numeric_limits<double>::infinity();
   }
-  double diff = expected - actual;
+  double diff = expected - arg;
   return (diff < kEpsilon && diff > -kEpsilon);
 }
 
-bool HelperFoundPointWithXY(double x_val, double y_val,
-                            const RWRCompleteOutput& output) {
-  for (const auto& point : output.point_list()) {
-    if (HelperDoubleNear(x_val, point.input_value())) {
-      for (const auto& kv : point.metric_value_list()) {
-        if (HelperDoubleNear(y_val, kv.value())) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
+MATCHER_P2(KeyedValueIs, key, value,
+           absl::StrCat("has key ", DescribeMatcher<std::string>(key), " and value ",
+                        DescribeMatcher<double>(value))) {
+  *result_listener << "has key = " << arg.value_key()
+                   << " and value = " << arg.value();
+  return Matches(key)(arg.value_key()) && Matches(value)(arg.value());
 }
 
-bool HelperFoundPointWithX(double x_val, const RWRCompleteOutput& output) {
-  for (const auto& point : output.point_list()) {
-    if (HelperDoubleNear(x_val, point.input_value())) {
-      if (point.metric_value_list_size() != 0) {
-        return true;
-      }
-    }
+MATCHER_P2(SamplePointFullMatch, x_val, y_key_and_val,
+           absl::StrCat("is a SamplePoint whose input_value ",
+                        DescribeMatcher<double>(x_val),
+                        " and has an output point that ",
+                        DescribeMatcher<const KeyedValue&>(y_key_and_val))) {
+  if (!Matches(x_val)(arg.input_value())) {
+    *result_listener << "whose input_value is " << arg.input_value();
+    return false;
   }
-
-  return false;
+  auto y_list_match = ::testing::ElementsAre(y_key_and_val);
+  if (!Matches(y_list_match)(arg.metric_value_list())) {
+    *result_listener << "whose metric_value_list is "
+                     << ::testing::PrintToString(arg.metric_value_list());
+    return false;
+  }
+  return true;
 }
 
-bool HelperFoundPointWithY(double y_val, const RWRCompleteOutput& output) {
-  for (const auto& point : output.point_list()) {
-    for (const auto& kv : point.metric_value_list()) {
-      if (HelperDoubleNear(y_val, kv.value())) {
-        return true;
-      }
-    }
-  }
+SamplePointMatcher SamplePointWithX(double x_val) {
+  return SamplePointFullMatch(HelperDoubleNear(x_val), ::testing::_);
+}
+SamplePointMatcher SamplePointWithY(double y_val) {
+  return SamplePointFullMatch(
+      ::testing::_, KeyedValueIs(::testing::_, HelperDoubleNear(y_val)));
+}
+SamplePointMatcher SamplePointWithXY(double x_val, double y_val) {
+  return SamplePointFullMatch(
+      HelperDoubleNear(x_val),
+      KeyedValueIs(::testing::_, HelperDoubleNear(y_val)));
+}
+SamplePointMatcher ExactSamplePoint(double x_val, absl::string_view metric_key,
+                                    double y_val) {
+  return SamplePointFullMatch(
+      HelperDoubleNear(x_val),
+      KeyedValueIs(metric_key, HelperDoubleNear(y_val)));
+}
 
-  return false;
+::testing::Matcher<const google::protobuf::RepeatedPtrField<SamplePoint>&> ContainsPoints(
+    std::vector<SamplePointMatcher> expected_points) {
+  return ::testing::IsSupersetOf(expected_points);
 }
 
 TEST(RollingWindowReducerTest, InvalidInput) {
@@ -409,9 +432,11 @@ TEST(RollingWindowReducerTest, MeanCorrect) {
   ASSERT_OK(sb->Complete(&comp_output));
 
   // 1.0 is still 10.0 because [ ... range ... )
-  EXPECT_TRUE(HelperFoundPointWithXY(1.0, 10, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.1, 15, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2, 20, comp_output));
+  EXPECT_THAT(comp_output.point_list(), ContainsPoints({
+                                            SamplePointWithXY(1.0, 10),
+                                            SamplePointWithXY(1.1, 15),
+                                            SamplePointWithXY(2.0, 20),
+                                        }));
 }
 
 TEST(RollingWindowReducerTest, SumCorrect) {
@@ -425,9 +450,11 @@ TEST(RollingWindowReducerTest, SumCorrect) {
   ASSERT_OK(sb->Complete(&comp_output));
 
   // 1.0 is still 10.0 because [ ... range ... )
-  EXPECT_TRUE(HelperFoundPointWithXY(1, 10, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.1, 30, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2, 20, comp_output));
+  EXPECT_THAT(comp_output.point_list(), ContainsPoints({
+                                            SamplePointWithXY(1.0, 10),
+                                            SamplePointWithXY(1.1, 30),
+                                            SamplePointWithXY(2.0, 20),
+                                        }));
 }
 
 TEST(RollingWindowReducerTest, CountCorrect) {
@@ -442,9 +469,11 @@ TEST(RollingWindowReducerTest, CountCorrect) {
   ASSERT_OK(sb->Complete(&comp_output));
 
   // 1 is still 1 because [ ... range ... )
-  EXPECT_TRUE(HelperFoundPointWithXY(1, 1, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.1, 2, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2, 1, comp_output));
+  EXPECT_THAT(comp_output.point_list(), ContainsPoints({
+                                            SamplePointWithXY(1.0, 1),
+                                            SamplePointWithXY(1.1, 2),
+                                            SamplePointWithXY(2.0, 1),
+                                        }));
 }
 
 TEST(RollingWindowReducerTest, ErrorCountCorrect) {
@@ -463,16 +492,18 @@ TEST(RollingWindowReducerTest, ErrorCountCorrect) {
   ASSERT_OK(sb->Complete(&comp_output));
 
   // 1 is still 1 because [ ... range ... )
-  EXPECT_FALSE(HelperFoundPointWithX(0.5, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(0.6, 1, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.0, 1, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.1, 3, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.4, 3, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.5, 3, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.0, 3, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.1, 1, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.5, 1, comp_output));
-  EXPECT_FALSE(HelperFoundPointWithX(2.6, comp_output));
+  EXPECT_THAT(comp_output.point_list(), Not(Contains(SamplePointWithX(0.5))));
+  EXPECT_THAT(comp_output.point_list(), ContainsPoints({
+                                            SamplePointWithXY(0.6, 1),
+                                            SamplePointWithXY(1.0, 1),
+                                            SamplePointWithXY(1.1, 3),
+                                            SamplePointWithXY(1.4, 3),
+                                            SamplePointWithXY(1.5, 3),
+                                            SamplePointWithXY(2.0, 3),
+                                            SamplePointWithXY(2.1, 1),
+                                            SamplePointWithXY(2.5, 1),
+                                        }));
+  EXPECT_THAT(comp_output.point_list(), Not(Contains(SamplePointWithX(2.6))));
 }
 
 TEST(RollingWindowReducerTest, PercentileCorrect) {
@@ -485,13 +516,12 @@ TEST(RollingWindowReducerTest, PercentileCorrect) {
       kInputKey, {{1, 10}, {1.1, 14}, {1.2, 16}, {1.5, 20}})));
   RWRCompleteOutput comp_output;
   ASSERT_OK(sb->Complete(&comp_output));
-
-  comp_output.PrintDebugString();
-
-  EXPECT_TRUE(HelperFoundPointWithXY(1, 14, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.6, 16, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.7, 18, comp_output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2, 20, comp_output));
+  EXPECT_THAT(comp_output.point_list(), ContainsPoints({
+                                            SamplePointWithXY(1, 14),
+                                            SamplePointWithXY(1.6, 16),
+                                            SamplePointWithXY(1.7, 18),
+                                            SamplePointWithXY(2, 20),
+                                        }));
 }
 
 TEST(RollingWindowReducerTest, WindowSizeCheck) {
@@ -504,13 +534,14 @@ TEST(RollingWindowReducerTest, WindowSizeCheck) {
       HelperCreateRWRAddPointsInput(kInputKey, {{0, 10}, {3, 20}})));
   RWRCompleteOutput point_list_1;
   ASSERT_OK(sb_1->Complete(&point_list_1));
-
-  EXPECT_TRUE(HelperFoundPointWithXY(0.5, 10, point_list_1));
-  EXPECT_TRUE(HelperFoundPointWithXY(0.6, 0, point_list_1));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.0, 0, point_list_1));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.5, 0, point_list_1));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.6, 20, point_list_1));
-  EXPECT_TRUE(HelperFoundPointWithXY(3.5, 20, point_list_1));
+  EXPECT_THAT(point_list_1.point_list(), ContainsPoints({
+                                             SamplePointWithXY(0.5, 10),
+                                             SamplePointWithXY(0.6, 0),
+                                             SamplePointWithXY(2.0, 0),
+                                             SamplePointWithXY(2.5, 0),
+                                             SamplePointWithXY(2.6, 20),
+                                             SamplePointWithXY(3.5, 20),
+                                         }));
 
   // window size set to 10.
   auto sb_5 = HelperCreateRWRInstance(
@@ -521,10 +552,11 @@ TEST(RollingWindowReducerTest, WindowSizeCheck) {
       HelperCreateRWRAddPointsInput(kInputKey, {{0, 10}, {3, 20}})));
   RWRCompleteOutput point_list_5;
   ASSERT_OK(sb_5->Complete(&point_list_5));
-
-  EXPECT_TRUE(HelperFoundPointWithXY(5, 30, point_list_5));
-  EXPECT_TRUE(HelperFoundPointWithXY(6, 20, point_list_5));
-  EXPECT_TRUE(HelperFoundPointWithXY(7, 20, point_list_5));
+  EXPECT_THAT(point_list_5.point_list(), ContainsPoints({
+                                             SamplePointWithXY(5, 30),
+                                             SamplePointWithXY(6, 20),
+                                             SamplePointWithXY(7, 20),
+                                         }));
 }
 
 TEST(RollingWindowReducerTest, StepsPerWindowCheck) {
@@ -536,9 +568,8 @@ TEST(RollingWindowReducerTest, StepsPerWindowCheck) {
       HelperCreateRWRAddPointsInput(kInputKey, {{0, 10}, {3, 20}})));
   RWRCompleteOutput point_list_05;
   ASSERT_OK(sb_05->Complete(&point_list_05));
-
   for (double i = 0; i <= 3.5; i += 0.5) {
-    EXPECT_TRUE(HelperFoundPointWithX(i, point_list_05));
+    EXPECT_THAT(point_list_05.point_list(), Contains(SamplePointWithX(i)));
   }
 
   auto sb_20 = HelperCreateRWRInstance({kInputKey}, {}, kOutputKey,
@@ -549,12 +580,10 @@ TEST(RollingWindowReducerTest, StepsPerWindowCheck) {
       HelperCreateRWRAddPointsInput(kInputKey, {{0, 10}, {3, 20}})));
   RWRCompleteOutput point_list_20;
   ASSERT_OK(sb_20->Complete(&point_list_20));
-
-  EXPECT_TRUE(HelperFoundPointWithX(0, point_list_20));
-  EXPECT_TRUE(HelperFoundPointWithX(2, point_list_20));
-  EXPECT_TRUE(HelperFoundPointWithX(4, point_list_20));
-  EXPECT_TRUE(HelperFoundPointWithX(6, point_list_20));
-  EXPECT_TRUE(HelperFoundPointWithX(8, point_list_20));
+  EXPECT_THAT(point_list_20.point_list(),
+              ContainsPoints({SamplePointWithX(0), SamplePointWithX(2),
+                              SamplePointWithX(4), SamplePointWithX(6),
+                              SamplePointWithX(8)}));
 }
 
 TEST(RollingWindowReducerTest, MultipleInputKeys) {
@@ -575,9 +604,8 @@ TEST(RollingWindowReducerTest, MultipleInputKeys) {
 
   RWRCompleteOutput output;
   ASSERT_OK(rwr->Complete(&output));
-
   for (double i = 0.5; i <= 3.5; i += 0.5) {
-    EXPECT_TRUE(HelperFoundPointWithX(i, output));
+    EXPECT_THAT(output.point_list(), Contains(SamplePointWithX(i)));
   }
 }
 
@@ -600,9 +628,8 @@ TEST(RollingWindowReducerTest, MultipleInputKeysSameSamplePoint) {
 
   RWRCompleteOutput output;
   ASSERT_OK(rwr->Complete(&output));
-
   for (double i = 0.5; i <= 3.5; i += 0.5) {
-    EXPECT_TRUE(HelperFoundPointWithXY(i, 40, output));
+    EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(i, 40)));
   }
 }
 
@@ -625,21 +652,22 @@ TEST(RollingWindowReducerTest, RatioTest) {
 
   RWRCompleteOutput output;
   ASSERT_OK(rwr->Complete(&output));
-
-  EXPECT_EQ(9, output.point_list_size());
-  EXPECT_TRUE(HelperFoundPointWithXY(0.0, 0.25, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(0.5, 0.25, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.0, 0.5, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.5, 0.5, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(
-      2.0, std::numeric_limits<double>::infinity(), output));
-  EXPECT_TRUE(HelperFoundPointWithXY(
-      2.5, std::numeric_limits<double>::infinity(), output));
-  EXPECT_TRUE(HelperFoundPointWithXY(3.0, 1, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(3.5, 2.0 / 3.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(4.0, 0.5, output));
+  EXPECT_THAT(
+      output.point_list(),
+      UnorderedElementsAreArray({
+          SamplePointWithXY(0.0, 0.25),
+          SamplePointWithXY(0.5, 0.25),
+          SamplePointWithXY(1.0, 0.5),
+          SamplePointWithXY(1.5, 0.5),
+          SamplePointWithXY(2.0, std::numeric_limits<double>::infinity()),
+          SamplePointWithXY(2.5, std::numeric_limits<double>::infinity()),
+          SamplePointWithXY(3.0, 1),
+          SamplePointWithXY(3.5, 2.0 / 3.0),
+          SamplePointWithXY(4.0, 0.5),
+      }));
 }
 
+// TODO(b/141503378): Div-by-zero is UB
 TEST(RollingWindowReducerTest, RatioNaN) {
   std::string input_key_1 = "k1";
   std::string input_key_2 = "k2";
@@ -657,11 +685,11 @@ TEST(RollingWindowReducerTest, RatioNaN) {
 
   RWRCompleteOutput output;
   ASSERT_OK(rwr->Complete(&output));
-
-  EXPECT_EQ(1, output.point_list_size());
-  EXPECT_TRUE(HelperFoundPointWithXY(0.0, std::nan(""), output));
+  EXPECT_THAT(output.point_list(), UnorderedElementsAreArray(
+                                       {SamplePointWithXY(0.0, std::nan(""))}));
 }
 
+// TODO(b/141503378): Div-by-zero is UB
 TEST(RollingWindowReducerTest, RatioInf) {
   std::string input_key_1 = "k1";
   std::string input_key_2 = "k2";
@@ -680,12 +708,11 @@ TEST(RollingWindowReducerTest, RatioInf) {
   RWRCompleteOutput output;
   ASSERT_OK(rwr->Complete(&output));
 
-  EXPECT_EQ(2, output.point_list_size());
-
-  EXPECT_TRUE(HelperFoundPointWithXY(
-          0, std::numeric_limits<double>::infinity(), output));
-  EXPECT_TRUE(HelperFoundPointWithXY(
-          3, -std::numeric_limits<double>::infinity(), output));
+  EXPECT_THAT(
+      output.point_list(),
+      UnorderedElementsAreArray(
+          {SamplePointWithXY(0, std::numeric_limits<double>::infinity()),
+           SamplePointWithXY(3, -std::numeric_limits<double>::infinity())}));
 }
 
 TEST(RollingWindowReducerTest, RatioTestWideWindow) {
@@ -714,34 +741,34 @@ TEST(RollingWindowReducerTest, RatioTestWideWindow) {
   // Note: window size extends 1.5 on both sides from the window center point
 
   // The following data points only contain x = {0} points in the window
-  EXPECT_TRUE(HelperFoundPointWithXY(-1.2, 0.25, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(-0.9, 0.25, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(-0.6, 0.25, output));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(-1.2, 0.25)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(-0.9, 0.25)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(-0.6, 0.25)));
   // The following data points contain x = {0, 1} points in the window
-  EXPECT_TRUE(HelperFoundPointWithXY(-0.3, 0.375, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(0.0, 0.375, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(0.3, 0.375, output));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(-0.3, 0.375)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(0.0, 0.375)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(0.3, 0.375)));
   // The following data points contain x = {0, 1, 2} points in the window
-  EXPECT_TRUE(HelperFoundPointWithXY(0.6, 0.5, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(0.9, 0.5, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.2, 0.5, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.5, 0.5, output));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(0.6, 0.5)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(0.9, 0.5)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(1.2, 0.5)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(1.5, 0.5)));
   // The following data points contain x = {1, 2, 3} points in the window
-  EXPECT_TRUE(HelperFoundPointWithXY(1.8, 5.0 / 6.0, output));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(1.8, 5.0 / 6.0)));
   // The following data points contain x = {1, 2, 3, 3.5} points in the window
-  EXPECT_TRUE(HelperFoundPointWithXY(2.1, 0.7, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.4, 0.7, output));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(2.1, 0.7)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(2.4, 0.7)));
   // The following data points contain x = {2, 3, 3.5} points in the window
-  EXPECT_TRUE(HelperFoundPointWithXY(2.7, 5.0 / 6.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(3.0, 5.0 / 6.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(3.3, 5.0 / 6.0, output));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(2.7, 5.0 / 6.0)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(3.0, 5.0 / 6.0)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(3.3, 5.0 / 6.0)));
   // The following data points contain x = {3, 3.5} points in the window
-  EXPECT_TRUE(HelperFoundPointWithXY(3.6, 2.0 / 3.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(3.9, 2.0 / 3.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(4.2, 2.0 / 3.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(4.5, 2.0 / 3.0, output));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(3.6, 2.0 / 3.0)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(3.9, 2.0 / 3.0)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(4.2, 2.0 / 3.0)));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(4.5, 2.0 / 3.0)));
   // The following data points contain x = {3.5} points in the window
-  EXPECT_TRUE(HelperFoundPointWithXY(4.8, 0.5, output));
+  EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(4.8, 0.5)));
 }
 
 TEST(RollingWindowReducerTest, RatioSparseDataZeroForEmptyWindowTrue) {
@@ -767,24 +794,24 @@ TEST(RollingWindowReducerTest, RatioSparseDataZeroForEmptyWindowTrue) {
 
   RWRCompleteOutput output;
   ASSERT_OK(rwr->Complete(&output));
-
-  EXPECT_EQ(16, output.point_list_size());
-  EXPECT_TRUE(HelperFoundPointWithXY(0.0, 0.25, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(0.5, 0.25, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.0, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(1.5, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.0, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(2.5, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(3.0, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(3.5, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(4.0, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(4.5, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(5.0, 2.0 / 3.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(5.5, 4.0 / 3.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(6.0, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(6.5, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(7.0, 0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(7.5, 0, output));
+  EXPECT_THAT(output.point_list(), UnorderedElementsAreArray({
+                                       SamplePointWithXY(0.0, 0.25),
+                                       SamplePointWithXY(0.5, 0.25),
+                                       SamplePointWithXY(1.0, 0),
+                                       SamplePointWithXY(1.5, 0),
+                                       SamplePointWithXY(2.0, 0),
+                                       SamplePointWithXY(2.5, 0),
+                                       SamplePointWithXY(3.0, 0),
+                                       SamplePointWithXY(3.5, 0),
+                                       SamplePointWithXY(4.0, 0),
+                                       SamplePointWithXY(4.5, 0),
+                                       SamplePointWithXY(5.0, 2.0 / 3.0),
+                                       SamplePointWithXY(5.5, 4.0 / 3.0),
+                                       SamplePointWithXY(6.0, 0),
+                                       SamplePointWithXY(6.5, 0),
+                                       SamplePointWithXY(7.0, 0),
+                                       SamplePointWithXY(7.5, 0),
+                                   }));
 }
 
 TEST(RollingWindowReducerTest, RatioSparseDataZeroForEmptyWindowFalse) {
@@ -810,12 +837,12 @@ TEST(RollingWindowReducerTest, RatioSparseDataZeroForEmptyWindowFalse) {
 
   RWRCompleteOutput output;
   ASSERT_OK(rwr->Complete(&output));
-
-  EXPECT_EQ(4, output.point_list_size());
-  EXPECT_TRUE(HelperFoundPointWithXY(0.0, 0.25, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(0.5, 0.25, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(5.0, 2.0 / 3.0, output));
-  EXPECT_TRUE(HelperFoundPointWithXY(5.5, 4.0 / 3.0, output));
+  EXPECT_THAT(output.point_list(), UnorderedElementsAreArray({
+                                       SamplePointWithXY(0.0, 0.25),
+                                       SamplePointWithXY(0.5, 0.25),
+                                       SamplePointWithXY(5.0, 2.0 / 3.0),
+                                       SamplePointWithXY(5.5, 4.0 / 3.0),
+                                   }));
 }
 
 TEST(RollingWindowReducerTest, RatioMultipleDenominatorInputKeys) {
@@ -835,9 +862,8 @@ TEST(RollingWindowReducerTest, RatioMultipleDenominatorInputKeys) {
 
   RWRCompleteOutput output;
   ASSERT_OK(rwr->Complete(&output));
-
   for (double i = 0.5; i <= 3.5; i += 0.5) {
-    EXPECT_TRUE(HelperFoundPointWithXY(i, 0.5, output));
+    EXPECT_THAT(output.point_list(), Contains(SamplePointWithXY(i, 0.5)));
   }
 }
 
@@ -851,8 +877,7 @@ TEST(RollingWindowReducerTest, ZeroIfEmptyFalse) {
       HelperCreateRWRAddPointsInput(kInputKey, {{1, 10}, {4, 20}})));
   RWRCompleteOutput comp_output;
   ASSERT_OK(sb->Complete(&comp_output));
-
-  EXPECT_FALSE(HelperFoundPointWithY(0, comp_output));
+  EXPECT_THAT(comp_output.point_list(), Not(Contains(SamplePointWithY(0))));
 }
 
 TEST(RollingWindowReducerTest, ZeroIfEmptyTrue) {
@@ -865,8 +890,7 @@ TEST(RollingWindowReducerTest, ZeroIfEmptyTrue) {
       HelperCreateRWRAddPointsInput(kInputKey, {{1, 10}, {4, 20}})));
   RWRCompleteOutput comp_output;
   ASSERT_OK(sb->Complete(&comp_output));
-
-  EXPECT_TRUE(HelperFoundPointWithY(0, comp_output));
+  EXPECT_THAT(comp_output.point_list(), Contains(SamplePointWithY(0)));
 }
 
 // // Useful for testing this code against preexisting data
@@ -948,9 +972,8 @@ TEST(RollingWindowReducerTest, ReduceAppendsToFileTest) {
       << file_io.Error();
   mako::SampleRecord record;
   while (file_io.Read(&record)) {
-    LOG(INFO) << record.DebugString();
+    LOG(INFO) << record.ShortDebugString();
     for (const KeyedValue& kv : record.sample_point().metric_value_list()) {
-      LOG(INFO) << "error count test; value_key: " << kv.value_key();
       if (kv.value_key() == error_count_key) {
         has_key = true;
         break;
@@ -963,14 +986,22 @@ TEST(RollingWindowReducerTest, ReduceAppendsToFileTest) {
 
 TEST(RollingWindowReducerTest, SanityCheck) {
   // Simple test which is easy to rationalize.
-  // Points every 0.25 starting at 0 and going to 2, with y-val = 1.
+  // Points every 0.25 starting at 0 and going to 2, with y-val = 10.
   // Regardless of steps_per_window we should:
   //   * never get a COUNT more than 4.
-  //   * MEAN should always be 1.
-  //   * never get a SUM more than 4.
-  double window_size = 1;
-  for (const auto& window_op :
-       {RWRConfig::COUNT, RWRConfig::SUM, RWRConfig::MEAN}) {
+  //   * MEAN should always be 10.
+  //   * never get a SUM more than 40.
+  const double window_size = 1;
+  struct OpAndExpectations {
+    RWRConfig::WindowOperation window_op;
+    double max_value;
+    double value_at_0, value_at_1, value_at_2;
+  } ops_to_test[] = {{RWRConfig::COUNT, 4, 2, 4, 3},
+                     {RWRConfig::SUM, 40, 20, 40, 30},
+                     {RWRConfig::MEAN, 10, 10, 10, 10}};
+
+  for (const auto& op_test : ops_to_test) {
+    const auto window_op = op_test.window_op;
     for (double steps_per_window : {1.0, 2.0, 4.0}) {
       for (bool zero_if_empty : {false, true}) {
         LOG(INFO) << "-----------";
@@ -984,49 +1015,25 @@ TEST(RollingWindowReducerTest, SanityCheck) {
         ASSERT_NE(nullptr, r);
 
         for (double i = 0; i <= 2; i += 0.25) {
-          ASSERT_OK(
-              r->AddPoints(HelperCreateRWRAddPointsInput(kInputKey, {{i, 1}})));
+          ASSERT_OK(r->AddPoints(
+              HelperCreateRWRAddPointsInput(kInputKey, {{i, 10}})));
         }
 
         RWRCompleteOutput output;
         ASSERT_OK(r->Complete(&output));
 
-        double max_value = -1;
-
         // 3 because we are always creating points at 0, 1, 2
         ASSERT_EQ(steps_per_window * 3, output.point_list_size());
 
         for (const auto& sp : output.point_list()) {
-          LOG(INFO) << sp.input_value() << ","
-                    << sp.metric_value_list(0).value();
+          LOG(INFO) << sp.ShortDebugString();
           ASSERT_EQ(1, sp.metric_value_list_size());
-          if (sp.metric_value_list(0).value() > max_value) {
-            max_value = sp.metric_value_list(0).value();
-          }
+          ASSERT_LE(sp.metric_value_list(0).value(), op_test.max_value);
         }
-
-        switch (window_op) {
-          case RWRConfig::SUM:
-            ABSL_FALLTHROUGH_INTENDED;
-          case RWRConfig::COUNT:
-            ASSERT_TRUE(HelperFoundPointWithXY(0, 2, output));
-            ASSERT_TRUE(HelperFoundPointWithXY(2, 3, output));
-            ASSERT_TRUE(HelperFoundPointWithXY(1, 4, output));
-            ASSERT_EQ(4, max_value);
-            break;
-          case RWRConfig::MEAN:
-            ASSERT_TRUE(HelperFoundPointWithXY(0, 1, output));
-            ASSERT_TRUE(HelperFoundPointWithXY(2, 1, output));
-            ASSERT_TRUE(HelperFoundPointWithXY(1, 1, output));
-            ASSERT_EQ(1, max_value);
-            break;
-          case RWRConfig::PERCENTILE:
-            ASSERT_EQ(1, 0);
-            break;
-          default:
-            FAIL() << "case not expected: " << window_op;
-            break;
-        }
+        ASSERT_THAT(output.point_list(),
+                    ContainsPoints({SamplePointWithXY(0, op_test.value_at_0),
+                                    SamplePointWithXY(1, op_test.value_at_1),
+                                    SamplePointWithXY(2, op_test.value_at_2)}));
       }
     }
   }
