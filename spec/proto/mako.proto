@@ -234,6 +234,57 @@ message RunBundle {
   repeated SampleBatch batch_list = 3;
 }
 
+// Tool for tracking issues (e.g. bugs or feature requests) of a
+// Mako project.
+//
+// NEXT_ID: 2
+message IssueTrackerInfo {
+  message BuganizerConfig {
+    optional string component_id = 1;
+  }
+
+  optional BuganizerConfig buganizer_config = 1;
+}
+
+// -----------------------------------------------------------------------------
+// Project Metadata
+// -----------------------------------------------------------------------------
+
+// DO NOT USE. THIS IS NOT SUPPORTED YET.
+// b/141321581
+//
+// Contains all information about a Mako project. A Mako project can
+// have multiple benchmarks while a benchmark can belong to only one project. A
+// project has its own set of owners. See owner_list field for project
+// owner permissions.
+//
+// NEXT_ID: 5
+message ProjectInfo {
+  // REQUIRED
+  // Uniquely identifies this project, and is used as a primary key. This is set
+  // by the project creator and is always evaluated as lower-case.
+  optional string project_name = 1;
+
+  // REQUIRED
+  // Display name for the project. This is what will be presented in the web UI.
+  optional string project_alias = 2;
+
+  // REQUIRED
+  // List of project owners specified by email addresses. See
+  // BenchmarkInfo.owner_list for further specifications.
+
+  // Only project owners can create, update, or delete this project. Adding a
+  // new benchmark for this project without project ownership will result in a
+  // permission denied error. Project and benchmark owners can perform all
+  // other benchmark/run operations.
+  repeated string owner_list = 3;
+
+  // OPTIONAL
+  // The issue tracker that the Triage Web UI workflow will use for any
+  // regressions under this project.
+  optional IssueTrackerInfo default_issue_tracker = 4;
+}
+
 // -----------------------------------------------------------------------------
 // Benchmark Metadata
 // -----------------------------------------------------------------------------
