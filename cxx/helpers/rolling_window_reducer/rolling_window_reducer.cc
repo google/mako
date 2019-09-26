@@ -45,10 +45,8 @@ static std::string ToMakoError(const Status& status) {
   return status.ok() ? kNoError : StatusToString(status);
 }
 
-Status ProcessFileData(
-    absl::string_view file_path,
-    const std::vector<std::unique_ptr<RollingWindowReducer>>& reducers,
-    FileIO* file_io) {
+Status ProcessFileData(absl::string_view file_path,
+                       RollingWindowReducer* reducer, FileIO* file_io) {
   RWRAddPointsInput points_to_process;
   int buffer_size = 0;
 
@@ -70,12 +68,10 @@ Status ProcessFileData(
       VLOG(1) << "Size of AddPointsInput Proto to be passed for file "
               << file_path << ": "
               << points_to_process.ByteSizeLong() << " bytes";
-      for (std::size_t i = 0; i < reducers.size(); i++) {
-        const Status status = reducers[i]->AddPoints(points_to_process);
-        if (!status.ok()) {
-          return Annotate(status,
-                          absl::StrFormat("adding points to reducer %d", i));
-        }
+
+      const Status status = reducer->AddPoints(points_to_process);
+      if (!status.ok()) {
+        return status;
       }
       points_to_process.Clear();
       buffer_size = 0;
@@ -92,75 +88,40 @@ Status ProcessFileData(
     VLOG(1) << "Size of AddPointsInput Proto to be passed for file "
             << file_path << ": "
             << points_to_process.ByteSizeLong() << " bytes";
-    for (std::size_t i = 0; i < reducers.size(); i++) {
-      const Status status = reducers[i]->AddPoints(points_to_process);
-      if (!status.ok()) {
-        return Annotate(status,
-                        absl::StrFormat("adding points to reducer %d", i));
-      }
+    const Status status = reducer->AddPoints(points_to_process);
+    if (!status.ok()) {
+      return status;
     }
   }
 
   return OkStatus();
 }
-}  // namespace
-
-StatusOr<google::protobuf::RepeatedPtrField<SamplePoint>>
-RollingWindowReducer::ReduceImpl(absl::Span<absl::string_view> file_paths,
-                                 const std::vector<RWRConfig>& configs,
-                                 FileIO* file_io) {
-  if (file_io == nullptr) {
-    return InvalidArgumentError("FileIO pointer invalid.");
-  }
-
-  // Create RWR instances for each RWRConfig in configs
-  std::vector<std::unique_ptr<RollingWindowReducer>> reducers;
-  for (std::size_t i = 0; i < configs.size(); i++) {
-    auto reducer_or = RollingWindowReducer::New(configs[i]);
-    if (!reducer_or.ok()) {
-      return Annotate(reducer_or.status(),
-                      absl::StrFormat("creating reducer for config %d", i));
-    }
-
-    reducers.push_back(std::move(reducer_or).value());
-  }
-
-  // Loop through all files
-  for (auto file_path : file_paths) {
-    if (!file_io->Open(std::string(file_path), FileIO::AccessMode::kRead)) {
-      return Annotate(UnknownError(file_io->Error()), "opening file");
-    }
-
-    const auto close_file =
-        mako::internal::MakeCleanup([file_io] { file_io->Close(); });
-
-    const Status status = ProcessFileData(file_path, reducers, file_io);
-    if (!status.ok()) {
-      return Annotate(status, absl::StrFormat("processing file: %s",
-                                              file_path));
-    }
-  }
-
-  // Collect resulting data from each RWR instance
-  google::protobuf::RepeatedPtrField<SamplePoint> output;
-  for (std::size_t i = 0; i < reducers.size(); i++) {
-    const Status status = reducers[i]->CompleteImpl(&output);
-    if (!status.ok()) {
-      return Annotate(status, absl::StrFormat("completing reducer %d", i));
-    }
-  }
-
-  return output;
-}
-
 
 static mako::internal::Random* GetRandom() {
   static mako::internal::Random* random = new mako::internal::Random;
   return random;
 }
 
-StatusOr<std::unique_ptr<RollingWindowReducer>> RollingWindowReducer::New(
-    const RWRConfig& config) {
+std::set<std::string> ToStringSet(const google::protobuf::RepeatedPtrField<std::string>& list) {
+  std::set<std::string> set;
+  for (const auto& key : list) {
+    set.insert(key);
+  }
+  return set;
+}
+
+int EffectiveMaxSampleSize(const RWRConfig& config) {
+  if (config.window_operation() != RWRConfig::PERCENTILE) {
+    return 0;  // do not keep samples unless percentile
+  } else if (config.has_max_sample_size()) {
+    return config.max_sample_size();
+  } else {
+    return -1;  // no maximum size
+  }
+}
+
+// Note: Doesn't check if 'error_matcher' compiles to a valid RE2.
+Status ValidateConfig(const RWRConfig& config) {
   // Validate config protobuf
   if (config.window_operation() == RWRConfig::ERROR_COUNT &&
       config.input_metric_keys_size() > 0) {
@@ -174,6 +135,13 @@ StatusOr<std::unique_ptr<RollingWindowReducer>> RollingWindowReducer::New(
     return InvalidArgumentError(
         "RWRConfig must provide at least one error_sampler_name_inputs when "
         "using an error (ERROR_*) window operation.");
+  }
+
+  if (config.window_operation() != RWRConfig::ERROR_COUNT &&
+      config.error_sampler_name_inputs_size() > 0) {
+    return InvalidArgumentError(
+        "RWRConfig should not have any error_sampler_name_inputs "
+        "when using a non-error (!= ERROR_*) window operation.");
   }
 
   if (config.window_operation() != RWRConfig::ERROR_COUNT &&
@@ -218,8 +186,6 @@ StatusOr<std::unique_ptr<RollingWindowReducer>> RollingWindowReducer::New(
         "RWRConfig must specify zero_for_empty_window.");
   }
 
-  int max_sample_size = 0;
-
   if (config.window_operation() == RWRConfig::PERCENTILE) {
     if (!config.has_percentile_milli()) {
       return InvalidArgumentError(
@@ -231,13 +197,98 @@ StatusOr<std::unique_ptr<RollingWindowReducer>> RollingWindowReducer::New(
       return InvalidArgumentError(
           "RWRConfig should specify percentile_milli that is >= 0");
     }
+  }
 
-    if (config.has_max_sample_size()) {
-      max_sample_size = config.max_sample_size();
-    } else {
-      max_sample_size = -1;
+  return OkStatus();
+}
+
+// Preserve test expectations for denominator=zero.
+// TODO(b/141503378): Fix behavior and remove this workaround.
+double DivByZero(double numerator) {
+  if (numerator == 0) {
+    return std::nan("");
+  } else {
+    return numerator > 0 ? std::numeric_limits<double>::infinity()
+                         : -std::numeric_limits<double>::infinity();
+  }
+}
+
+}  // namespace
+
+StatusOr<google::protobuf::RepeatedPtrField<SamplePoint>>
+RollingWindowReducer::ReduceImpl(absl::Span<absl::string_view> file_paths,
+                                 const std::vector<RWRConfig>& configs,
+                                 FileIO* file_io) {
+  if (file_io == nullptr) {
+    return InvalidArgumentError("FileIO pointer invalid.");
+  }
+
+  auto reducer_or = RollingWindowReducer::NewMerged(configs);
+  if (!reducer_or.ok()) {
+    return reducer_or.status();
+  }
+  RollingWindowReducer* reducer = reducer_or.value().get();
+
+  // Loop through all files
+  for (auto file_path : file_paths) {
+    if (!file_io->Open(std::string(file_path), FileIO::AccessMode::kRead)) {
+      return Annotate(UnknownError(file_io->Error()), "opening file");
+    }
+
+    const auto close_file =
+        mako::internal::MakeCleanup([file_io] { file_io->Close(); });
+
+    const Status status = ProcessFileData(file_path, reducer, file_io);
+    if (!status.ok()) {
+      return Annotate(status, absl::StrFormat("processing file: %s",
+                                              file_path));
     }
   }
+
+  google::protobuf::RepeatedPtrField<SamplePoint> output;
+  const Status status = reducer->CompleteImpl(&output);
+  if (!status.ok()) {
+    return status;
+  }
+  return output;
+}
+
+// static
+StatusOr<std::unique_ptr<RollingWindowReducer>> RollingWindowReducer::New(
+    const RWRConfig& config) {
+  return NewMerged({config});
+}
+
+StatusOr<std::unique_ptr<RollingWindowReducer>> RollingWindowReducer::NewMerged(
+    const std::vector<RWRConfig>& configs) {
+  std::unique_ptr<RollingWindowReducer> reducer(new RollingWindowReducer);
+  for (std::size_t i = 0; i < configs.size(); i++) {
+    auto status = reducer->AddConfig(configs[i]);
+    if (!status.ok()) {
+      return Annotate(status,
+                      absl::StrFormat("creating reducer for config %d", i));
+    }
+  }
+  return reducer;
+}
+
+Status RollingWindowReducer::AddConfig(const RWRConfig& config) {
+  auto validation = ValidateConfig(config);
+  if (!validation.ok()) {
+    return validation;
+  }
+  // Try to merge the config into each existing subreducer. The number of
+  // RWRConfigs will be tiny compared to the number of input points, so it
+  // shouldn't matter if we do a naive O(n^2) match.
+  for (auto& subreducer : subreducers_) {
+    if (subreducer->TryMergeSimilarConfig(config)) {
+      VLOG(1) << "Merging config: " << config.ShortDebugString();
+      return OkStatus();
+    }
+  }
+
+  VLOG(1) << "Creating new subreducer: " << config.ShortDebugString();
+  int max_sample_size = EffectiveMaxSampleSize(config);
   std::unique_ptr<RE2> error_matcher;
   if (config.window_operation() == RWRConfig::ERROR_COUNT &&
       !config.error_matcher().empty()) {
@@ -248,11 +299,9 @@ StatusOr<std::unique_ptr<RollingWindowReducer>> RollingWindowReducer::New(
           error_matcher->error());
     }
   }
-
-  // absl::make_unique can't call a private constructor.
-  return absl::WrapUnique(new RollingWindowReducer(
-      config, max_sample_size, max_sample_size > 0 ? GetRandom() : nullptr,
-      std::move(error_matcher)));
+  subreducers_.push_back(absl::make_unique<Subreducer>(
+      config, max_sample_size, std::move(error_matcher)));
+  return OkStatus();
 }
 
 // static
@@ -267,8 +316,84 @@ std::unique_ptr<RollingWindowReducer> RollingWindowReducer::Create(
   return std::move(reducer_or.value());
 }
 
+RollingWindowReducer::Subreducer::Subreducer(const RWRConfig& config,
+                                             int max_sample_size,
+                                             std::unique_ptr<RE2> error_matcher)
+    : window_size_(config.window_size()),
+      step_size_(config.window_size() / config.steps_per_window()),
+      steps_per_window_(config.steps_per_window()),
+      base_window_loc_(std::numeric_limits<double>::max()),
+      min_window_index_(std::numeric_limits<int>::max()),
+      max_window_index_(std::numeric_limits<int>::min()),
+      error_matcher_(std::move(error_matcher)) {
+  input_metric_keys_ = ToStringSet(config.input_metric_keys());
+  denominator_input_metric_keys_ =
+      ToStringSet(config.denominator_input_metric_keys());
+  error_sampler_name_inputs_ = ToStringSet(config.error_sampler_name_inputs());
+
+  running_stats_config_.max_sample_size = max_sample_size;
+  if (max_sample_size > 0) {
+    running_stats_config_.random = GetRandom();
+  }
+  output_configs_.push_back(OutputConfig(config));
+}
+
+bool RollingWindowReducer::Subreducer::TryMergeSimilarConfig(
+    const RWRConfig& other_config) {
+  if (other_config.window_size() != window_size_ ||
+      other_config.steps_per_window() != steps_per_window_) {
+    VLOG(3) << " cannot merge: different window sizes";
+    return false;
+  }
+  if (error_matcher_ || !other_config.error_matcher().empty()) {
+    VLOG(3) << " cannot merge: config has error matcher regex";
+    return false;
+  }
+  if (input_metric_keys_ != ToStringSet(other_config.input_metric_keys())) {
+    VLOG(3) << " cannot merge: different input_metric_keys";
+    return false;
+  }
+  if (denominator_input_metric_keys_ !=
+      ToStringSet(other_config.denominator_input_metric_keys())) {
+    VLOG(3) << " cannot merge: different denominator_input_metric_keys";
+    return false;
+  }
+  if (error_sampler_name_inputs_ !=
+      ToStringSet(other_config.error_sampler_name_inputs())) {
+    VLOG(3) << " cannot merge: different error_sampler_name_inputs";
+    return false;
+  }
+
+  VLOG(2) << "All input fields match, adding output metric to reducer";
+
+  output_configs_.push_back(OutputConfig(other_config));
+
+  // Increase max_sample_size to match the new config, if needed.
+  int other_max_sample_size = EffectiveMaxSampleSize(other_config);
+  if (other_max_sample_size < 0) {
+    running_stats_config_.max_sample_size = -1;
+  } else if (other_max_sample_size > running_stats_config_.max_sample_size) {
+    running_stats_config_.max_sample_size = other_max_sample_size;
+    if (running_stats_config_.random == nullptr) {
+      running_stats_config_.random = GetRandom();
+    }
+  }
+
+  return true;
+}
+
 Status RollingWindowReducer::AddPoints(const RWRAddPointsInput& input) {
-  if (window_operation_ == RWRConfig::ERROR_COUNT) {
+  for (auto& subreducer : subreducers_) {
+    subreducer->AddPoints(input);
+  }
+  return OkStatus();
+}
+
+void RollingWindowReducer::Subreducer::AddPoints(
+    const RWRAddPointsInput& input) {
+  // Since the config(s) passed validation, input_metric_keys_ is empty iff the
+  // window_operation is ERROR_COUNT.
+  if (input_metric_keys_.empty()) {
     // Loop through all SampleErrors
     for (const auto& error : input.error_list()) {
       if (error_sampler_name_inputs_.count(error.sampler_name()) &&
@@ -279,24 +404,19 @@ Status RollingWindowReducer::AddPoints(const RWRAddPointsInput& input) {
   } else {
     // Loop through all SamplePoints
     for (const auto& point : input.point_list()) {
-      // Add the point to all relevant windows if it contains the metric
-      // value key we are interested in
+      // Add the point to all relevant windows if it contains a metric value key
+      // we are interested in
       for (const auto& metric_value : point.metric_value_list()) {
-        if (input_metric_keys_.count(metric_value.value_key()) ||
-            (window_operation_ == RWRConfig::RATIO_SUM &&
-             denominator_input_metric_keys_.count(metric_value.value_key()))) {
           AddPointToAllContainingWindows(point.input_value(),
                                          metric_value.value(),
                                          metric_value.value_key());
-        }
       }
     }
   }
-
-  return OkStatus();
 }
 
-bool RollingWindowReducer::IsMatch(absl::string_view error_message) {
+bool RollingWindowReducer::Subreducer::IsMatch(
+    absl::string_view error_message) {
   return !error_matcher_ || RE2::PartialMatch(error_message, *error_matcher_);
 }
 
@@ -308,123 +428,129 @@ Status RollingWindowReducer::Complete(
   return CompleteImpl(output->mutable_point_list());
 }
 
-
 Status RollingWindowReducer::CompleteImpl(
     google::protobuf::RepeatedPtrField<SamplePoint>* output) {
   if (output == nullptr) {
     return InvalidArgumentError("RepeatedPtrField pointer invalid.");
   }
-
-  // No point processed, return an empty list
-  if (window_data_.empty()) {
-    return OkStatus();
+  for (auto& subreducer : subreducers_) {
+    subreducer->Complete(output);
   }
-
-  if (zero_for_empty_window_) {
-    // Loop through all possible windows locations
-    for (int curr_window_index = min_window_index_;
-         curr_window_index <= max_window_index_; curr_window_index++) {
-      // Get window's value
-      double value_to_set = 0;
-      const auto window_iter = window_data_.find(curr_window_index);
-      if (window_iter != window_data_.end()) {
-        value_to_set =
-            window_iter->second.GetWindowValue(window_operation_, percentile_);
-      }
-      if (window_operation_ == RWRConfig::RATIO_SUM) {
-        const auto denominator_iter =
-            window_data_denominator_.find(curr_window_index);
-        if (denominator_iter != window_data_denominator_.end()) {
-          double denominator = denominator_iter->second.GetWindowValue(
-              window_operation_, percentile_);
-          value_to_set /= denominator;
-        } else {
-          value_to_set = 0;
-        }
-      }
-
-      // Create sample point at middle of window
-      SamplePoint* sp = output->Add();
-      sp->set_input_value(WindowLocation(curr_window_index));
-      KeyedValue* kv = sp->add_metric_value_list();
-      kv->set_value_key(output_metric_key_);
-      kv->set_value(value_to_set);
-    }
-  } else {
-    // Only loop through all windows in window_data_ map
-    for (auto& window : window_data_) {
-      int curr_window_index = window.first;
-
-      // If computing RATIO_SUM, then only use the data point if both numerator
-      // and denominator windows contain valid data in the current window.
-      if (window_operation_ == RWRConfig::RATIO_SUM &&
-          window_data_denominator_.find(curr_window_index) ==
-              window_data_denominator_.end()) {
-        continue;
-      }
-
-      double value_to_set =
-          window.second.GetWindowValue(window_operation_, percentile_);
-      if (window_operation_ == RWRConfig::RATIO_SUM) {
-        const auto denominator_iter =
-            window_data_denominator_.find(curr_window_index);
-        double denominator = denominator_iter->second.GetWindowValue(
-            window_operation_, percentile_);
-        value_to_set /= denominator;
-      }
-
-      //  Create sample point at window location
-      SamplePoint* sp = output->Add();
-      sp->set_input_value(WindowLocation(curr_window_index));
-      KeyedValue* kv = sp->add_metric_value_list();
-      kv->set_value_key(output_metric_key_);
-      kv->set_value(value_to_set);
-    }
-  }
-
   return OkStatus();
 }
 
-double RollingWindowReducer::HighestWindowLoc(double value) {
+void RollingWindowReducer::Subreducer::AppendOutputPointsForWindow(
+    int window_index, WindowDataProcessor* window,
+    google::protobuf::RepeatedPtrField<SamplePoint>* output) {
+  for (const auto& output_config : output_configs_) {
+    if (!window && !output_config.zero_for_empty_window) {
+      continue;
+    }
+
+    double value_to_set = window ? window->GetWindowValue(output_config) : 0;
+
+    if (output_config.window_operation == RWRConfig::RATIO_SUM) {
+      auto& denominator_windows = window_data_denominator_;
+      auto iter = denominator_windows.find(window_index);
+      if (iter != denominator_windows.end()) {
+        double denominator = iter->second.GetWindowValue(output_config);
+        // The tests check for "proper" div-by-zero behavior; this is a bug, but
+        // for now we preserve existing behavior.
+        // Note that this is inconsistent with zero_for_empty_window.
+        // TODO(b/141503378): Fix this.
+        if (denominator == 0) {
+          value_to_set = DivByZero(value_to_set);
+        } else {
+          value_to_set /= denominator;
+        }
+      } else if (!output_config.zero_for_empty_window) {
+        continue;
+      } else {
+        value_to_set = 0;
+      }
+    }
+
+    // Create sample point at middle of window
+    SamplePoint* sp = output->Add();
+    sp->set_input_value(WindowLocation(window_index));
+    KeyedValue* kv = sp->add_metric_value_list();
+    kv->set_value_key(output_config.metric_key);
+    kv->set_value(value_to_set);
+  }
+}
+
+void RollingWindowReducer::Subreducer::Complete(
+    google::protobuf::RepeatedPtrField<SamplePoint>* output) {
+  // No point processed, return an empty list
+  if (window_data_.empty()) {
+    return;
+  }
+
+  bool care_about_empty_windows = false;
+  for (const auto& config : output_configs_) {
+    care_about_empty_windows |= config.zero_for_empty_window;
+  }
+
+  if (care_about_empty_windows) {
+    // Loop through all possible windows locations
+    for (int curr_window_index = min_window_index_;
+         curr_window_index <= max_window_index_; curr_window_index++) {
+      const auto window_iter = window_data_.find(curr_window_index);
+      WindowDataProcessor* window =
+          window_iter != window_data_.end() ? &window_iter->second : nullptr;
+      AppendOutputPointsForWindow(curr_window_index, window, output);
+    }
+  } else {
+    // Only loop through all windows in window_data_ map
+    for (auto& indexed_window : window_data_) {
+      int curr_window_index = indexed_window.first;
+      WindowDataProcessor* window = &indexed_window.second;
+      AppendOutputPointsForWindow(curr_window_index, window, output);
+    }
+  }
+}
+
+double RollingWindowReducer::Subreducer::HighestWindowLoc(double value) {
   return std::floor((value + window_size_ / 2.0) / step_size_) * step_size_;
 }
 
-int RollingWindowReducer::WindowIndex(double value) {
+int RollingWindowReducer::Subreducer::WindowIndex(double value) {
   return static_cast<int>(std::lround((value - base_window_loc_) / step_size_));
 }
 
-double RollingWindowReducer::WindowLocation(int window_index) {
+double RollingWindowReducer::Subreducer::WindowLocation(int window_index) {
   return window_index * step_size_ + base_window_loc_;
 }
 
-void RollingWindowReducer::AddPointToAllContainingWindows(
+void RollingWindowReducer::Subreducer::AddPointToAllContainingWindows(
     double x_val, double y_val, const std::string& value_key) {
-  auto index_bounds = updateWindowIndexBounds(x_val);
+  const bool is_primary_metric = input_metric_keys_.count(value_key);
+  const bool is_denominator_metric =
+      denominator_input_metric_keys_.count(value_key);
 
-  std::vector<absl::node_hash_map<int, WindowDataProcessor>*>
-      window_data_selectors;
-  if (input_metric_keys_.count(value_key)) {
-    window_data_selectors.push_back(&window_data_);
-  }
-  if (window_operation_ == RWRConfig::RATIO_SUM &&
-      denominator_input_metric_keys_.count(value_key)) {
-    window_data_selectors.push_back(&window_data_denominator_);
-  }
-  for (auto& window_data_selector : window_data_selectors) {
-    // Give point to window's DataProcessor
-    for (int curr_window_index = index_bounds.low;
-         curr_window_index <= index_bounds.high; curr_window_index++) {
-      auto insert_result = window_data_selector->insert(
+  if (!is_primary_metric && !is_denominator_metric) return;
+
+  auto index_bounds = UpdateWindowIndexBounds(x_val);
+
+  for (int curr_window_index = index_bounds.low;
+       curr_window_index <= index_bounds.high; curr_window_index++) {
+    if (is_primary_metric) {
+      auto insert_result = window_data_.insert(
+          {curr_window_index, WindowDataProcessor(running_stats_config_)});
+      insert_result.first->second.AddPoint(y_val);
+    }
+    if (is_denominator_metric) {
+      auto insert_result = window_data_denominator_.insert(
           {curr_window_index, WindowDataProcessor(running_stats_config_)});
       insert_result.first->second.AddPoint(y_val);
     }
   }
 }
 
-void RollingWindowReducer::AddErrorToAllContainingWindows(double x_val) {
-  auto index_bounds = updateWindowIndexBounds(x_val);
+void RollingWindowReducer::Subreducer::AddErrorToAllContainingWindows(
+    double x_val) {
+  auto index_bounds = UpdateWindowIndexBounds(x_val);
 
-  // Give point to window's DataProcessor
   for (int curr_window_index = index_bounds.low;
        curr_window_index <= index_bounds.high; curr_window_index++) {
     auto insert_result = window_data_.insert(
@@ -436,8 +562,8 @@ void RollingWindowReducer::AddErrorToAllContainingWindows(double x_val) {
 // Updates the base window index and window bounds with the sample X value. It
 // then returns the indices of the lower and upper windows that contain the X
 // value.
-RollingWindowReducer::WindowIndexBounds
-RollingWindowReducer::updateWindowIndexBounds(double sample_x_val) {
+RollingWindowReducer::Subreducer::WindowIndexBounds
+RollingWindowReducer::Subreducer::UpdateWindowIndexBounds(double sample_x_val) {
   // Take note of the first point we encounter, this will serve as the
   // base window location (all future points will be stored relative to
   // this location)
@@ -465,7 +591,6 @@ RollingWindowReducer::updateWindowIndexBounds(double sample_x_val) {
   }
 
   // return the lower and upper windows that contain the point in question
-
   return bounds;
 }
 
@@ -473,17 +598,11 @@ RollingWindowReducer::WindowDataProcessor::WindowDataProcessor(
     const RunningStats::Config& config)
     : running_stats_(config), error_count_(0) {}
 
-void RollingWindowReducer::WindowDataProcessor::AddPoint(double point) {
-  running_stats_.Add(point);
-}
-
-void RollingWindowReducer::WindowDataProcessor::AddError() { ++error_count_; }
-
 double RollingWindowReducer::WindowDataProcessor::GetWindowValue(
-    RWRConfig_WindowOperation window_operation, double percent) {
+    const OutputConfig& output_config) {
   RunningStats::Result result;
 
-  switch (window_operation) {
+  switch (output_config.window_operation) {
     case RWRConfig::RATIO_SUM:
       // The ratio in RATIO_SUM is calculated outside of the individual
       // WindowDataProcessor value calculation, which only provides the SUM
@@ -502,11 +621,12 @@ double RollingWindowReducer::WindowDataProcessor::GetWindowValue(
       result.value = error_count_;
       break;
     case RWRConfig::PERCENTILE:
-      result = running_stats_.Percentile(percent);
+      result = running_stats_.Percentile(output_config.percentile);
       break;
     default:
       LOG(FATAL) << "Unknown window operation type: "
-                 << RWRConfig_WindowOperation_Name(window_operation);
+                 << RWRConfig_WindowOperation_Name(
+                        output_config.window_operation);
       return 0;
   }
 

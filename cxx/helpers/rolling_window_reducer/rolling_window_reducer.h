@@ -25,6 +25,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "src/google/protobuf/repeated_field.h"
@@ -49,6 +50,22 @@ class RollingWindowReducer {
   static StatusOr<std::unique_ptr<RollingWindowReducer> > New(
       const RWRConfig& config);
 
+  // Create a merged RollingWindowReducer based on the supplied configs,
+  // returning an error if any config is invalid. The returned reducer is
+  // equivalent to having a collection of reducers for each individual config,
+  // but may be more efficient.
+  //
+  // The following examples give the same result:
+  //   auto rwr_merge = RollingWindowReducer::New({config1, config2});
+  //   CHECK_OK(rwr_merge->AddPoints(input));
+  //   CHECK_OK(rwr_merge->Complete(&output));
+  // -- or --
+  //   auto r1 = RWR::New(config1);     auto r2 = RWR::New(config2);
+  //   CHECK_OK(r1->AddPoints(input));  CHECK_OK(r2->AddPoints(input));
+  //   CHECK_OK(r1->Complete(&output)); CHECK_OK(r2->Complete(&output));
+  static StatusOr<std::unique_ptr<RollingWindowReducer> > NewMerged(
+      const std::vector<RWRConfig>& configs);
+
   // A legacy version of New that returns null on error, for use by SWIG. Please
   // use the above version elsewhere.
   static std::unique_ptr<RollingWindowReducer> Create(
@@ -72,78 +89,38 @@ class RollingWindowReducer {
   std::string StringComplete(mako::helpers::RWRCompleteOutput* output);
 
  private:
-  RollingWindowReducer(const RWRConfig& config, int max_sample_size,
-                       mako::internal::Random* random,
-                       std::unique_ptr<RE2> error_matcher)
-      : output_metric_key_(config.output_metric_key()),
-        window_operation_(config.window_operation()),
-        window_size_(config.window_size()),
-        step_size_(config.window_size() / config.steps_per_window()),
-        steps_per_window_(config.steps_per_window()),
-        zero_for_empty_window_(config.zero_for_empty_window()),
-        max_sample_size_(max_sample_size),
-        percentile_(config.percentile_milli() / 100000.0),
-        base_window_loc_(std::numeric_limits<double>::max()),
-        min_window_index_(std::numeric_limits<int>::max()),
-        max_window_index_(std::numeric_limits<int>::min()),
-        error_matcher_(std::move(error_matcher)) {
-    for (const auto& key : config.input_metric_keys()) {
-      input_metric_keys_.insert(key);
-    }
-    for (const auto& key : config.denominator_input_metric_keys()) {
-      denominator_input_metric_keys_.insert(key);
-    }
-    for (const auto& key : config.error_sampler_name_inputs()) {
-      error_sampler_name_inputs_.insert(key);
-    }
+  RollingWindowReducer() {}
 
-    running_stats_config_.max_sample_size = max_sample_size_;
-    running_stats_config_.random = random;
-  }
+  // The CLIF Python adapter gets confused unless we explicitly delete these.
+  // On the other hand, SWIG cannot parse the "= delete" syntax.
+#ifndef SWIG
+  RollingWindowReducer(const RollingWindowReducer&) = delete;
+  RollingWindowReducer& operator=(const RollingWindowReducer&) = delete;
+#endif  // #ifndef SWIG
 
-  // Returns whether a sampler error message matches the error_matcher set in
-  // the config. Will always return true if no error_matcher was set.
-  bool IsMatch(absl::string_view error_message);
-
-  // Returns the highest possible window location (window locations must
-  // be evenly divisible by the step size) which would contain the point
-  double HighestWindowLoc(double value);
-
-  // The first point that is processed is used as the "base_window_loc_"
-  // and has index 0. All future points are relative to this index.
-  //
-  // Returns an index for a window based on the window starting location.
-  int WindowIndex(double value);
+  // Merge a config into a compatable subreducer, or create a new subreducer for
+  // it. Returns an error if the config is not valid.
+  Status AddConfig(const RWRConfig& config);
 
   static StatusOr<google::protobuf::RepeatedPtrField<SamplePoint> > ReduceImpl(
       absl::Span<absl::string_view> file_paths,
       const std::vector<RWRConfig>& configs, FileIO* file_io);
   Status CompleteImpl(google::protobuf::RepeatedPtrField<SamplePoint>* output);
 
-  // Struct to store the low and high index bounds of a particular x value
-  struct WindowIndexBounds {
-    double low, high;
+  struct OutputConfig {
+    explicit OutputConfig(const RWRConfig& config)
+        : metric_key(config.output_metric_key()),
+          window_operation(config.window_operation()),
+          percentile(config.percentile_milli() / 100000.0),
+          zero_for_empty_window(config.zero_for_empty_window()) {}
+
+    std::string metric_key;
+    RWRConfig::WindowOperation window_operation;
+    double percentile;  // only for percentile operation
+    bool zero_for_empty_window;
   };
 
-  // Updates the base window index and window bounds with the sample X value. It
-  // then returns the indices of the lower and upper windows that contain the X
-  // value.
-  WindowIndexBounds updateWindowIndexBounds(double sample_x_val);
-
-  // Returns a window starting location based on the index.
-  double WindowLocation(int window_index);
-
-  // Given a point, this function gives the point to all relevant
-  // WindowDataProcessors
-  void AddPointToAllContainingWindows(double x_val, double y_val,
-                                      const std::string& value_key);
-
-  // Given an error, this function gives the error to all relevant
-  // WindowDataProcessors
-  void AddErrorToAllContainingWindows(double x_val);
-
-  // Class to keep track of sum and count for each window. Provides the sum,
-  // mean, or count "window value" depending on the user's WindowOperation
+  // Class to keep track of metric values in a specific window.
   // Important to keep this class's size small since an instance of it
   // will be created for each window
   class WindowDataProcessor {
@@ -151,54 +128,112 @@ class RollingWindowReducer {
     explicit WindowDataProcessor(
         const mako::internal::RunningStats::Config& config);
 
-    // Add point to window
-    void AddPoint(double point);
-
-    // Add error to window
-    void AddError();
+    void AddPoint(double point) { running_stats_.Add(point); }
+    void AddError() { ++error_count_; }
 
     // Get current value of window.
-    // percent only needed when operation is PERCENTILE.
-    double GetWindowValue(RWRConfig_WindowOperation window_operation,
-                          double percent);
+    double GetWindowValue(const OutputConfig& output_config);
 
    private:
     mako::internal::RunningStats running_stats_;
     int64_t error_count_;
   };
 
-  // Construction parameters
-  std::set<std::string> input_metric_keys_;
-  // When computing window of a Ratio, remember which metric is the denominator.
-  std::set<std::string> denominator_input_metric_keys_;
-  // Sampler names to pull errors from
-  std::set<std::string> error_sampler_name_inputs_;
-  std::string output_metric_key_;
-  RWRConfig_WindowOperation window_operation_;
-  double window_size_;
-  double step_size_;
-  int steps_per_window_;
-  bool zero_for_empty_window_;
-  int max_sample_size_;
-  double percentile_;   // only for percentile operation
-  mako::internal::RunningStats::Config running_stats_config_;
+  // Each Subreducer keeps track of the windows for the metric(s) for a
+  // particular RWRConfig. It may be the case that the Subreducers for two
+  // configs would always contain the same data; we call these "similar", and
+  // only create one object per set of similar configs.
+  class Subreducer {
+   public:
+    Subreducer(const RWRConfig& config, int max_sample_size,
+               std::unique_ptr<RE2> error_matcher);
 
-  // Used to map window indices to window locations
-  double base_window_loc_;
+    void AddPoints(const mako::helpers::RWRAddPointsInput& input);
+    void Complete(google::protobuf::RepeatedPtrField<SamplePoint>* output);
 
-  // Useful in looping through all windows
-  double min_window_index_;
-  double max_window_index_;
+    // Compare another config to this reducer's config. If the two configs are
+    // "similar", merge other_config into this reducer and return true. If the
+    // other config is not similar, does nothing and returns false.
+    // May only be called before points are added.
+    bool TryMergeSimilarConfig(const RWRConfig& other_config);
 
-  // Maps window index to window data (stored in WindowDataProcessor instances)
-  absl::node_hash_map<int, WindowDataProcessor> window_data_;
-  // For use when computing RATIO, keep a separate window data for the
-  // denominator.
-  absl::node_hash_map<int, WindowDataProcessor> window_data_denominator_;
-  // Regex specified in RWRConfig.error_matcher. Used to match against error
-  // text to determine if that error should be counted for ERROR_COUNT
-  // operations.
-  std::unique_ptr<RE2> error_matcher_;
+   private:
+    // Returns whether a sampler error message matches the error_matcher set in
+    // the config. Will always return true if no error_matcher was set.
+    bool IsMatch(absl::string_view error_message);
+
+    // Returns the highest possible window location (window locations must
+    // be evenly divisible by the step size) which would contain the point
+    double HighestWindowLoc(double value);
+
+    // The first point that is processed is used as the "base_window_loc_"
+    // and has index 0. All future points are relative to this index.
+    //
+    // Returns an index for a window based on the window starting location.
+    int WindowIndex(double value);
+
+    struct WindowIndexBounds {
+      int low, high;  // inclusive
+    };
+
+    // Updates the base window index and window bounds with the sample X value.
+    // It then returns the indices of the lower and upper windows that contain
+    // the X value.
+    WindowIndexBounds UpdateWindowIndexBounds(double sample_x_val);
+
+    // Returns a window starting location based on the index.
+    double WindowLocation(int window_index);
+
+    // Given a point, this function gives the point to all relevant
+    // WindowDataProcessors. No-op if value_key is not an input_metric_key or
+    // denominator_metric_key.
+    void AddPointToAllContainingWindows(double x_val, double y_val,
+                                        const std::string& value_key);
+
+    // Given an error, this function gives the error to all relevant
+    // WindowDataProcessors
+    void AddErrorToAllContainingWindows(double x_val);
+
+    // Append the SamplePoint(s) for the window at the given index. An empty
+    // window has no WindowDataProcessor and is represented by null.
+    void AppendOutputPointsForWindow(
+        int window_index, WindowDataProcessor* window,
+        google::protobuf::RepeatedPtrField<SamplePoint>* output);
+
+    // Construction parameters
+    std::set<std::string> input_metric_keys_;
+    // When computing window of a Ratio, remember which metric is the
+    // denominator.
+    std::set<std::string> denominator_input_metric_keys_;
+    // Sampler names to pull errors from
+    std::set<std::string> error_sampler_name_inputs_;
+    double window_size_;
+    double step_size_;
+    int steps_per_window_;
+    mako::internal::RunningStats::Config running_stats_config_;
+    std::vector<OutputConfig> output_configs_;
+
+    // Used to map window indices to window locations
+    double base_window_loc_;
+
+    // Useful in looping through all windows
+    int min_window_index_;
+    int max_window_index_;
+
+    // Maps window index to window data (stored in WindowDataProcessor
+    // instances)
+    absl::node_hash_map<int, WindowDataProcessor> window_data_;
+    // For use when computing RATIO, keep a separate window data for the
+    // denominator.
+    absl::node_hash_map<int, WindowDataProcessor> window_data_denominator_;
+    // Regex specified in RWRConfig.error_matcher. Used to match against error
+    // text to determine if that error should be counted for ERROR_COUNT
+    // operations.
+    std::unique_ptr<RE2> error_matcher_;
+  };
+
+  // At least one subreducer, and at most one subreducer per config.
+  std::vector<std::unique_ptr<Subreducer> > subreducers_;
 
   // friend function so that it can live in a separate visibility-restricted
   // build rule but still have access to private methods / fields.
