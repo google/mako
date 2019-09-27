@@ -29,6 +29,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "curl/curl.h"
+#include "third_party/curl/curlver.h"
 #include "cxx/helpers/status/canonical_errors.h"
 #include "cxx/internal/utils/cleanup.h"
 #include "cxx/internal/utils/googleinit.h"
@@ -165,6 +166,11 @@ Cleanup<std::function<void()>> SetHeaders(
 
   // Give curl the pointer to the headers.
   curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, *http_headers);
+  // TODO(b/140914760) After curl update to 7.66, remove the conditional.
+#if LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 66 \
+  || LIBCURL_VERSION_MAJOR > 7 
+  curl_easy_setopt(curl_handle, CURLOPT_HTTP09_ALLOWED, 1L);
+#endif
 
   return cleanup;
 }
