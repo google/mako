@@ -38,7 +38,7 @@ option java_package = "com.google.testing.performance.mako.helpers";
 option java_outer_classname = "RollingWindowReducerProto";
 
 // Passed into the RollingWindowReducer constructor
-// NEXT ID: 12
+// NEXT ID: 13
 message RWRConfig {
   // CONDITIONALLY REQUIRED
   // Metric value keys for the sample points you are interested in processing.
@@ -109,9 +109,8 @@ message RWRConfig {
 
   // REQUIRED
   // The higher this value, the smoother the resulting data.
-  // For computing throughput / aggregate data, this value should be the
-  // interval of time you are interested in. For example, for QPS, it should
-  // be 1000ms since we are interested in a 1 second time interval.
+  // For computing throughput / aggregate data, this value does not need to be
+  // the interval of time you are interested in; see output_scaling_factor.
   //
   // Each window is inclusive on the lower end and exclusive on the upper end
   // eg. [...)
@@ -159,6 +158,22 @@ message RWRConfig {
   // The 1000th percentile to calculate. e.g. 99000 calculates the 99th
   // percentile.
   optional int32 percentile_milli = 7;
+
+  // UNCOMMON
+  // When specified, the output value for each window will be multiplied by
+  // this factor. This allows you to compute a rate without restricting
+  // window_size (i.e. smoothness).
+  // Another possible use is to adjust units, e.g. convert latency-in-seconds to
+  // latency-in-milliseconds.
+  //
+  // For example, if window_operation is COUNT and input_value is milliseconds,
+  // these all produce QPS outputs at varying levels of smoothness:
+  //   * window_size = 1000 [output_scaling_factor = 1]  (default)
+  //   * window_size = 5000, output_scaling_factor = 0.2 (more smooth)
+  //   * window_size = 100,  output_scaling_factor = 10  (less smooth)
+  //
+  // Cannot be zero.
+  optional double output_scaling_factor = 12 [default = 1];
 
   // UNCOMMON
   // Limits the sample size used per window for percentile operations, which

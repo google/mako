@@ -185,6 +185,10 @@ Status ValidateConfig(const RWRConfig& config) {
     return InvalidArgumentError(
         "RWRConfig must specify zero_for_empty_window.");
   }
+  if (config.output_scaling_factor() == 0) {
+    return InvalidArgumentError(
+        "RWRConfig cannot have output_scaling_factor=0.");
+  }
 
   if (config.window_operation() == RWRConfig::PERCENTILE) {
     if (!config.has_percentile_milli()) {
@@ -469,6 +473,7 @@ void RollingWindowReducer::Subreducer::AppendOutputPointsForWindow(
         value_to_set = 0;
       }
     }
+    value_to_set *= output_config.scaling_factor;
 
     // Create sample point at middle of window
     SamplePoint* sp = output->Add();

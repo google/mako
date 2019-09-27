@@ -867,6 +867,120 @@ TEST(RollingWindowReducerTest, RatioMultipleDenominatorInputKeys) {
   }
 }
 
+TEST(RollingWindowReducerTest, RatesWithScalingFactor) {
+  RWRConfig base_config;
+  base_config.add_input_metric_keys(kInputKey);
+  base_config.set_window_operation(RWRConfig::SUM);
+  base_config.set_zero_for_empty_window(true);
+  RWRConfig config1 = base_config;
+  config1.set_output_metric_key("window1");
+  config1.set_window_size(1);
+  config1.set_steps_per_window(2);  // output point every 0.5
+  config1.set_output_scaling_factor(1);
+  RWRConfig config2 = base_config;
+  config2.set_output_metric_key("window2");
+  config2.set_window_size(2);
+  config2.set_steps_per_window(4);  // output point every 0.5
+  config2.set_output_scaling_factor(0.5);
+  RWRConfig config05 = base_config;
+  config05.set_output_metric_key("window05");
+  config05.set_window_size(0.5);
+  config05.set_steps_per_window(1);  // output point every 0.5
+  config05.set_output_scaling_factor(2);
+
+  auto reducer_or =
+      RollingWindowReducer::NewMerged({config1, config2, config05});
+  ASSERT_OK(reducer_or);
+  auto rwr = std::move(reducer_or).value();
+
+  ASSERT_OK(rwr->AddPoints(HelperCreateRWRAddPointsInput(
+      kInputKey, {{0, 1}, {0.5, 1}, {1, 1}, {1.5, 1}, {2, 2}, {3, 1}})));
+
+  // X-axis: 0.0  0.5  1.0  1.5  2.0  2.5  3.0  3.5  4.0
+  //          |----+----|----+----|----+----|----+----|
+  // wsize=1       [   1@   )[   2@   )[   3@   )
+  //                    [   1@5  )[   2@5  )
+  //          |----+----|----+----|----+----|----+----|
+  // wsize=2  [        1@        )[        3@      )
+  //                    [        2@      )
+  //                         [        2@5     )
+  //          |----+----|----+----|----+----|----+----|
+  // wsize=.5    [ @ )[ @ )[ @ )[ @ )[ @ )[ @ )[ @ )[ @ )
+  //          |----+----|----+----|----+----|----+----|
+  // Points:  1    1    1    1    2    0    1    0    0   // w/added zeroes
+  RWRCompleteOutput output;
+  ASSERT_OK(rwr->Complete(&output));
+  // Initially there is a y=1 point every half-second, maintained long enough to
+  // span all window sizes. All scales should agree that rate at x=1 is 2.
+  EXPECT_THAT(output.point_list(),
+              ContainsPoints({ExactSamplePoint(1, "window1", 2),
+                              ExactSamplePoint(1, "window2", 2),
+                              ExactSamplePoint(1, "window05", 2)}));
+  // At x=2 there's a y=2 value, but then there's no point at x=2.5.
+  // window2 sees both and averages back to rate=2.
+  // window1 sees the spike but not the drop and reports rate=3.
+  // window05 has only the y=2 point and reports rate=4.
+  EXPECT_THAT(output.point_list(),
+              ContainsPoints({ExactSamplePoint(2, "window1", 3),
+                              ExactSamplePoint(2, "window2", 2),
+                              ExactSamplePoint(2, "window05", 4)}));
+  // etc
+  EXPECT_THAT(output.point_list(),
+              ContainsPoints({ExactSamplePoint(2.5, "window1", 2),
+                              ExactSamplePoint(2.5, "window2", 2),
+                              ExactSamplePoint(2.5, "window05", 0),
+                              ExactSamplePoint(3, "window1", 1),
+                              ExactSamplePoint(3, "window2", 1.5),
+                              ExactSamplePoint(3, "window05", 2)}));
+}
+
+TEST(RollingWindowReducerTest, ArbitraryScalingFactor) {
+  RWRConfig config;
+  config.add_input_metric_keys(kInputKey);
+  config.set_zero_for_empty_window(true);
+  config.set_window_size(kWindowSize);
+  config.set_steps_per_window(kStepsPerWindow);
+  std::vector<RWRConfig> configs;
+  config.set_output_metric_key("mean");
+  config.set_window_operation(RWRConfig::MEAN);
+  config.set_output_scaling_factor(1);
+  configs.push_back(config);
+  config.set_output_metric_key("meanx10");
+  config.set_output_scaling_factor(10);
+  configs.push_back(config);
+  config.set_output_metric_key("count");
+  config.set_window_operation(RWRConfig::COUNT);
+  config.set_output_scaling_factor(1);
+  configs.push_back(config);
+  config.set_output_metric_key("halfcount");
+  config.set_output_scaling_factor(0.5);
+  configs.push_back(config);
+  config.set_output_metric_key("median");
+  config.set_window_operation(RWRConfig::PERCENTILE);
+  config.set_percentile_milli(50000);
+  config.set_output_scaling_factor(1);
+  configs.push_back(config);
+  config.set_output_metric_key("medianx3");
+  config.set_output_scaling_factor(3);
+  configs.push_back(config);
+
+  auto reducer_or = RollingWindowReducer::NewMerged({configs});
+  ASSERT_OK(reducer_or);
+  auto rwr = std::move(reducer_or).value();
+
+  ASSERT_OK(rwr->AddPoints(
+      HelperCreateRWRAddPointsInput(kInputKey, {{0, 0}, {0, 1}, {0, 5}})));
+  RWRCompleteOutput output;
+  ASSERT_OK(rwr->Complete(&output));
+  EXPECT_THAT(output.point_list(),
+              ContainsPoints({ExactSamplePoint(0, "mean", 2),
+                              ExactSamplePoint(0, "meanx10", 20),
+                              ExactSamplePoint(0, "count", 3),
+                              ExactSamplePoint(0, "halfcount", 1.5),
+                              ExactSamplePoint(0, "median", 1),
+                              ExactSamplePoint(0, "medianx3", 3)}));
+}
+
 TEST(RollingWindowReducerTest, ZeroIfEmptyFalse) {
   auto sb =
       HelperCreateRWRInstance({kInputKey}, {}, kOutputKey, RWRConfig::MEAN,

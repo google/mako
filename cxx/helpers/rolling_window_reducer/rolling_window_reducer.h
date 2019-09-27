@@ -112,11 +112,13 @@ class RollingWindowReducer {
         : metric_key(config.output_metric_key()),
           window_operation(config.window_operation()),
           percentile(config.percentile_milli() / 100000.0),
+          scaling_factor(config.output_scaling_factor()),
           zero_for_empty_window(config.zero_for_empty_window()) {}
 
     std::string metric_key;
     RWRConfig::WindowOperation window_operation;
     double percentile;  // only for percentile operation
+    double scaling_factor;
     bool zero_for_empty_window;
   };
 
