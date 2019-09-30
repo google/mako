@@ -20,6 +20,9 @@
 #include <string>
 
 #include "cxx/spec/storage.h"
+#include "proto/clients/analyzers/threshold_analyzer.pb.h"
+#include "proto/clients/analyzers/utest_analyzer.pb.h"
+#include "proto/clients/analyzers/window_deviation.pb.h"
 #include "proto/quickstore/quickstore.pb.h"
 #include "spec/proto/mako.pb.h"
 
@@ -154,6 +157,16 @@ class Quickstore {
   virtual std::string AddMetricAggregate(const std::string& value_key,
                                     const std::string& aggregate_type, double value);
 
+  // Add an analyzer input for the appropriate analyzer.
+  //
+  // A std::string is returned with an error if the operation was unsucessful.
+  virtual std::string AddThresholdAnalyzer(
+      mako::analyzers::threshold_analyzer::ThresholdAnalyzerInput input);
+  virtual std::string AddWindowDeviationAnalyzer(
+      mako::window_deviation::WindowDeviationInput input);
+  virtual std::string AddUTestAnalyzer(
+      mako::utest_analyzer::UTestAnalyzerInput input);
+
   // Store all the values that you have added. You cannot save if no Add*()
   // functions have been called.
   //
@@ -161,9 +174,10 @@ class Quickstore {
   // Aggregate and SamplePoint data registered using the Add* methods since the
   // last call to Store() as a part of that new Run.
   //
-  // Data can be added via Add* calls in any order.
+  // Data and analyzers can be added via Add* calls in any order.
   //
-  // After a call to Store() all data added via Add* will be cleared.
+  // After a call to Store() all data added via Add* will be cleared, but
+  // analyzers will persist.
   virtual mako::quickstore::QuickstoreOutput Store();
 
  private:

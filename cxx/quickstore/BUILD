@@ -16,6 +16,9 @@ cc_library(
     deps = [
         "//cxx/quickstore/internal:store",
         "//cxx/spec:storage",
+        "//proto/clients/analyzers:threshold_analyzer_cc_proto",
+        "//proto/clients/analyzers:utest_analyzer_cc_proto",
+        "//proto/clients/analyzers:window_deviation_cc_proto",
         "//proto/quickstore:quickstore_cc_proto",
         "//spec/proto:mako_cc_proto",
         "@com_google_glog//:glog",

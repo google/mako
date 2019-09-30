@@ -20,6 +20,9 @@
 #include "glog/logging.h"
 #include "cxx/quickstore/internal/store.h"
 #include "cxx/spec/storage.h"
+#include "proto/clients/analyzers/threshold_analyzer.pb.h"
+#include "proto/clients/analyzers/utest_analyzer.pb.h"
+#include "proto/clients/analyzers/window_deviation.pb.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {
@@ -82,6 +85,24 @@ std::string Quickstore::AddMetricAggregate(const std::string& value_key,
   metric_aggregate_value_keys_.push_back(value_key);
   metric_aggregate_types_.push_back(aggregate_type);
   metric_aggregate_values_.push_back(value);
+  return kNoError;
+}
+
+std::string Quickstore::AddThresholdAnalyzer(
+    mako::analyzers::threshold_analyzer::ThresholdAnalyzerInput input) {
+  *input_.add_threshold_inputs() = input;
+  return kNoError;
+}
+
+std::string Quickstore::AddWindowDeviationAnalyzer(
+    mako::window_deviation::WindowDeviationInput input) {
+  *input_.add_wda_inputs() = input;
+  return kNoError;
+}
+
+std::string Quickstore::AddUTestAnalyzer(
+    mako::utest_analyzer::UTestAnalyzerInput input) {
+  *input_.add_utest_inputs() = input;
   return kNoError;
 }
 
