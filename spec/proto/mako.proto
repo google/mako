@@ -285,6 +285,17 @@ message ProjectInfo {
   optional IssueTrackerInfo default_issue_tracker = 4;
 }
 
+// Output for Storage.GetProjectInfo()
+// NEXT_ID: 3
+message ProjectInfoGetResponse {
+  // REQUIRED
+  // Response status
+  optional Status status = 1;
+
+  // CONDITIONALLY_REQUIRED - set when results exist
+  optional ProjectInfo project_info = 2;
+}
+
 // -----------------------------------------------------------------------------
 // Benchmark Metadata
 // -----------------------------------------------------------------------------
