@@ -265,8 +265,9 @@ message ProjectInfo {
   // by the project creator and is always evaluated as lower-case.
   optional string project_name = 1;
 
-  // REQUIRED
+  // OPTIONAL
   // Display name for the project. This is what will be presented in the web UI.
+  // If left blank, project_name will be used.
   optional string project_alias = 2;
 
   // REQUIRED
