@@ -23,6 +23,37 @@
 
 namespace mako {
 namespace internal {
+namespace {
+
+// Calculates the given percentile from the given sample.
+// Assumes the sample has already been sorted using the provided transform
+// function to calculate the key for each value.
+RunningStats::Result PercentileImpl(
+    const std::vector<double>& sample, double pct,
+    std::function<double(double)> transform = [](double value) {
+      return value;
+    }) {
+  RunningStats::Result r;
+  // simple case for size 1
+  if (sample.size() == 1) {
+    r.value = transform(sample[0]);
+    return r;
+  }
+  // float index that has this value and floor/ceiling of it
+  double k = static_cast<double>(sample.size() - 1) * pct;
+  double f = std::floor(k);
+  double c = std::ceil(k);
+  if (f == c) {
+    r.value = transform(sample[static_cast<int>(k)]);
+    return r;
+  }
+  // interpolate
+  double d0 = transform(sample[static_cast<int>(f)]) * (c - k);
+  double d1 = transform(sample[static_cast<int>(c)]) * (k - f);
+  r.value = d0 + d1;
+  return r;
+}
+}  // namespace
 
 Random::Random() {
   // std::random_device is a non-deterministic uniform random number generator,
@@ -169,15 +200,24 @@ RunningStats::Result RunningStats::Stddev() const {
 }
 
 RunningStats::Result RunningStats::Mad() {
-  Result median = Median();
-  if (!median.error.empty()) {
-    return median;
+  Result median_result = Median();
+  if (!median_result.error.empty()) {
+    return median_result;
   }
-  RunningStats residuals = RunningStats(config_);
-  for (double x : sample_) {
-    residuals.Add(std::abs(x - median.value));
-  }
-  return residuals.Median();
+  double median = median_result.value;
+  auto absolute_deviation = [median](double value) {
+    return std::abs(value - median);
+  };
+  // Sort the sample using each value's absolute deviation as the key for
+  // comparison rather than the original value.
+  // This allows us to calculate the MAD without destroying the sample or using
+  // any additional memory.
+  std::sort(sample_.begin(), sample_.end(),
+            [absolute_deviation](double a, double b) {
+              return absolute_deviation(a) < absolute_deviation(b);
+            });
+  sorted_ = false;
+  return PercentileImpl(sample_, 0.5, absolute_deviation);
 }
 
 RunningStats::Result RunningStats::Percentile(double pct) {
@@ -197,25 +237,8 @@ RunningStats::Result RunningStats::Percentile(double pct) {
     r.error = ss.str();
     return r;
   }
-  // simple case for size 1
-  if (sample_.size() == 1) {
-    r.value = sample_[0];
-    return r;
-  }
-  // float index that has this value and floor/ceiling of it
   SortSample();
-  double k = static_cast<double>(sample_.size() - 1) * pct;
-  double f = std::floor(k);
-  double c = std::ceil(k);
-  if (f == c) {
-    r.value = sample_[static_cast<int>(k)];
-    return r;
-  }
-  // interpolate
-  double d0 = sample_[static_cast<int>(f)] * (c - k);
-  double d1 = sample_[static_cast<int>(c)] * (k - f);
-  r.value = d0 + d1;
-  return r;
+  return PercentileImpl(sample_, pct);
 }
 
 void RunningStats::SortSample() {
