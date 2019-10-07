@@ -381,15 +381,23 @@ static void BM_AddSampled(benchmark::State& state) {
 BENCHMARK(BM_AddSampled);
 
 static void BM_AddVector(benchmark::State& state) {
-  RunningStats stats(RunningStats::Config{});
   std::vector<double> vals(state.range(0));
   for (int i = 0; i < state.range(0); ++i) vals[i] = 0.3*i;
 
   for (auto _ : state) {
+    RunningStats stats(RunningStats::Config{});
     CHECK_EQ("", stats.AddVector(vals));
   }
 }
-BENCHMARK(BM_AddVector)->Range(1, 100*1000);
+BENCHMARK(BM_AddVector)->Range(1, 1<<24);
 
+static void BM_Mad(benchmark::State& state) {
+  RunningStats stats;
+  for (int i = 0; i < state.range(0); ++i) CHECK_EQ("", stats.Add(0.3 * i));
+  for (auto _ : state) {
+    CHECK_EQ("", stats.Mad().error);
+  }
+}
+BENCHMARK(BM_Mad)->Range(1, 1<<24);
 }  // namespace internal
 }  // namespace mako
