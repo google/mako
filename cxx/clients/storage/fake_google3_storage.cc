@@ -199,7 +199,7 @@ template <typename Container, typename Query, typename Response>
 void FindMatchingElements(const Container& container, const Query& query,
                           int limit_max, Response* response) {
   auto iter = container.begin();
-  if (query.has_cursor()) {
+  if (!query.cursor().empty()) {
     typename Container::size_type cursor = stoi(query.cursor());
     CHECK_LT(cursor, container.size());
     std::advance(iter, cursor);
