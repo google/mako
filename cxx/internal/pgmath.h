@@ -18,7 +18,7 @@
 
 #include <random>
 #include <string>
-#include <vector>
+#include <deque>
 
 namespace mako {
 namespace internal {
@@ -123,7 +123,7 @@ class RunningStats {
   Result Percentile(double pct);
 
   // Returns the current sample used for percentiles, median, and MAD.
-  const std::vector<double>& sample() const {return sample_;}
+  const std::deque<double>& sample() const {return sample_;}
 
  private:
   void SortSample();
@@ -135,7 +135,7 @@ class RunningStats {
   // User supplied config
   Config config_;
   // Sample being maintained, may be capped by max_sample_size.
-  std::vector<double> sample_;
+  std::deque<double> sample_;
   // True if sample is currently sorted. The sample is not maintained sorted,
   // because values may get swapped many times while adding.
   bool sorted_;

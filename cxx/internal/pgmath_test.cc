@@ -15,7 +15,7 @@
 
 #include <algorithm>
 #include <string>
-#include <vector>
+#include <deque>
 
 #include "glog/logging.h"
 #include "benchmark/benchmark.h"
@@ -355,7 +355,7 @@ TEST(PgmathTest, SampleRestrictions) {
     config.random = &random;
     RunningStats stats(config);
     stats.AddVector(c.values);
-    std::vector<double> values = stats.sample();
+    std::deque<double> values = stats.sample();
     std::sort(values.begin(), values.end());
     // log for manual verification of reservoir sampling
     LOG(INFO) << "sorted sample: " << absl::StrJoin(values, ", ");

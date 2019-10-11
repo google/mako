@@ -16,10 +16,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <deque>
 #include <random>
 #include <sstream>
 #include <string>
-#include <vector>
 
 namespace mako {
 namespace internal {
@@ -29,7 +29,7 @@ namespace {
 // Assumes the sample has already been sorted using the provided transform
 // function to calculate the key for each value.
 RunningStats::Result PercentileImpl(
-    const std::vector<double>& sample, double pct,
+    const std::deque<double>& sample, double pct,
     std::function<double(double)> transform = [](double value) {
       return value;
     }) {
