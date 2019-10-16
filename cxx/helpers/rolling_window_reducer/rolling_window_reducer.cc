@@ -376,7 +376,8 @@ bool RollingWindowReducer::Subreducer::TryMergeSimilarConfig(
   int other_max_sample_size = EffectiveMaxSampleSize(other_config);
   if (other_max_sample_size < 0) {
     running_stats_config_.max_sample_size = -1;
-  } else if (other_max_sample_size > running_stats_config_.max_sample_size) {
+  } else if (other_max_sample_size > running_stats_config_.max_sample_size &&
+             running_stats_config_.max_sample_size > 0) {
     running_stats_config_.max_sample_size = other_max_sample_size;
     if (running_stats_config_.random == nullptr) {
       running_stats_config_.random = GetRandom();

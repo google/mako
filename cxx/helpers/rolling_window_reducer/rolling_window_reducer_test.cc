@@ -1063,6 +1063,56 @@ void WriteFile(absl::string_view file_name, const RWRAddPointsInput& input,
 }
 
 
+TEST(RollingWindowReducerTest, MergeAfterPercentile) {
+  RWRConfig base_config;
+  base_config.add_input_metric_keys(kInputKey);
+  base_config.set_zero_for_empty_window(true);
+  RWRConfig config1 = base_config;
+  config1.set_output_metric_key("median");
+  config1.set_window_size(1);
+  config1.set_window_operation(RWRConfig::PERCENTILE);
+  config1.set_percentile_milli(50000);
+  config1.set_steps_per_window(2);  // output point every 0.5
+  RWRConfig config2 = base_config;
+  config2.set_output_metric_key("sum");
+  config2.set_window_size(1);
+  config2.set_window_operation(RWRConfig::SUM);
+  config2.set_steps_per_window(2);  // output point every 0.5
+
+  auto reducer_or =
+      RollingWindowReducer::NewMerged({config1, config2});
+  ASSERT_OK(reducer_or);
+  auto rwr = std::move(reducer_or).value();
+
+  ASSERT_OK(rwr->AddPoints(HelperCreateRWRAddPointsInput(
+      kInputKey, {{0, 1}, {0.5, 1}, {1, 1}, {1.5, 1}, {2, 2}, {3, 1}})));
+
+  // X-axis: 0.0  0.5  1.0  1.5  2.0  2.5  3.0  3.5  4.0
+  //          |----+----|----+----|----+----|----+----|
+  // wsize=1       [   1@   )[   2@   )[   3@   )
+  //                    [   1@5  )[   2@5  )
+  //          |----+----|----+----|----+----|----+----|
+  // Points:  1    1    1    1    2         1
+  RWRCompleteOutput output;
+  ASSERT_OK(rwr->Complete(&output));
+  // At x=1, the window is [1, 1] so the median is 1 and the sum 2.
+  EXPECT_THAT(output.point_list(),
+              ContainsPoints({ExactSamplePoint(1, "median", 1),
+                              ExactSamplePoint(1, "sum", 2)}));
+  // At x=2, the window is [1, 2] so the median is 1.5 and the sum 3.
+  EXPECT_THAT(output.point_list(),
+              ContainsPoints({ExactSamplePoint(2, "median", 1.5),
+                              ExactSamplePoint(2, "sum", 3)}));
+  // At x=2.5 the window is [2] so the median is 2 and the sum is 2.
+  // At x = 3 the window is [1] so the median is 1 and the sum is 1.
+  EXPECT_THAT(output.point_list(),
+              ContainsPoints({ExactSamplePoint(2.5, "median", 2),
+                              ExactSamplePoint(2.5, "sum", 2),
+                              ExactSamplePoint(3, "median", 1),
+                              ExactSamplePoint(3, "sum", 1)}));
+}
+
+
 TEST(RollingWindowReducerTest, ReduceAppendsToFileTest) {
   const std::string error_count_key = "error_count";
 
