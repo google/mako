@@ -131,6 +131,5 @@ are issued to the
 which does the work.
 
 When automating performance tests that use Go Quickstore with `go build`, you'll
-have to arrange for the microservice to be built by by your test (or pulled
-from a prebuilt location) and started, so that it listens for client
-connections.
+have to arrange for the microservice to be built by your test (or pulled from a
+prebuilt location) and started, so that it listens for client connections.
