@@ -122,7 +122,7 @@ cc_library(
         ":oauth_token_provider",
         "//cxx/helpers/status",
         "//cxx/helpers/status:statusor",
-        "@com_github_googleapis_google_cloud_cpp//google/cloud:google_cloud_cpp_common",
+        "//third_party/google_cloud_cpp_common/google/cloud:google_cloud_cpp_common",
         "@com_github_googleapis_google_cloud_cpp//google/cloud/storage:storage_client",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
@@ -139,7 +139,7 @@ cc_test(
     deps = [
         ":google_oauth_fetcher",
         "//cxx/helpers/status:status_matchers",
-        "@com_github_googleapis_google_cloud_cpp//google/cloud:google_cloud_cpp_common",
+        "//third_party/google_cloud_cpp_common/google/cloud:google_cloud_cpp_common",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
     ],
