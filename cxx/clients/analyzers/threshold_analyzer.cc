@@ -293,7 +293,11 @@ bool Analyzer::DoAnalyze(const mako::AnalyzerInput& analyzer_input,
           // of pre-computed aggregates across the various runs then go ahead
           // and compute the median of the collection of aggregate values that
           // we have.
-          std::sort(results.begin(), results.end());
+          std::sort(
+              results.begin(), results.end(),
+              [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+                return (a.second < b.second);
+              });
           double median = results.size() % 2 == 1
                               ? results[results.size() / 2].second
                               : ((results[results.size() / 2 - 1].second +
