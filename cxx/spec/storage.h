@@ -58,7 +58,7 @@ class Storage {
   // you wish to update. All information in the provided BenchmarkInfo
   // will overwrite the existing record.
   //
-  // The results of the operation will be placed in ModificiationResponse.
+  // The results of the operation will be placed in ModificationResponse.
   //
   // The boolean returned represents success (true) or failure (false) of the
   // operation. More details about the success/failure will be in
@@ -97,7 +97,7 @@ class Storage {
   // *NOTE* To delete a benchmark, all child data (eg. sample-batches and
   // run-infos) must first be deleted.
   //
-  // The results of the operation will be placed in ModificiationResponse.
+  // The results of the operation will be placed in ModificationResponse.
   //
   // The boolean returned represents success (true) or failure (false) of the
   // operation. More details about the success/failure will be in
@@ -144,7 +144,7 @@ class Storage {
   // you wish to update. All information in the provided RunInfo
   // will overwrite the existing record.
   //
-  // The results of the operation will be placed in ModificiationResponse.
+  // The results of the operation will be placed in ModificationResponse.
   //
   // The boolean returned represents success (true) or failure (false) of the
   // operation. More details about the success/failure will be in
@@ -177,7 +177,7 @@ class Storage {
   //
   // Also deletes child SampleBatch data for each run that matches the query.
   //
-  // The results of the operation will be placed in ModificiationResponse.
+  // The results of the operation will be placed in ModificationResponse.
   //
   // The boolean returned represents success (true) or failure (false) of the
   // operation. More details about the success/failure will be in
@@ -240,7 +240,7 @@ class Storage {
   //
   // Calling this is uncommon. Deleting a RunInfo will delete the child batches.
   //
-  // The results of the operation will be placed in ModificiationResponse.
+  // The results of the operation will be placed in ModificationResponse.
   //
   // The boolean returned represents success (true) or failure (false) of the
   // operation. More details about the success/failure will be in
