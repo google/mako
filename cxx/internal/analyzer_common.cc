@@ -33,7 +33,7 @@ helpers::StatusOr<std::vector<RunData>> ExtractDataAndRemoveEmptyResults(
   data.reserve(sorted_runs.size());
   for (const RunInfo* run : sorted_runs) {
     std::vector<const SampleBatch*> unused;
-    std::vector<std::pair<double, double>> results;
+    std::vector<DataPoint> results;
     std::string err = ::mako::internal::ApplyFilter(*run, unused, data_filter,
                                                    false, &results);
     if (!err.empty()) {
@@ -49,7 +49,7 @@ helpers::StatusOr<std::vector<RunData>> ExtractDataAndRemoveEmptyResults(
           absl::StrCat("Run data extraction failed to get one value, got : ",
                        results.size()));
     }
-    data.push_back(RunData{run, results[0].second});
+    data.push_back(RunData{run, results[0].y_value});
   }
   return data;
 }

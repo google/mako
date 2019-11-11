@@ -16,7 +16,9 @@
 #ifndef CXX_INTERNAL_FILTER_UTILS_H_
 #define CXX_INTERNAL_FILTER_UTILS_H_
 
+#include <ostream>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -24,6 +26,35 @@
 
 namespace mako {
 namespace internal {
+
+struct DataPoint {
+  explicit DataPoint(double x, double y) : x_value(x), y_value(y) {}
+
+  bool operator==(const DataPoint& other) const {
+    return x_value == other.x_value && y_value == other.y_value;
+  }
+  // The X-value for this data point.
+  // This will be either RunInfo.timestamp_ms or SamplePoint.input_value
+  // depending on the DataFilter.
+  double x_value = 0;
+
+  // The Y-value for this data point.
+  // This will be either an aggregate value or metric value depending on the
+  // DataFilter.
+  double y_value = 0;
+};
+
+// Function used to sort vectors of DataPoints, sorting first by the x value and
+// then by the y value.
+// Inline comparison operator is not defined so sorting requires the comparison
+// function be explicitly supplied.
+inline bool CompareDataPoint(const DataPoint& a, const DataPoint& b) {
+  return std::tie(a.x_value, a.y_value) < std::tie(b.x_value, b.y_value);
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const DataPoint& point) {
+  return stream << "{" << point.x_value << ", " << point.y_value << "}";
+}
 
 // ApplyFilter applies the passed DataFilter to the RunInfo/SampleBatches
 // and returns the data as vector<pair<double, double>>.
@@ -51,7 +82,7 @@ namespace internal {
 std::string ApplyFilter(const mako::RunInfo& run_info,
     const std::vector<const mako::SampleBatch*>& sample_batches,
     const mako::DataFilter& data_filter, bool sort_data,
-    std::vector<std::pair<double, double>>* results);
+    std::vector<DataPoint>* results);
 
 // a helper that allows us to pass in iterators for other types of containers of
 // SampleBatch pointers... for example,
@@ -61,7 +92,7 @@ std::string ApplyFilter(const mako::RunInfo& run_info,
                    SampleBatchIt sample_batches_begin,
                    SampleBatchIt sample_batches_end,
                    const mako::DataFilter& data_filter, bool sort_data,
-                   std::vector<std::pair<double, double>>* results) {
+                   std::vector<DataPoint>* results) {
   std::vector<const mako::SampleBatch*> sample_batches(sample_batches_begin,
                                                            sample_batches_end);
 

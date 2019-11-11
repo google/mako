@@ -252,7 +252,7 @@ void StatsCalculator::AddBundleData(const RunBundle& data_bundle,
   for (auto it : sample_[s_index].sample_data_filter) {
     const std::string& value_key = it.first;
     const auto& data_filter = it.second;
-    std::vector<std::pair<double, double>> results;
+    std::vector<internal::DataPoint> results;
     std::string err = mako::internal::ApplyFilter(
         data_bundle.run_info(), data_bundle.batch_list().pointer_begin(),
         data_bundle.batch_list().pointer_end(), data_filter, false, &results);
@@ -262,7 +262,7 @@ void StatsCalculator::AddBundleData(const RunBundle& data_bundle,
       continue;
     }
     for (const auto& result : results) {
-      sample_[s_index].sample_data[value_key].push_back(result.second);
+      sample_[s_index].sample_data[value_key].push_back(result.y_value);
     }
   }
 }

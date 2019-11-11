@@ -22,6 +22,8 @@
 namespace mako {
 namespace internal {
 
+namespace {
+
 constexpr char kNoError[] = "";
 
 // Introduced to distinguish missing data errors.
@@ -70,7 +72,7 @@ class FilterError {
 FilterError ProcessSamplePoint(
     const SamplePoint& sample_point, const std::string& value_key,
     const google::protobuf::RepeatedPtrField<LabeledRange>& ignore_ranges,
-    std::vector<std::pair<double, double>>* results) {
+    std::vector<DataPoint>* results) {
   for (const auto& keyed_value : sample_point.metric_value_list()) {
     if (!keyed_value.has_value() || !keyed_value.has_value_key()) {
       return FilterError::Error(
@@ -96,8 +98,8 @@ FilterError ProcessSamplePoint(
           return FilterError::NoError();
         }
       }
-      results->push_back(
-          std::make_pair(sample_point.input_value(), keyed_value.value()));
+      results->push_back(DataPoint(/*x=*/sample_point.input_value(),
+                                   /*y=*/keyed_value.value()));
     }
   }
   return FilterError::NoError();
@@ -107,7 +109,7 @@ FilterError FilterSamplePoints(
     const std::vector<const SampleBatch*>& sample_batches,
     const std::string& value_key,
     const google::protobuf::RepeatedPtrField<LabeledRange>& ignore_ranges, bool sort_data,
-    std::vector<std::pair<double, double>>* results) {
+    std::vector<DataPoint>* results) {
   for (const auto sample_batch : sample_batches) {
     if (sample_batch == nullptr) {
       return FilterError::Error("nullptr SampleBatch found.");
@@ -126,20 +128,20 @@ FilterError FilterSamplePoints(
   }
 
   if (sort_data) {
-    std::sort(results->begin(), results->end());
+    std::sort(results->begin(), results->end(), CompareDataPoint);
   }
 
   return FilterError::NoError();
 }
 
 FilterError PackAndPush(const RunInfo& run_info, double value,
-                        std::vector<std::pair<double, double>>* results) {
-  results->push_back(std::make_pair(run_info.timestamp_ms(), value));
+                        std::vector<DataPoint>* results) {
+  results->push_back(DataPoint(/*x=*/run_info.timestamp_ms(), /*y=*/value));
   return FilterError::NoError();
 }
 
-FilterError FilterBenchmarkScore(
-    const RunInfo& run_info, std::vector<std::pair<double, double>>* results) {
+FilterError FilterBenchmarkScore(const RunInfo& run_info,
+                                 std::vector<DataPoint>* results) {
   if (!run_info.aggregate().has_run_aggregate()) {
     return FilterError::MissingData("RunInfo missing RunAggregate");
   }
@@ -152,7 +154,7 @@ FilterError FilterBenchmarkScore(
 }
 
 FilterError FilterErrorCount(const RunInfo& run_info,
-                             std::vector<std::pair<double, double>>* results) {
+                             std::vector<DataPoint>* results) {
   if (!run_info.aggregate().has_run_aggregate()) {
     return FilterError::MissingData("RunInfo missing RunAggregate");
   }
@@ -164,9 +166,9 @@ FilterError FilterErrorCount(const RunInfo& run_info,
                      results);
 }
 
-FilterError FilterCustomAggregate(
-    const RunInfo& run_info, const std::string& custom_aggregate_key,
-    std::vector<std::pair<double, double>>* results) {
+FilterError FilterCustomAggregate(const RunInfo& run_info,
+                                  const std::string& custom_aggregate_key,
+                                  std::vector<DataPoint>* results) {
   if (!run_info.aggregate().has_run_aggregate()) {
     return FilterError::MissingData("RunInfo missing RunAggregate");
   }
@@ -196,9 +198,9 @@ int FindMetricAggregateIndex(
   return -1;
 }
 
-FilterError FilterMetricAggregate(
-    const RunInfo& run_info, const DataFilter& data_filter,
-    std::vector<std::pair<double, double>>* results) {
+FilterError FilterMetricAggregate(const RunInfo& run_info,
+                                  const DataFilter& data_filter,
+                                  std::vector<DataPoint>* results) {
   int index = FindMetricAggregateIndex(
       run_info.aggregate().metric_aggregate_list(), data_filter.value_key());
 
@@ -233,9 +235,9 @@ FilterError FilterMetricAggregate(
   }
 }
 
-FilterError FilterPercentileAggregate(
-    const RunInfo& run_info, const DataFilter& data_filter,
-    std::vector<std::pair<double, double>>* results) {
+FilterError FilterPercentileAggregate(const RunInfo& run_info,
+                                      const DataFilter& data_filter,
+                                      std::vector<DataPoint>* results) {
   int metric_index = FindMetricAggregateIndex(
       run_info.aggregate().metric_aggregate_list(), data_filter.value_key());
 
@@ -282,7 +284,7 @@ FilterError FilterPercentileAggregate(
 
 FilterError FilterAggregates(const RunInfo& run_info,
                              const DataFilter& data_filter,
-                             std::vector<std::pair<double, double>>* results) {
+                             std::vector<DataPoint>* results) {
   if (!run_info.has_aggregate()) {
     return FilterError::MissingData("RunInfo missing aggregate");
   }
@@ -300,10 +302,12 @@ FilterError FilterAggregates(const RunInfo& run_info,
   }
 }
 
+}  // namespace
+
 std::string ApplyFilter(const RunInfo& run_info,
                    const std::vector<const SampleBatch*>& sample_batches,
                    const DataFilter& data_filter, bool sort_data,
-                   std::vector<std::pair<double, double>>* results) {
+                   std::vector<DataPoint>* results) {
   if (!data_filter.has_data_type()) {
     return FilterError::Error("DataFilter is missing data_type").error_msg();
   }

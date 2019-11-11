@@ -22,17 +22,20 @@
 #include "gtest/gtest.h"
 #include "spec/proto/mako.pb.h"
 
-using mako::BenchmarkInfo;
-using mako::RunInfo;
+namespace mako {
+namespace internal {
+namespace {
+
 using mako::Aggregate;
-using mako::RunAggregate;
-using mako::MetricAggregate;
+using mako::DataFilter;
 using mako::KeyedValue;
 using mako::LabeledRange;
+using mako::MetricAggregate;
 using mako::Range;
+using mako::RunAggregate;
+using mako::RunInfo;
 using mako::SampleBatch;
 using mako::SamplePoint;
-using mako::DataFilter;
 
 const char* kbenchmark_key = "benchmark_key";
 const char* krun_key = "run_key";
@@ -41,7 +44,7 @@ const double krun_benchmark_score = 45;
 const double kerror_count = 1;
 
 // Ignore regions
-// First num is start, second is end.
+// First num is start, y_value is end.
 const double kignore_region_1[] = {0, 1};
 const double kignore_region_2[] = {24, 200};
 
@@ -87,48 +90,41 @@ const double kcustom_aggregate_1_value = 23.1;
 const char* kcustom_aggregate_2_key = "ca2";
 const double kcustom_aggregate_2_value = 46.2;
 
-std::vector<std::pair<double, double>> HelperCreateMetric1Values() {
-  std::vector<std::pair<double, double>> tmp{
-      std::make_pair(1, 2), std::make_pair(3, 4), std::make_pair(5, 6),
-      std::make_pair(7, 8), std::make_pair(9, 10)};
+std::vector<DataPoint> HelperCreateMetric1Values() {
+  std::vector<DataPoint> tmp{DataPoint(1, 2), DataPoint(3, 4), DataPoint(5, 6),
+                             DataPoint(7, 8), DataPoint(9, 10)};
   return tmp;
 }
 
-std::vector<std::pair<double, double>>
-HelperCreateMetric1ValuesNotInIgnoreRange() {
-  std::vector<std::pair<double, double>> tmp{
-      std::make_pair(3, 4), std::make_pair(5, 6), std::make_pair(7, 8),
-      std::make_pair(9, 10)};
+std::vector<DataPoint> HelperCreateMetric1ValuesNotInIgnoreRange() {
+  std::vector<DataPoint> tmp{DataPoint(3, 4), DataPoint(5, 6), DataPoint(7, 8),
+                             DataPoint(9, 10)};
   return tmp;
 }
 
-std::vector<std::pair<double, double>> HelperCreateMetric2Values() {
-  std::vector<std::pair<double, double>> tmp{
-      std::make_pair(7, 8),     std::make_pair(20, 40),
-      std::make_pair(25, 30),   std::make_pair(100, 90),
-      std::make_pair(200, 400), std::make_pair(201, 203)};
+std::vector<DataPoint> HelperCreateMetric2Values() {
+  std::vector<DataPoint> tmp{DataPoint(7, 8),     DataPoint(20, 40),
+                             DataPoint(25, 30),   DataPoint(100, 90),
+                             DataPoint(200, 400), DataPoint(201, 203)};
   return tmp;
 }
 
-std::vector<std::pair<double, double>>
-HelperCreateMetric2ValuesNotInIgnoreRange() {
-  std::vector<std::pair<double, double>> tmp{
-      std::make_pair(7, 8), std::make_pair(20, 40), std::make_pair(201, 203)};
+std::vector<DataPoint> HelperCreateMetric2ValuesNotInIgnoreRange() {
+  std::vector<DataPoint> tmp{DataPoint(7, 8), DataPoint(20, 40),
+                             DataPoint(201, 203)};
   return tmp;
 }
 
-std::vector<std::pair<double, double>> HelperCreateMetric3Values() {
-  std::vector<std::pair<double, double>> tmp{
-      std::make_pair(7, 16),    std::make_pair(20, 80),
-      std::make_pair(25, 60),   std::make_pair(100, 180),
-      std::make_pair(200, 800), std::make_pair(201, 406)};
+std::vector<DataPoint> HelperCreateMetric3Values() {
+  std::vector<DataPoint> tmp{DataPoint(7, 16),    DataPoint(20, 80),
+                             DataPoint(25, 60),   DataPoint(100, 180),
+                             DataPoint(200, 800), DataPoint(201, 406)};
   return tmp;
 }
 
-std::vector<std::pair<double, double>>
-HelperCreateMetric3ValuesNotInIgnoreRange() {
-  std::vector<std::pair<double, double>> tmp{
-      std::make_pair(7, 16), std::make_pair(20, 80), std::make_pair(201, 406)};
+std::vector<DataPoint> HelperCreateMetric3ValuesNotInIgnoreRange() {
+  std::vector<DataPoint> tmp{DataPoint(7, 16), DataPoint(20, 80),
+                             DataPoint(201, 406)};
   return tmp;
 }
 
@@ -158,10 +154,10 @@ class FilterUtilsTest : public ::testing::Test {
     metric_1->set_run_key(krun_key);
     for (auto& a : HelperCreateMetric1Values()) {
       SamplePoint* point = metric_1->add_sample_point_list();
-      point->set_input_value(a.first);
+      point->set_input_value(a.x_value);
       KeyedValue* value = point->add_metric_value_list();
       value->set_value_key(kmetric_1_key);
-      value->set_value(a.second);
+      value->set_value(a.y_value);
     }
     sample_batches_.push_back(metric_1);
 
@@ -176,29 +172,29 @@ class FilterUtilsTest : public ::testing::Test {
               metric_3_iter = metric_3_values.begin();
          metric_2_iter != metric_2_values.end();
          metric_2_iter++, metric_3_iter++) {
-      auto& metric_2_pair = *metric_2_iter;
-      auto& metric_3_pair = *metric_3_iter;
+      auto& metric_2 = *metric_2_iter;
+      auto& metric_3 = *metric_3_iter;
 
       SamplePoint* point_2 = metric_2_3->add_sample_point_list();
-      point_2->set_input_value(metric_2_pair.first);
+      point_2->set_input_value(metric_2.x_value);
       KeyedValue* value = point_2->add_metric_value_list();
       value->set_value_key(kmetric_2_key);
-      value->set_value(metric_2_pair.second);
+      value->set_value(metric_2.y_value);
 
       SamplePoint* point_3 = metric_2_3->add_sample_point_list();
-      point_3->set_input_value(metric_3_pair.first);
+      point_3->set_input_value(metric_3.x_value);
       value = point_3->add_metric_value_list();
       value->set_value_key(kmetric_3_key);
-      value->set_value(metric_3_pair.second);
+      value->set_value(metric_3.y_value);
     }
     sample_batches_.push_back(metric_2_3);
     return sample_batches_;
   }
 };
 
-std::vector<std::pair<double, double>> PackInPair(double val) {
-  std::vector<std::pair<double, double>> tmp;
-  tmp.push_back(std::make_pair(krun_timestamp_ms, val));
+std::vector<DataPoint> PackInPair(double val) {
+  std::vector<DataPoint> tmp;
+  tmp.push_back(DataPoint(krun_timestamp_ms, val));
   return tmp;
 }
 
@@ -283,7 +279,7 @@ bool Success(std::string s) {
 TEST_F(FilterUtilsTest, DataFilterMissingDataType) {
   DataFilter data_filter;
   data_filter.set_value_key(kmetric_3_key);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -293,7 +289,7 @@ TEST_F(FilterUtilsTest, DataFilterMissingDataType) {
 TEST_F(FilterUtilsTest, DataFilterMissingValueKey) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -303,7 +299,7 @@ TEST_F(FilterUtilsTest, DataFilterMissingValueKey) {
 TEST_F(FilterUtilsTest, DataFilterMissingValueKeyError) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::ERROR_COUNT);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -313,7 +309,7 @@ TEST_F(FilterUtilsTest, DataFilterMissingValueKeyError) {
 TEST_F(FilterUtilsTest, DataFilterMissingValueKeyBenchmarkScore) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::BENCHMARK_SCORE);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -324,7 +320,7 @@ TEST_F(FilterUtilsTest, RunInfoMissingAggregate) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_MIN);
   data_filter.set_value_key(kmetric_1_key);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   auto run_info = HelperCreateRunInfo();
   run_info.clear_aggregate();
@@ -345,7 +341,7 @@ TEST_F(FilterUtilsTest, RunInfoMissingBenchmarkScore) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::BENCHMARK_SCORE);
   data_filter.set_value_key(kmetric_1_key);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   auto run_info = HelperCreateRunInfo();
   run_info.mutable_aggregate()
@@ -369,7 +365,7 @@ TEST_F(FilterUtilsTest, RunInfoMissingErrorCount) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::ERROR_COUNT);
   data_filter.set_value_key(kmetric_1_key);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   auto run_info = HelperCreateRunInfo();
   run_info.mutable_aggregate()
@@ -395,7 +391,7 @@ TEST_F(FilterUtilsTest, RunInfoMissingRunAggregate) {
   // 'ignore_missing_data' field on DataFilter still causes an error.
   DataFilter data_filter;
   data_filter.set_value_key(kcustom_aggregate_1_key);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
   auto run_info = HelperCreateRunInfo();
 
   // Clear run aggregate
@@ -453,7 +449,7 @@ TEST_F(FilterUtilsTest, MissingCustomAggregateIgnored) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::CUSTOM_AGGREGATE);
   data_filter.set_value_key("unknown_key");
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   // Request was successful, but results are empty
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
@@ -480,7 +476,7 @@ TEST_F(FilterUtilsTest, InvalidCustomAggregateKey) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::CUSTOM_AGGREGATE);
   data_filter.set_value_key("unknown_key");
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -502,7 +498,7 @@ TEST_F(FilterUtilsTest, InvalidMetricAggregate) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_MIN);
   data_filter.set_value_key("NoSuchMetric");
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -520,7 +516,7 @@ TEST_F(FilterUtilsTest, PercentileNoSuchMetric) {
 
   data_filter.set_value_key("NoSuchMetric");
   data_filter.set_percentile_milli_rank(kpercentile_milli_rank[0]);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
@@ -531,7 +527,6 @@ TEST_F(FilterUtilsTest, PercentileNoSuchMetric) {
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
       &tmp)));
-
 
   // But with a valid metric key, should work
   data_filter.set_value_key(kmetric_1_key);
@@ -547,7 +542,7 @@ TEST_F(FilterUtilsTest, NoSuchPercentileMilliRank) {
 
   // Not in kpercentile_milli_rank
   data_filter.set_percentile_milli_rank(1);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -572,7 +567,7 @@ TEST_F(FilterUtilsTest, NoPercentilesForAggregateOrMetrics) {
 
   data_filter.set_value_key(kmetric_1_key);
   data_filter.set_percentile_milli_rank(kpercentile_milli_rank[0]);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   // Clear Metric 1's percentiles
   RunInfo run_info = HelperCreateRunInfo();
@@ -599,7 +594,7 @@ TEST_F(FilterUtilsTest, MetricMissingPercentile) {
 
   data_filter.set_value_key(kmetric_1_key);
   data_filter.set_percentile_milli_rank(kpercentile_milli_rank[0]);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   // Clear Metric 1's percentiles
   RunInfo run_info = HelperCreateRunInfo();
@@ -625,7 +620,7 @@ TEST_F(FilterUtilsTest, MetricMissingKey) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_PERCENTILE);
   data_filter.set_value_key(kmetric_1_key);
-  std::vector<std::pair<double, double>> tmp;
+  std::vector<DataPoint> tmp;
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -641,7 +636,7 @@ TEST_F(FilterUtilsTest, SamplePointMetricMissingValue) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(kmetric_2_key);
-  std::vector<std::pair<double, double>> results;
+  std::vector<DataPoint> results;
 
   std::vector<const SampleBatch*> clear_sample_batches;
   SampleBatch metric_2_batch;
@@ -666,7 +661,7 @@ TEST_F(FilterUtilsTest, SamplePointMetricMissingValueKey) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(kmetric_2_key);
-  std::vector<std::pair<double, double>> results;
+  std::vector<DataPoint> results;
 
   std::vector<const SampleBatch*> clear_sample_batches;
   SampleBatch metric_2_batch;
@@ -691,7 +686,7 @@ TEST_F(FilterUtilsTest, IgnoreRangeMissingRange) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(kmetric_1_key);
-  std::vector<std::pair<double, double>> results;
+  std::vector<DataPoint> results;
 
   auto run_info = HelperCreateRunInfo();
 
@@ -707,7 +702,7 @@ TEST_F(FilterUtilsTest, NoIgnoreRanges) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(kmetric_1_key);
-  std::vector<std::pair<double, double>> results;
+  std::vector<DataPoint> results;
 
   auto run_info = HelperCreateRunInfo();
   run_info.clear_ignore_range_list();
@@ -723,7 +718,7 @@ TEST_F(FilterUtilsTest, Metric1SamplePoints) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(kmetric_1_key);
-  std::vector<std::pair<double, double>> results;
+  std::vector<DataPoint> results;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -736,7 +731,7 @@ TEST_F(FilterUtilsTest, Metric2SamplePoints) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(kmetric_2_key);
-  std::vector<std::pair<double, double>> results;
+  std::vector<DataPoint> results;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -748,7 +743,7 @@ TEST_F(FilterUtilsTest, Metric3SamplePoints) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(kmetric_3_key);
-  std::vector<std::pair<double, double>> results;
+  std::vector<DataPoint> results;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
       HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -828,7 +823,7 @@ TEST_F(FilterUtilsTest, Aggregates) {
     data_filter.set_data_type(test.data_type);
     data_filter.set_value_key(test.metric_name);
     data_filter.set_percentile_milli_rank(test.pmr);
-    std::vector<std::pair<double, double>> results;
+    std::vector<DataPoint> results;
 
     EXPECT_TRUE(Success(mako::internal::ApplyFilter(
         HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
@@ -843,11 +838,11 @@ TEST_F(FilterUtilsTest, SortedResults) {
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(metric_name);
-  std::vector<std::pair<double, double>> results;
+  std::vector<DataPoint> results;
 
-  std::vector<std::pair<double, double>> metric_values{
-      std::make_pair(10, 2), std::make_pair(1000, 4), std::make_pair(1, 9),
-      std::make_pair(4, 8),  std::make_pair(2, 1),
+  std::vector<DataPoint> metric_values{
+      DataPoint(10, 2), DataPoint(1000, 4), DataPoint(1, 9),
+      DataPoint(4, 8),  DataPoint(2, 1),
   };
 
   // Clear all ignore regions.
@@ -861,15 +856,15 @@ TEST_F(FilterUtilsTest, SortedResults) {
   batch.set_run_key(krun_key);
   for (auto& a : metric_values) {
     SamplePoint* point = batch.add_sample_point_list();
-    point->set_input_value(a.first);
+    point->set_input_value(a.x_value);
     KeyedValue* value = point->add_metric_value_list();
     value->set_value_key(metric_name);
-    value->set_value(a.second);
+    value->set_value(a.y_value);
   }
   sample_batches.push_back(&batch);
 
   // Sort the metrics
-  std::sort(metric_values.begin(), metric_values.end());
+  std::sort(metric_values.begin(), metric_values.end(), CompareDataPoint);
 
   // Sort = False, so should NOT be equal.
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
@@ -882,3 +877,7 @@ TEST_F(FilterUtilsTest, SortedResults) {
       run_info, sample_batches, data_filter, true, &results)));
   ASSERT_EQ(metric_values, results);
 }
+
+}  // namespace
+}  // namespace internal
+}  // namespace mako

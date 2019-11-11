@@ -113,17 +113,17 @@ bool Analyzer::SetAnalyzerError(const std::string& error_message,
 }
 
 void EvaluateThresholdConfig(
-    const std::vector<std::pair<double, double>>& data,
+    const std::vector<internal::DataPoint>& data,
     const mako::analyzers::threshold_analyzer::ThresholdConfig& config,
     ThresholdConfigResult* result) {
   double points_under_min = 0;
   double points_above_max = 0;
   double total_points = data.size();
 
-  for (auto& pair : data) {
-    if (config.has_min() && pair.second < config.min()) {
+  for (auto& point : data) {
+    if (config.has_min() && point.y_value < config.min()) {
       points_under_min++;
-    } else if (config.has_max() && pair.second > config.max()) {
+    } else if (config.has_max() && point.y_value > config.max()) {
       points_above_max++;
     }
   }
@@ -140,7 +140,7 @@ void EvaluateThresholdConfig(
   result->set_percent_above_max(points_above_max / total_points * 100);
   result->set_percent_below_min(points_under_min / total_points * 100);
   if (data.size() == 1) {
-    result->set_value_outside_threshold(data[0].second);
+    result->set_value_outside_threshold(data[0].y_value);
   }
 
   result->set_regression(actual_percent_outside_range >
@@ -203,7 +203,7 @@ bool Analyzer::DoAnalyze(const mako::AnalyzerInput& analyzer_input,
                               analyzer_output);
     }
 
-    std::vector<std::pair<double, double>> results;
+    std::vector<mako::internal::DataPoint> results;
 
     std::vector<const SampleBatch*> batches;
     for (const SampleBatch& sample_batch : run_bundle.batch_list()) {
@@ -252,7 +252,7 @@ bool Analyzer::DoAnalyze(const mako::AnalyzerInput& analyzer_input,
       int run_with_data_count = 0;
       for (const auto& cross_run_bundle :
            analyzer_input.historical_run_list()) {
-        std::vector<std::pair<double, double>> run_results;
+        std::vector<internal::DataPoint> run_results;
         std::vector<const SampleBatch*> cross_run_batch;
         for (const SampleBatch& sample_batch : cross_run_bundle.batch_list()) {
           cross_run_batch.push_back(&sample_batch);
@@ -295,16 +295,16 @@ bool Analyzer::DoAnalyze(const mako::AnalyzerInput& analyzer_input,
           // we have.
           std::sort(
               results.begin(), results.end(),
-              [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
-                return (a.second < b.second);
+              [](const internal::DataPoint& a, const internal::DataPoint& b) {
+                return (a.y_value < b.y_value);
               });
           double median = results.size() % 2 == 1
-                              ? results[results.size() / 2].second
-                              : ((results[results.size() / 2 - 1].second +
-                                  results[results.size() / 2].second) /
+                              ? results[results.size() / 2].y_value
+                              : ((results[results.size() / 2 - 1].y_value +
+                                  results[results.size() / 2].y_value) /
                                  2);
           results.clear();
-          results.push_back({0XBADF00D, median});
+          results.push_back(internal::DataPoint(0XBADF00D, median));
         }
 
         LOG(INFO) << "++++++++++";

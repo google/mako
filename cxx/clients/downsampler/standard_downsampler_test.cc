@@ -769,7 +769,7 @@ std::vector<double> GetInputsWithMetric(
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
   data_filter.set_value_key(metric_name);
   bool no_sort_data = false;
-  std::vector<std::pair<double, double>> results;
+  std::vector<internal::DataPoint> results;
 
   auto err_str = mako::internal::ApplyFilter(
       mako::RunInfo{}, batches.pointer_begin(), batches.pointer_end(),
@@ -779,7 +779,7 @@ std::vector<double> GetInputsWithMetric(
 
   std::vector<double> inputs(results.size());
   std::transform(results.begin(), results.end(), inputs.begin(),
-                 [](const std::pair<double, double> p) { return p.first; });
+                 [](const internal::DataPoint p) { return p.x_value; });
 
   return inputs;
 }
