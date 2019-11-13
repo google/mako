@@ -178,11 +178,10 @@ bool RetryingStorageRequest(const Request& request, const std::string& url,
 }
 
 template <typename Response>
-bool UploadRunInfo(
-    const RunInfo& run_info, const std::string& path,
-    internal::StorageTransport* transport,
-    internal::StorageRetryStrategy* retry_strategy,
-    Response* response, SudoStorageRequest::Type type) {
+bool UploadRunInfo(const RunInfo& run_info, const std::string& path,
+                   internal::StorageTransport* transport,
+                   internal::StorageRetryStrategy* retry_strategy,
+                   Response* response, SudoStorageRequest::Type type) {
   // Look for mako_internal_additional_tags in both flags and environment
   // variables.  If found in both places, prefer the value from the flags.
   const char* env_var_additional_tags =
@@ -190,8 +189,8 @@ bool UploadRunInfo(
   std::vector<std::string> additional_tags =
       absl::GetFlag(FLAGS_mako_internal_additional_tags);
   if (additional_tags.empty() && env_var_additional_tags) {
-    additional_tags = absl::StrSplit(env_var_additional_tags, ',',
-                                     absl::SkipWhitespace());
+    additional_tags =
+        absl::StrSplit(env_var_additional_tags, ',', absl::SkipWhitespace());
   }
   // Look for mako_internal_test_pass_id_override in both flags and
   // environment variables.  If found in both places, prefer the value from the
@@ -264,6 +263,39 @@ Storage::Storage(
     : transport_(std::move(transport)),
       retry_strategy_(std::move(retry_strategy)) {
   transport_->set_client_tool_tag(ResolveClientToolTag());
+}
+
+// TODO(b/141321581): Replace with mako::internal implementation once
+// annoucement is ready.
+bool Storage::CreateProjectInfo(const ProjectInfo& project_info,
+                                mako::CreationResponse* creation_response) {
+  auto status = creation_response->mutable_status();
+  status->set_code(Status_Code_FAIL);
+  status->set_fail_message("Not yet implemented.");
+  status->set_retry(false);
+  return false;
+}
+
+// TODO(b/141321581): Replace with mako::internal implementation once
+// annoucement is ready.
+bool Storage::UpdateProjectInfo(const ProjectInfo& project_info,
+                                mako::ModificationResponse* mod_response) {
+  auto status = mod_response->mutable_status();
+  status->set_code(Status_Code_FAIL);
+  status->set_fail_message("Not yet implemented.");
+  status->set_retry(false);
+  return false;
+}
+
+// TODO(b/141321581): Replace with mako::internal implementation once
+// annoucement is ready.
+bool Storage::GetProjectInfo(const ProjectInfo& project_info,
+                             mako::ProjectInfoGetResponse* response) {
+  auto status = response->mutable_status();
+  status->set_code(Status_Code_FAIL);
+  status->set_fail_message("Not yet implemented.");
+  status->set_retry(false);
+  return false;
 }
 
 bool Storage::CreateBenchmarkInfo(const BenchmarkInfo& benchmark_info,

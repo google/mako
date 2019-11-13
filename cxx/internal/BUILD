@@ -88,6 +88,7 @@ cc_test(
         ":proto_validation",
         "//spec/proto:mako_cc_proto",
         "@com_google_googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

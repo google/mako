@@ -13,6 +13,7 @@
 // limitations under the license.
 #include "cxx/internal/proto_validation.h"
 
+#include "src/google/protobuf/text_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "spec/proto/mako.pb.h"
@@ -45,6 +46,20 @@ mako::BenchmarkInfo CreateValidBenchmarkInfo() {
   v->set_label("KLabel");
   *(b.add_metric_info_list()) = *v;
   return b;
+}
+
+mako::ProjectInfo CreateValidProjectInfo() {
+  mako::ProjectInfo p;
+  google::protobuf::TextFormat::ParseFromString(
+      R"pb(
+        project_name: "foo_project"
+        project_alias: "Project Foo"
+        owner_list: "user@google.com"
+        owner_list: "group@google.com"
+        default_issue_tracker: { buganizer_config: { component_id: 123456789 } }
+      )pb",
+      &p);
+  return p;
 }
 
 TEST(ProtoValidationTest, AggregatorInput) {
@@ -133,6 +148,23 @@ TEST(ProtoValidationTest, ValidateBenchmarkInfo) {
   f = b;
   f.mutable_input_value_info()->clear_value_key();
   ASSERT_NE("", ValidateBenchmarkInfo(f));
+}
+
+TEST(ProtoValidationTest, ValidateProjectInfo) {
+  mako::ProjectInfo p0 = CreateValidProjectInfo();
+  ASSERT_EQ("", ValidateProjectInfo(p0));
+
+  mako::ProjectInfo p = p0;
+  p.set_project_name("");
+  ASSERT_NE("", ValidateProjectInfo(p));
+
+  p = p0;
+  p.clear_owner_list();
+  ASSERT_NE("", ValidateProjectInfo(p));
+
+  p = p0;
+  p.set_owner_list(0, "");
+  ASSERT_NE("", ValidateProjectInfo(p));
 }
 
 TEST(ProtoValidationTest, DownsamplerInput) {

@@ -28,6 +28,57 @@ namespace mako {
 // details on individual functions.
 class Storage {
  public:
+  // TODO(b/141321581) Make pure virtual once all subclasses updated.
+  //
+  // Creates a new ProjectInfo record.
+  //
+  // The ProjectInfo reference that is passed, should contain all the
+  // information that you wish to have stored in the newly created project.
+  //
+  // The result of the creation request will be placed in the supplied
+  // CreationResponse message.
+  //
+  // The boolean returned represents success (true) or failure (false) of the
+  // operation. More details about the success/failure will be in
+  // CreationResponse.Status.
+  virtual bool CreateProjectInfo(
+      const mako::ProjectInfo& project_info,
+      mako::CreationResponse* creation_response) {
+    return false;
+  }
+
+  // TODO(b/141321581) Make pure virtual once all subclasses updated.
+  //
+  // Update a ProjectInfo record.
+  //
+  // The ProjectInfo.project_name will be used to select the benchmark that
+  // you wish to update. All information in the provided ProjectInfo
+  // will overwrite the existing record.
+  //
+  // The results of the operation will be placed in ModificationResponse.
+  //
+  // The boolean returned represents success (true) or failure (false) of the
+  // operation. More details about the success/failure will be in
+  // ModificationResponse.Status.
+  virtual bool UpdateProjectInfo(const mako::ProjectInfo& project_info,
+                                 mako::ModificationResponse* mod_response) {
+    return false;
+  }
+
+  // TODO(b/141321581) Make pure virtual once all subclasses updated.
+  //
+  // Gets ProjectInfo record that match the ProjectInfo.project_name.
+  //
+  // The ProjectInfoGetResponse will be populated with results.
+  //
+  // The boolean returned represents success (true) or failure (false) of the
+  // operation. More details about the success/failure will be in
+  // ProjectInfoGetResponse.Status.
+  virtual bool GetProjectInfo(const mako::ProjectInfo& project_info,
+                              mako::ProjectInfoGetResponse* get_response) {
+    return false;
+  }
+
   // Creates a new BenchmarkInfo record.
   //
   // The BenchmarkInfo reference that is passed, should contain all the

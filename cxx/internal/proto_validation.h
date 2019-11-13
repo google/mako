@@ -69,6 +69,10 @@ std::string ValidateRunInfoCreationRequest(const mako::RunInfo& input);
 // creation.  Returns error message as string or empty if successful.
 std::string ValidateSampleBatchCreationRequest(const mako::SampleBatch& input);
 
+// Validate that all REQUIRED ProjectInfo fields are set. Returns error message
+// as string or empty if successful.
+std::string ValidateProjectInfo(const mako::ProjectInfo& input);
+
 }  // namespace internal
 }  // namespace mako
 

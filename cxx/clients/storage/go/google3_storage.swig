@@ -84,6 +84,17 @@ PROTO_IN_OUT(
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.SampleBatchQueryResponse)
 
+PROTO_INPUT(
+  mako::ProjectInfo,
+  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
+  pgpb.ProjectInfo)
+
+PROTO_IN_OUT(
+  mako::ProjectInfoGetResponse,
+  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
+  pgpb.ProjectInfoGetResponse)
+
+
 // Exposed API
 %ignoreall
 
@@ -113,6 +124,10 @@ PROTO_IN_OUT(
 %unignore mako::google3_storage::Storage::GetSampleErrorCountMax;
 %unignore mako::google3_storage::Storage::GetBatchSizeMax;
 %unignore mako::google3_storage::Storage::GetHostname;
+
+%unignore mako::google3_storage::Storage::CreateProjectInfo;
+%unignore mako::google3_storage::Storage::UpdateProjectInfo;
+%unignore mako::google3_storage::Storage::GetProjectInfo;
 
 %unignore mako::google3_storage::Storage::last_call_server_elapsed_time;
 

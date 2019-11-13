@@ -45,6 +45,11 @@ std::vector<BenchmarkInfo>& Benchmarks() EXCLUSIVE_LOCKS_REQUIRED(mutex) {
   return *benchmarks;
 }
 
+std::vector<mako::ProjectInfo>& Projects() EXCLUSIVE_LOCKS_REQUIRED(mutex) {
+  static auto* projects = new std::vector<mako::ProjectInfo>();
+  return *projects;
+}
+
 std::multiset<mako::RunInfo, SortByDescendingTimeStampsMs>& Runs()
     EXCLUSIVE_LOCKS_REQUIRED(mutex) {
   static auto* runs =
@@ -229,6 +234,81 @@ void FindMatchingElements(const Container& container, const Query& query,
 }  // namespace
 
 Storage::Storage() : Storage(Options()) {}
+
+bool Storage::CreateProjectInfo(const mako::ProjectInfo& project_info,
+                                mako::CreationResponse* creation_response) {
+  VLOG(2) << "FakeStorage.CreateProjectInfo(" << project_info.ShortDebugString()
+          << ")";
+  CHECK(creation_response);
+  absl::MutexLock lock(&mutex);
+  std::string err = mako::internal::ValidateProjectInfo(project_info);
+  if (!err.empty()) {
+    LOG(ERROR) << err;
+    *creation_response->mutable_status() = ErrorStatus(err);
+    return false;
+  }
+  Projects().push_back(project_info);
+  creation_response->set_key(project_info.project_name());
+  *creation_response->mutable_status() = SuccessStatus();
+  VLOG(2) << "Created ProjectInfo with project_name key: "
+          << project_info.project_name();
+  return true;
+}
+
+bool Storage::UpdateProjectInfo(const mako::ProjectInfo& project_info,
+                                mako::ModificationResponse* mod_response) {
+  VLOG(2) << "FakeStorage.UpdateProjectInfo(" << project_info.ShortDebugString()
+          << ")";
+  CHECK(mod_response);
+  absl::MutexLock lock(&mutex);
+  std::string err = mako::internal::ValidateProjectInfo(project_info);
+  if (!err.empty()) {
+    LOG(ERROR) << err;
+    *mod_response->mutable_status() = ErrorStatus(err);
+    return false;
+  }
+
+  for (auto itr = Projects().begin(); itr != Projects().end(); ++itr) {
+    if (itr->project_name() == project_info.project_name()) {
+      *itr = project_info;
+      *mod_response->mutable_status() = SuccessStatus();
+      mod_response->set_count(1);
+      VLOG(2) << "Updated ProjectInfo with project_name key: "
+              << project_info.project_name();
+      return true;
+    }
+  }
+  mod_response->set_count(0);
+  err = absl::StrCat("Could not find project with name: ",
+                     project_info.project_name());
+  *mod_response->mutable_status() = ErrorStatus(err);
+  LOG(ERROR) << err;
+  return false;
+}
+
+bool Storage::GetProjectInfo(const mako::ProjectInfo& project_info,
+                             mako::ProjectInfoGetResponse* get_response) {
+  CHECK(get_response);
+  absl::MutexLock lock(&mutex);
+  if (!project_info.has_project_name() || project_info.project_name().empty()) {
+    std::string err = "missing project name";
+    LOG(ERROR) << err;
+    *get_response->mutable_status() = ErrorStatus(err);
+    return false;
+  }
+  for (auto& project : Projects()) {
+    if (project.project_name() == project_info.project_name()) {
+      *get_response->mutable_project_info() = project;
+      *get_response->mutable_status() = SuccessStatus();
+      return true;
+    }
+  }
+  std::string err = absl::StrCat("Could not find project with name: ",
+                                 project_info.project_name());
+  *get_response->mutable_status() = ErrorStatus(err);
+  LOG(ERROR) << err;
+  return false;
+}
 
 bool Storage::CreateBenchmarkInfo(
     const mako::BenchmarkInfo& benchmark_info,

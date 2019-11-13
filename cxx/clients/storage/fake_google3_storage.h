@@ -88,6 +88,45 @@ class Storage : public mako::Storage {
         batch_limit_max_(options.batch_limit_max),
         hostname_(options.hostname) {}
 
+  // Creates a new ProjectInfo record in Mako storage via the
+  // StorageTransport.
+  //
+  // ProjectInfo arg must contain all required fields described in
+  // mako.proto.
+  //
+  // Returns false if message fails or backend fails. More details found in
+  // response's Status protobuf.
+  //
+  // More details can be found in interface documentation.
+  bool CreateProjectInfo(
+      const mako::ProjectInfo& project_info,
+      mako::CreationResponse* creation_response) override;
+
+  // Updates an existing ProjectInfo record in Mako storage via the
+  // StorageTransport.
+  //
+  // ProjectInfo arg must contain all required fields described in
+  // mako.proto.
+  //
+  // Returns false if message fails or backend fails. More details found in
+  // response's Status protobuf.
+  //
+  // More details can be found in interface documentation.
+  bool UpdateProjectInfo(const mako::ProjectInfo& project_info,
+                         mako::ModificationResponse* mod_response) override;
+
+  // Gets an existing ProjectInfo record in Mako storage via the
+  // StorageTransport.
+  //
+  // ProjectInfo arg must contain project_name field.
+  //
+  // Returns false if message fails or backend fails. More details found in
+  // response's Status protobuf.
+  //
+  // More details can be found in interface documentation.
+  bool GetProjectInfo(const mako::ProjectInfo& project_info,
+                      mako::ProjectInfoGetResponse* response) override;
+
   // Creates a new BenchmarkInfo record in Mako storage via RPC sent to
   // server specified in constructor.
   //
