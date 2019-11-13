@@ -92,9 +92,9 @@ git_repository(
 # Google Cloud CPP
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
-    url = "http://github.com/googleapis/google-cloud-cpp/archive/v0.11.0.tar.gz",
-    strip_prefix = "google-cloud-cpp-0.11.0",
-    sha256 = "3abe2cf553ce33ff58d23848ae716cd2fcabfd454b89f6f65a92ed261244c1df",
+    url = "http://github.com/googleapis/google-cloud-cpp/archive/v0.15.0.tar.gz",
+    strip_prefix = "google-cloud-cpp-0.15.0",
+    sha256 = "23602261630556e6c6283fea300075b40d4711e47ad9627423b01258784247ca",
 )
 load("@com_github_googleapis_google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 google_cloud_cpp_deps()

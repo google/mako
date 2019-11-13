@@ -19,8 +19,8 @@
 
 #include "absl/synchronization/mutex.h"
 #include "google/cloud/storage/oauth2/credentials.h"
-#include "third_party/google_cloud_cpp_common/google/cloud/status.h"
-#include "third_party/google_cloud_cpp_common/google/cloud/status_or.h"
+#include "google/cloud/status.h"
+#include "google/cloud/status_or.h"
 #include "cxx/helpers/status/statusor.h"
 #include "cxx/internal/storage_client/oauth_token_provider.h"
 

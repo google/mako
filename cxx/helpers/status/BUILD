@@ -13,7 +13,7 @@ cc_library(
         "status.h",
     ],
     deps = [
-        "@com_github_googleapis_google_cloud_cpp//google/cloud:google_cloud_cpp_common",
+        "@com_github_googleapis_google_cloud_cpp_common//google/cloud:google_cloud_cpp_common",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
     ],
@@ -23,7 +23,7 @@ cc_library(
     name = "statusor",
     hdrs = ["statusor.h"],
     deps = [
-        "@com_github_googleapis_google_cloud_cpp//google/cloud:google_cloud_cpp_common",
+        "@com_github_googleapis_google_cloud_cpp_common//google/cloud:google_cloud_cpp_common",
     ],
 )
 

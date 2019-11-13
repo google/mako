@@ -17,7 +17,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
-#include "third_party/google_cloud_cpp_common/google/cloud/status.h"
+#include "google/cloud/status.h"
 #include "cxx/helpers/status/status_matchers.h"
 
 // Tests that we properly handle the result of

@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "google/cloud/storage/oauth2/credentials.h"
 #include "google/cloud/storage/oauth2/google_credentials.h"
-#include "third_party/google_cloud_cpp_common/google/cloud/status.h"
+#include "google/cloud/status.h"
 #include "cxx/helpers/status/canonical_errors.h"
 #include "re2/re2.h"
 

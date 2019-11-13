@@ -61,7 +61,6 @@ cc_test(
         "//proto/clients/analyzers:threshold_analyzer_cc_proto",
         "//proto/helpers/rolling_window_reducer:rolling_window_reducer_cc_proto",
         "//proto/quickstore:quickstore_cc_proto",
-        "//spec/cxx:fileio",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/memory",

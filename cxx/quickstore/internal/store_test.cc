@@ -19,7 +19,6 @@
 #include "glog/logging.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "spec/cxx/fileio.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
 #include "cxx/clients/aggregator/standard_aggregator.h"
