@@ -189,5 +189,21 @@ std::string ValidateSampleBatchCreationRequest(const mako::SampleBatch& input) {
   return ValidateSampleBatchSharedFields(input);
 }
 
+std::string ValidateProjectInfo(const mako::ProjectInfo& input) {
+  if (!input.has_project_name() || input.project_name().empty()) {
+    return "ProjectInfo.project_name is empty";
+  }
+  if (input.owner_list_size() == 0) {
+    return "ProjectInfo.owner_list is empty";
+  }
+
+  for (int i = 0; i < input.owner_list_size(); ++i) {
+    if (input.owner_list(i).empty()) {
+      return absl::StrCat("ProjectInfo.owner_list[", i, "] is empty");
+    }
+  }
+  return kNoError;
+}
+
 }  // namespace internal
 }  // namespace mako
