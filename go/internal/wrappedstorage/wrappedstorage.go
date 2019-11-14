@@ -85,6 +85,36 @@ func NewSimple(w SimpleSwigWrap, finalizer func()) *Simple {
 	return s
 }
 
+func (s *Simple) CreateProjectInfo(_ context.Context, pi *pgpb.ProjectInfo) (*pgpb.CreationResponse, error) {
+	cr := &pgpb.CreationResponse{}
+	if !s.wrapper.CreateProjectInfo(pi, cr) {
+		return cr, errors.New(cr.GetStatus().GetFailMessage())
+	}
+	// go/mako-go-swig-finalizer-problem
+	runtime.KeepAlive(s)
+	return cr, nil
+}
+
+func (s *Simple) UpdateProjectInfo(_ context.Context, pi *pgpb.ProjectInfo) (*pgpb.ModificationResponse, error) {
+	mr := &pgpb.ModificationResponse{}
+	if !s.wrapper.UpdateProjectInfo(pi, mr) {
+		return mr, errors.New(mr.GetStatus().GetFailMessage())
+	}
+	// go/mako-go-swig-finalizer-problem
+	runtime.KeepAlive(s)
+	return mr, nil
+}
+
+func (s *Simple) GetProjectInfo(_ context.Context, pi *pgpb.ProjectInfo) (*pgpb.ProjectInfoGetResponse, error) {
+	gr := &pgpb.ProjectInfoGetResponse{}
+	if !s.wrapper.GetProjectInfo(pi, gr) {
+		return gr, errors.New(gr.GetStatus().GetFailMessage())
+	}
+	// go/mako-go-swig-finalizer-problem
+	runtime.KeepAlive(s)
+	return gr, nil
+}
+
 // CreateBenchmarkInfo creates a benchmark info record. See interface description for
 // more information.
 func (s *Simple) CreateBenchmarkInfo(_ context.Context, bi *pgpb.BenchmarkInfo) (*pgpb.CreationResponse, error) {
@@ -298,6 +328,10 @@ func (s *Simple) GetSwigWrap() SwigWrap {
 // SimpleSwigWrap is the interface of a direct, straight-forward wrapping of mako::Storage
 type SimpleSwigWrap interface {
 	SwigWrap
+	CreateProjectInfo(*pgpb.ProjectInfo, *pgpb.CreationResponse) bool
+	UpdateProjectInfo(*pgpb.ProjectInfo, *pgpb.ModificationResponse) bool
+	GetProjectInfo(*pgpb.ProjectInfo, *pgpb.ProjectInfoGetResponse) bool
+
 	CreateBenchmarkInfo(*pgpb.BenchmarkInfo, *pgpb.CreationResponse) bool
 	UpdateBenchmarkInfo(*pgpb.BenchmarkInfo, *pgpb.ModificationResponse) bool
 	QueryBenchmarkInfo(*pgpb.BenchmarkInfoQuery, *pgpb.BenchmarkInfoQueryResponse) bool

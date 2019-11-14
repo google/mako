@@ -31,9 +31,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
-
 	fakeStorage "github.com/google/mako/go/clients/storage/fakestorage"
+	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
 )
 
 var ctx context.Context
@@ -274,6 +273,11 @@ func TestHelp(t *testing.T) {
 						list_benchmarks  Lists matching benchmark keys.
 						update_benchmark  Update an existing benchmark.
 
+					Subcommands for projects:
+						create_project Creates a new project.
+						get_project Returns information of a project given its project name.
+						update_project Updates a project.
+
 					Subcommands for runs:
 						delete_runs      Delete one or more runs and associated sample batch data.
 						display_run      Displays a run.
@@ -295,16 +299,16 @@ func TestHelp(t *testing.T) {
 	`)
 }
 
-// helper function that writes out a given benchmark info text proto buffer to a
-// test file, returning the filename it wrote to
-func writeBenchmarkTextProto(benchmarkTxt string) (benchFilePath string) {
-	benchFilePath = path.Join(os.Getenv("TEST_TMPDIR"), "test_benchmark.textpb")
-	f, err := os.Create(benchFilePath)
+// helper function that writes out text in text proto buffer format to a test file
+// with the given filename. It returns the fully qualified file path.
+func writeTextProto(text, filename string) (filePath string) {
+	filePath = path.Join(os.Getenv("TEST_TMPDIR"), filename+".textpb")
+	f, err := os.Create(filePath)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
-	_, err = f.WriteString(benchmarkTxt)
+	_, err = f.WriteString(text)
 	if err != nil {
 		panic(err)
 	}
@@ -313,7 +317,7 @@ func writeBenchmarkTextProto(benchmarkTxt string) (benchFilePath string) {
 
 func TestCreateListUpdateDeleteBenchmark(t *testing.T) {
 	defer fs.FakeClear()
-	benchFilePath := writeBenchmarkTextProto(`
+	benchFilePath := writeTextProto(`
 benchmark_name: "testmark"
 project_name: "testproj"
 
@@ -335,14 +339,14 @@ metric_info_list: <
   value_key: "tm2"
   label: "OtherTestMetric"
 >
-`)
+`, "test_benchmark")
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "create_benchmark", benchFilePath},
 		`Benchmark creation successful. Please add the benchmark_key: '1' to your benchmark text-proto file.
 	`)
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "list_benchmarks", "-project_name=testproj"}, "1\n")
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "list_benchmarks", "-benchmark_name=testmark"}, "1\n")
 	// add another benchmark to see how things work with multiple benchmarks in system
-	benchFilePath2 := writeBenchmarkTextProto(`
+	benchFilePath2 := writeTextProto(`
 benchmark_name: "testmark2"
 project_name: "testproj"
 
@@ -364,7 +368,7 @@ metric_info_list: <
   value_key: "tm2"
   label: "OtherTestMetric"
 >
-`)
+`, "test_benchmark")
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "create_benchmark", benchFilePath2},
 		`Benchmark creation successful. Please add the benchmark_key: '2' to your benchmark text-proto file.
 	`)
@@ -395,7 +399,7 @@ metric_info_list: <
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "list_benchmarks", "-benchmark_name=non_existent"},
 		"No results! Check your arguments.\n")
 	// test update_benchmark
-	benchFilePath = writeBenchmarkTextProto(`
+	benchFilePath = writeTextProto(`
 benchmark_key: "1"
 benchmark_name: "testmarkv2"
 project_name: "testproj"
@@ -418,7 +422,7 @@ metric_info_list: <
   value_key: "tm2"
   label: "OtherTestMetric"
 >
-`)
+`, "test_benchmark")
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "update_benchmark", benchFilePath},
 		"Benchmark update successful.\n")
 	// check to see if we can query based on the updated benchmark, and not on the old value
@@ -681,6 +685,59 @@ func TestDisplaySampleBatch(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCreateGetUpdateProject(t *testing.T) {
+	defer fs.FakeClear()
+
+	textProto := `
+# project_name is always evaluated as lowercase and must be unique
+project_name: "bigtable"
+
+# project_alias is the display name of the project and will be shown on
+# mako.dev. It does not have to be unique.
+project_alias: "Bigtable"
+
+# owner_list contains a list of owners (e.g. user@google.com, mdb_group@prod.google.com, etc.).
+# Set "*" as an owner to enable global permissions.
+owner_list: "mako@prod.google.com"
+owner_list: "user@google.com"
+
+#
+default_issue_tracker: {
+  buganizer_config: {
+    component_id: "123456789"
+  }
+}
+`
+	projFilePath := writeTextProto(textProto, "test_project")
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "create_project", projFilePath}, `Successfully created project.`)
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "get_project", "-project_name=bigtable"}, `project_name:"bigtable"  project_alias:"Bigtable"  owner_list:"mako@prod.google.com"  owner_list:"user@google.com"  default_issue_tracker:{buganizer_config:{component_id:"123456789"}}`)
+
+	textProto = `
+# project_name is always evaluated as lowercase and must be unique
+project_name: "BIGTABLE"
+
+# project_alias is the display name of the project and will be shown on
+# mako.dev. It does not have to be unique.
+project_alias: "Spanner Bigtable"
+
+# owner_list contains a list of owners (e.g. user@google.com, mdb_group@prod.google.com, etc.).
+# Set "*" as an owner to enable global permissions.
+owner_list: "user@google.com"
+owner_list: "mako@prod.google.com"
+owner_list: "spanner@prod.google.com"
+
+#
+default_issue_tracker: {
+  buganizer_config: {
+    component_id: "987654321"
+  }
+}
+`
+	projFilePath = writeTextProto(textProto, "test_project")
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "update_project", projFilePath}, `Successfully updated project.`)
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "get_project", "-project_name=BIGTABLE"}, `project_name:"bigtable"  project_alias:"Spanner Bigtable"  owner_list:"user@google.com"  owner_list:"mako@prod.google.com"  owner_list:"spanner@prod.google.com"  default_issue_tracker:{buganizer_config:{component_id:"987654321"}}`)
 }
 
 func readRunFilesFile(name string) ([]byte, error) {

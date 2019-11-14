@@ -20,6 +20,7 @@
 #include "glog/logging.h"
 #include "src/google/protobuf/repeated_field.h"
 #include "absl/base/thread_annotations.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "cxx/internal/proto_validation.h"
@@ -247,11 +248,20 @@ bool Storage::CreateProjectInfo(const mako::ProjectInfo& project_info,
     *creation_response->mutable_status() = ErrorStatus(err);
     return false;
   }
-  Projects().push_back(project_info);
-  creation_response->set_key(project_info.project_name());
+  mako::ProjectInfo pi = project_info;
+  pi.set_project_name(absl::AsciiStrToLower(project_info.project_name()));
+  for (const auto& p : Projects()) {
+    if (p.project_name() == pi.project_name()) {
+      err = absl::StrCat("Project with name=", pi.project_name(),
+                         " already exists");
+      *creation_response->mutable_status() = ErrorStatus(err);
+      return false;
+    }
+  }
+  Projects().push_back(pi);
+  creation_response->set_key(pi.project_name());
   *creation_response->mutable_status() = SuccessStatus();
-  VLOG(2) << "Created ProjectInfo with project_name key: "
-          << project_info.project_name();
+  VLOG(2) << "Created ProjectInfo with project_name key: " << pi.project_name();
   return true;
 }
 
@@ -268,19 +278,20 @@ bool Storage::UpdateProjectInfo(const mako::ProjectInfo& project_info,
     return false;
   }
 
+  mako::ProjectInfo pi = project_info;
+  pi.set_project_name(absl::AsciiStrToLower(project_info.project_name()));
   for (auto itr = Projects().begin(); itr != Projects().end(); ++itr) {
-    if (itr->project_name() == project_info.project_name()) {
-      *itr = project_info;
+    if (itr->project_name() == pi.project_name()) {
+      *itr = pi;
       *mod_response->mutable_status() = SuccessStatus();
       mod_response->set_count(1);
       VLOG(2) << "Updated ProjectInfo with project_name key: "
-              << project_info.project_name();
+              << pi.project_name();
       return true;
     }
   }
   mod_response->set_count(0);
-  err = absl::StrCat("Could not find project with name: ",
-                     project_info.project_name());
+  err = absl::StrCat("Could not find project with name: ", pi.project_name());
   *mod_response->mutable_status() = ErrorStatus(err);
   LOG(ERROR) << err;
   return false;
@@ -296,15 +307,17 @@ bool Storage::GetProjectInfo(const mako::ProjectInfo& project_info,
     *get_response->mutable_status() = ErrorStatus(err);
     return false;
   }
+
+  std::string key = absl::AsciiStrToLower(project_info.project_name());
+
   for (auto& project : Projects()) {
-    if (project.project_name() == project_info.project_name()) {
+    if (project.project_name() == key) {
       *get_response->mutable_project_info() = project;
       *get_response->mutable_status() = SuccessStatus();
       return true;
     }
   }
-  std::string err = absl::StrCat("Could not find project with name: ",
-                                 project_info.project_name());
+  std::string err = absl::StrCat("Could not find project with name: ", key);
   *get_response->mutable_status() = ErrorStatus(err);
   LOG(ERROR) << err;
   return false;
@@ -618,6 +631,7 @@ void Storage::FakeClear() {
   Benchmarks().clear();
   Runs().clear();
   Batches().clear();
+  Projects().clear();
   max_key = 0;
 }
 

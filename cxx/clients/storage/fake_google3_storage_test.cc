@@ -15,9 +15,12 @@
 
 #include <set>
 
+#include "src/google/protobuf/text_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/strings/ascii.h"
 #include "cxx/testing/protocol-buffer-matchers.h"
+#include "spec/proto/mako.pb.h"
 
 namespace mako {
 namespace fake_google3_storage {
@@ -34,6 +37,22 @@ class FakeGoogle3StorageTest : public ::testing::Test {
   void TearDown() override { s_.FakeClear(); }
   Storage s_;
 };
+
+mako::ProjectInfo CreateProjectInfo() {
+  mako::ProjectInfo p;
+  google::protobuf::TextFormat::ParseFromString(
+      R"pb(
+        project_name: "foo_project"
+        project_alias: "Project Foo"
+        owner_list: "user@google.com"
+        owner_list: "group@google.com"
+        default_issue_tracker: {
+          buganizer_config: { component_id: "123456789" }
+        }
+      )pb",
+      &p);
+  return p;
+}
 
 mako::BenchmarkInfo CreateBenchmarkInfo() {
   mako::BenchmarkInfo benchmark_info;
@@ -1012,6 +1031,77 @@ TEST_F(FakeGoogle3StorageTest, QueryBenchmarkInfoWithLimit0) {
   ASSERT_TRUE(s.QueryBenchmarkInfo(query, &resp));
   ASSERT_EQ(max_benchmarks_returned, resp.benchmark_info_list_size());
   ASSERT_NE("", resp.cursor());
+}
+
+TEST_F(FakeGoogle3StorageTest, CreateAndGetProjectInfo) {
+  mako::CreationResponse cr;
+  mako::ProjectInfoGetResponse gr;
+
+  mako::ProjectInfo good_project = CreateProjectInfo();
+
+  // Create a project with no name. Check error.
+  mako::ProjectInfo bad_project = good_project;
+  bad_project.clear_project_name();
+  EXPECT_FALSE(s_.CreateProjectInfo(bad_project, &cr));
+  EXPECT_EQ(mako::Status::FAIL, cr.status().code());
+
+  // Create valid project.
+  EXPECT_TRUE(s_.CreateProjectInfo(good_project, &cr));
+  EXPECT_EQ(mako::Status::SUCCESS, cr.status().code());
+
+  // Create project with already existing name. Check error.
+  mako::ProjectInfo already_existing_project = good_project;
+  already_existing_project.set_project_alias("Project bar");
+  EXPECT_FALSE(s_.CreateProjectInfo(already_existing_project, &cr));
+  EXPECT_EQ(mako::Status::FAIL, cr.status().code());
+
+  // Get project by name. Check equality.
+  mako::ProjectInfo query_project;
+  query_project.set_project_name(good_project.project_name());
+  EXPECT_TRUE(s_.GetProjectInfo(query_project, &gr));
+  EXPECT_THAT(gr.project_info(), EqualsProto(good_project));
+}
+
+TEST_F(FakeGoogle3StorageTest, UpdateAndGetProjectInfo) {
+  mako::CreationResponse cr;
+  mako::ModificationResponse mr;
+  mako::ProjectInfoGetResponse gr;
+
+  mako::ProjectInfo good_project = CreateProjectInfo();
+
+  // Update a project that does not exist. Check error.
+  EXPECT_FALSE(s_.UpdateProjectInfo(good_project, &mr));
+  EXPECT_EQ(mako::Status::FAIL, mr.status().code());
+
+  // Create valid project.
+  EXPECT_TRUE(s_.CreateProjectInfo(good_project, &cr));
+  EXPECT_EQ(mako::Status::SUCCESS, cr.status().code());
+
+  // Modify the project and update it.
+  mako::ProjectInfo modified_project = good_project;
+  // Make uppercase project name should not make a difference.
+  modified_project.set_project_name(
+      absl::AsciiStrToUpper(good_project.project_name()));
+  modified_project.add_owner_list("bar@foogle.com");
+  EXPECT_TRUE(s_.UpdateProjectInfo(modified_project, &mr));
+  EXPECT_EQ(mako::Status::SUCCESS, mr.status().code());
+
+  // Get project by name. Check equality.
+  mako::ProjectInfo query_project;
+  query_project.set_project_name(modified_project.project_name());
+  EXPECT_TRUE(s_.GetProjectInfo(query_project, &gr));
+  modified_project.set_project_name(
+      absl::AsciiStrToLower(modified_project.project_name()));
+  EXPECT_THAT(gr.project_info(), EqualsProto(modified_project));
+}
+
+TEST_F(FakeGoogle3StorageTest, GetNonexistentProjectInfo) {
+  mako::ProjectInfoGetResponse gr;
+  mako::ProjectInfo query_project;
+  query_project.set_project_name("foo");
+  EXPECT_FALSE(s_.GetProjectInfo(query_project, &gr));
+  EXPECT_EQ(mako::Status::FAIL, gr.status().code());
+  EXPECT_FALSE(gr.has_project_info());
 }
 
 }  // namespace

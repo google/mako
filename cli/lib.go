@@ -35,6 +35,7 @@ package lib
 import (
 	"context"
 	"errors"
+
 	"flag"
 	"fmt"
 	"io"
@@ -46,10 +47,10 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
-	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
 	"github.com/google/subcommands"
 
 	"github.com/google/mako/go/spec/mako"
+	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
 )
 
 var (
@@ -85,6 +86,33 @@ var (
 )
 
 const (
+	createProjectUsage = `
+	create_project [<path>]
+
+	Creates a project with information specified in the project text-proto file.
+
+	The text-proto file at the specified path should be in the same form as
+	https://github.com/google/mako/blob/master/examples/project_info/project.config
+
+`
+
+	updateProjectUsage = `
+	update_project [<path>]
+
+	Updates a project with information specified in the project text-proto file.
+
+	The text-proto file at the specified path should be in the same form as
+	https://github.com/google/mako/blob/master/examples/project_info/project.config
+`
+
+	getProjectUsage = `
+	get_project -project_name=<projectName>
+
+	Returns information of a project given its project name.
+
+	NOTE: -project_name is required. It is always evaluated as lower-case.
+`
+
 	listBenchmarkUsage = `
   list_benchmarks [-project_name=<projectName>] [-benchmark_name=<benchmarkName>] [-owner=<owner>]
 
@@ -959,6 +987,77 @@ func deleteBenchmark(ctx context.Context, s mako.Storage) (subcommands.ExitStatu
 	return subcommands.ExitSuccess, nil
 }
 
+// -- project commands --
+
+func createProject(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, error) {
+	log.Info("Creating project")
+
+	pi, status, err := projectInfoFromFlags()
+	if err != nil {
+		return status, err
+	}
+
+	if _, err := s.CreateProjectInfo(ctx, pi); err != nil {
+		return subcommands.ExitFailure, err
+	}
+
+	fmt.Fprint(outWriter, "Successfully created project.")
+	return subcommands.ExitSuccess, nil
+}
+
+func updateProject(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, error) {
+	log.Info("Updating project")
+
+	pi, status, err := projectInfoFromFlags()
+	if err != nil {
+		return status, err
+	}
+
+	if _, err := s.UpdateProjectInfo(ctx, pi); err != nil {
+		return subcommands.ExitFailure, err
+	}
+
+	fmt.Fprint(outWriter, "Successfully updated project.")
+	return subcommands.ExitSuccess, nil
+}
+
+func getProject(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, error) {
+	if subargProjectName == "" {
+		return subcommands.ExitUsageError, errors.New("missing project name flag")
+	}
+
+	p := &pgpb.ProjectInfo{ProjectName: proto.String(strings.ToLower(subargProjectName))}
+	gr, err := s.GetProjectInfo(ctx, p)
+	if err != nil {
+		return subcommands.ExitFailure, err
+	}
+	fmt.Fprint(outWriter, gr.GetProjectInfo().String())
+	return subcommands.ExitSuccess, nil
+}
+
+func projectInfoFromFlags() (*pgpb.ProjectInfo, subcommands.ExitStatus, error) {
+	if sz := len(flag.Args()); sz < 2 {
+		return nil, subcommands.ExitUsageError, errors.New("missing path to project config")
+	} else if sz > 2 {
+		return nil, subcommands.ExitUsageError, errors.New("too many flag args")
+	}
+
+	return projectInfoFromProvidedPath()
+}
+
+func projectInfoFromProvidedPath() (*pgpb.ProjectInfo, subcommands.ExitStatus, error) {
+	str, status, err := getProtoAtPathAsString()
+	if err != nil {
+		return nil, status, err
+	}
+	pi := &pgpb.ProjectInfo{}
+	if err := unmarshal(pi, str); err != nil {
+		return nil, subcommands.ExitFailure, err
+	}
+
+	return pi, subcommands.ExitSuccess, nil
+}
+
 // -- annotation commands --
 
 func listAnnotations(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, error) {
@@ -1341,8 +1440,35 @@ func (c *cmd) Execute(ctx context.Context, f *flag.FlagSet, args ...interface{})
 }
 
 func registerMakoCommands(commander *subcommands.Commander) {
-	// -- benchmark commands --
 
+	// -- project commands --
+	commander.Register(
+		&cmd{
+			name:     "create_project",
+			synopsis: "Creates a new project.",
+			usage:    createProjectUsage,
+			setFlags: func(f *flag.FlagSet) {},
+			execute:  createProject}, "projects")
+
+	commander.Register(
+		&cmd{
+			name:     "update_project",
+			synopsis: "Updates a project.",
+			usage:    updateProjectUsage,
+			setFlags: func(f *flag.FlagSet) {},
+			execute:  updateProject}, "projects")
+
+	commander.Register(
+		&cmd{
+			name:     "get_project",
+			synopsis: "Returns information of a project given its project name.",
+			usage:    getProjectUsage,
+			setFlags: func(f *flag.FlagSet) {
+				f.StringVar(&subargProjectName, "project_name", "", "Name of the project.")
+			},
+			execute: getProject}, "projects")
+
+	// -- benchmark commands --
 	commander.Register(
 		&cmd{
 			name:     "list_benchmarks",
@@ -1371,7 +1497,7 @@ func registerMakoCommands(commander *subcommands.Commander) {
 			name:     "create_benchmark",
 			synopsis: "Create a new benchmark.",
 			usage:    createBenchmarkUsage,
-			setFlags: func(f *flag.FlagSet) { return },
+			setFlags: func(f *flag.FlagSet) {},
 			execute:  createBenchmark}, "benchmarks")
 
 	commander.Register(

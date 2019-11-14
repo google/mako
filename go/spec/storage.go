@@ -22,6 +22,42 @@ import (
 
 // Storage interface used to store data inside Mako.
 type Storage interface {
+
+	// CreateProjectInfo creates a new ProjectInfo record.
+	//
+	// The ProjectInfo reference that is passed, should contain all the
+	// information that you wish to have stored in the newly created project.
+	//
+	// The result of the creation request will be placed in the supplied
+	// CreationResponse message.
+	//
+	// The boolean returned represents success (true) or failure (false) of the
+	// operation. More details about the success/failure will be in
+	// CreationResponse.Status.
+	CreateProjectInfo(context.Context, *pgpb.ProjectInfo) (*pgpb.CreationResponse, error)
+
+	// UpdateProjectInfo updates a ProjectInfo record.
+	//
+	// The ProjectInfo.project_name will be used to select the benchmark that
+	// you wish to update. All information in the provided ProjectInfo
+	// will overwrite the existing record.
+	//
+	// The results of the operation will be placed in ModificationResponse.
+	//
+	// The boolean returned represents success (true) or failure (false) of the
+	// operation. More details about the success/failure will be in
+	// ModificationResponse.Status.
+	UpdateProjectInfo(context.Context, *pgpb.ProjectInfo) (*pgpb.ModificationResponse, error)
+
+	// GetProjectInfo gets ProjectInfo record that match the ProjectInfo.project_name.
+	//
+	// The ProjectInfoGetResponse will be populated with results.
+	//
+	// The boolean returned represents success (true) or failure (false) of the
+	// operation. More details about the success/failure will be in
+	// ProjectInfoGetResponse.Status.
+	GetProjectInfo(context.Context, *pgpb.ProjectInfo) (*pgpb.ProjectInfoGetResponse, error)
+
 	// CreateBenchmarkInfo creates a new BenchmarkInfo record.
 	//
 	// The BenchmarkInfo reference that is passed, should contain all the
