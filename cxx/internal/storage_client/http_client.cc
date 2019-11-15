@@ -29,7 +29,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "curl/curl.h"
-#include "third_party/curl/curlver.h"
+#include "curl/curlver.h"
 #include "cxx/helpers/status/canonical_errors.h"
 #include "cxx/internal/utils/cleanup.h"
 #include "cxx/internal/utils/googleinit.h"
