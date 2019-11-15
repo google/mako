@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <deque>
+#include <functional>
 #include <random>
 #include <sstream>
 #include <string>
