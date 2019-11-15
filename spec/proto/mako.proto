@@ -1681,7 +1681,7 @@ message AnalyzerOutput {
 // Holds annotations about whether the Analyzer output regression value was
 // accurate and potentially links to follow up information such as buganizer
 // work items. Typically populated by a human through the Mako Web UI.
-// NEXT ID: 7
+// NEXT ID: 8
 message AnalysisTriageInfo {
   // NEXT ID: 5
   enum AnalysisTriageType {
@@ -1738,6 +1738,12 @@ message AnalysisTriageInfo {
   // future. Consumers should use analysis_key from the containing
   // AnalyzerOutput message.
   optional string analysis_key = 6;
+
+  // OPTIONAL
+  // Key pointing to the AlertInfo(s) associated with this regression.
+  //
+  // TODO(b/129361687): this feature is not yet publicly available.
+  repeated string alert_keys = 7;
 }
 
 // -----------------------------------------------------------------------------
