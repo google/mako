@@ -162,12 +162,12 @@ message UTestConfig {
   // REQUIRED
   // Specifies the significance level (or alpha value) for the UTest.
   //
-  // This is the probability that this a difference of at least this magnitude
-  // would arise if the two distributions had no difference in central
-  // tendencies. The lower this value, the larger the difference you're willing
-  // to ignore. For example, if significance_level = 0.05, then we will fail the
-  // test if there is less than a 5% probability that a difference of at least
-  // this magnitude would occur given that the central tendencies of the two
+  // This is the probability that a difference of at least this magnitude would
+  // arise if the two distributions had no difference in central tendencies. The
+  // lower this value, the larger the difference you're willing to ignore.
+  // For example, if significance_level = 0.05, then we will fail the test if
+  // there is less than a 5% probability that a difference of at least this
+  // magnitude would occur given that the central tendencies of the two
   // distributions were equal.
   //
   // Commonly chosen significance levels are 0.001, 0.01, 0.05 and 0.1.
