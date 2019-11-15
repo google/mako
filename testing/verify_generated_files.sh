@@ -26,6 +26,8 @@ if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 # Include dependencies.
 . "$DIR/utils.sh"
 
+set_bazel
+
 some_changed=false
 while read -r sourcepath destpath; do
   if ! cmp -s "${sourcepath}" "${destpath}"; then

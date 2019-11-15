@@ -19,4 +19,13 @@ set -e
 # Display commands being run.
 set -x
 
-time bazel build //...
+# Find the script's directory.
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+
+# Include dependencies.
+. "$DIR/utils.sh"
+
+set_bazel
+
+time "${MAKO_BAZEL}" build //...

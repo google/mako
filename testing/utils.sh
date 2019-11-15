@@ -17,12 +17,19 @@
 # The utils in this file assume that the calling script has ensured the CWD is
 # the root of the Mako repo.
 
+# Sets the MAKO_BAZEL variable, if unset.
+set_bazel() {
+  if [[ -z "${MAKO_BAZEL}" ]]; then
+    MAKO_BAZEL="bazel"
+  fi
+}
+
 # Returns two paths on each line: <src> <dst>
 # where <src> is the bazel-generated source file, and <dst> is the directory
 # path in the repo where that file should be copied.
 generate_go_proto_files() {
-  bazel query 'kind("go_proto_library rule", //...)' 2>"./bazel.err" | while read target; do
-    bazel build $target
+  "${MAKO_BAZEL}" query 'kind("go_proto_library rule", //...)' 2>"./bazel.err" | while read target; do
+    "${MAKO_BAZEL}" build $target
 
     # Break the target into its base path and the target name by using ':' as a
     # separator.
@@ -30,7 +37,7 @@ generate_go_proto_files() {
 
     # Bazel has no way to directly get the 'importpath' field, so we ask it to
     # export the query output to XML and then parse it.
-    xml=$(bazel query $target --output xml | grep importpath)
+    xml=$("${MAKO_BAZEL}" query $target --output xml | grep importpath)
     import_path=$([[ ${xml} =~ \<string\ name=\"importpath\"\ value=\"(.*)\"\/\> ]]; echo ${BASH_REMATCH[1]})
 
     # This is the path to the generated file.
@@ -43,3 +50,4 @@ generate_go_proto_files() {
     echo "${genfile} ${dest_path}"
   done
 }
+
