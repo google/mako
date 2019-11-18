@@ -607,7 +607,7 @@ message RunAnnotation {
 // 2) Update:
 //    At the end of the test, this is written again with all relevant fields
 //    set. Note that the run_key (provided in Create response) must be set.
-// NEXT_ID: 19
+// NEXT_ID: 20
 message RunInfo {
   // REQUIRED
   // Associates this run with a benchmark.
@@ -688,6 +688,30 @@ message RunInfo {
   //     * Period (.)
   //     * Colon (:)
   repeated string tags = 5;
+
+  // COMMON
+  // Tags for this run that define what other Runs of this Benchmark are part of
+  // the history for this configuration of this benchmark.
+  //
+  // The set of Runs of the same benchmark that are also tagged with all values
+  // in historical_context_tags are comparable to this current RunInfo message
+  // and therefore form the "history" of this Run.
+  //
+  // Example: If the RunInfo.tags are:
+  //   ["platform=android", "mem=16GB", "cl=1234567"]
+  // then it is likely that RunInfo.historical_context_tags should be:
+  //   ["platform=android", "mem=16GB"]
+  //
+  // This field is used by Mako to provide smarter features such as
+  // automatically filtering historical trend lines for the current run to the
+  // tags in this field. Future features such as de-duplication for automated
+  // bug filing and reduced verbosity of Analyzers that need historical runs to
+  // do their regression detection will be more effective with this field
+  // populated.
+  //
+  // All tags in this field must also be items in the RunInfo.tags field.
+  // Violating this constraint is an error.
+  repeated string historical_context_tags = 19;
 
   // UNCOMMON
   // Defines ranges of input values that should be ignored for the purpose
