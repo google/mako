@@ -203,6 +203,7 @@ func equalIgnoreWhitespace(s1, s2 string) bool {
 // out if they are different (ignoring whitespace)
 func checkCmdLine(ctx context.Context, t *testing.T, cmdLine []string, expectedOutput string,
 	expectedExitStatus subcommands.ExitStatus) {
+	t.Helper()
 	var buf bytes.Buffer
 	t.Logf("Running command %s", cmdLine)
 
@@ -228,6 +229,7 @@ func checkCmdLine(ctx context.Context, t *testing.T, cmdLine []string, expectedO
 }
 
 func checkCmdLineSucceeded(ctx context.Context, t *testing.T, cmdLine []string, expectedOutput string) {
+	t.Helper()
 	checkCmdLine(ctx, t, cmdLine, expectedOutput, subcommands.ExitSuccess)
 }
 
