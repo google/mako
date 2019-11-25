@@ -881,10 +881,11 @@ message SampleError {
   // The single input value associated with these metric measurements.
   optional double input_value = 1;
 
-  // OPTIONAL
+  // CONDITIONALLY REQUIRED
   // Short identifier of the sampler to help a human debug which Sampler hit
   // the error. If a sampler_name is not supplied, the Mako framework will
-  // autoassign the sampler_name to be the name of the current sampler.
+  // autoassign the sampler_name to be the name of the current sampler in C++
+  // and Python. In Go and Java, the sampler_name must be specified.
   optional string sampler_name = 2;
 
   // REQUIRED
