@@ -48,7 +48,7 @@ HeaderResult FailureResult(google::cloud::StatusCode code,
 
 TEST(GoogleOauthFetcherTest, ParsesHeader) {
   const std::string token =
-      "ya29.c.El2TBkjVCI-32GrKp9lDJDptZn5NHnIL9NF7Oc_zstErD1EiR6_"
+      "ya28.c.El2TBkjVCI-32GrKp9lDJDptZn5NHnIL9NF7Oc_zstErD1EiR6_"
       "fUJRzxTiWbV79DCJmbdHSAnYYt1QQBP4yV42FLXn3qYVLHHUfvPyJIfEIKyD6vVjQVEwW0TN"
       "A8yk";
   auto status_or_token = GoogleOAuthFetcher::ParseAuthorizationHeader(
