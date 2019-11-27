@@ -41,7 +41,7 @@ generate_go_proto_files() {
     import_path=$([[ ${xml} =~ \<string\ name=\"importpath\"\ value=\"(.*)\"\/\> ]]; echo ${BASH_REMATCH[1]})
 
     # This is the path to the generated file.
-    genfile=$(ls bazel-genfiles/${target_path}/*/${target_name}%/${import_path}/*.pb.go)
+    genfile=$(ls bazel-bin/${target_path}/*/${target_name}%/${import_path}/*.pb.go)
 
     # Figure out where to copy it.
     filename=$(basename ${genfile})
