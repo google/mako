@@ -714,7 +714,17 @@ default_issue_tracker: {
 `
 	projFilePath := writeTextProto(textProto, "test_project")
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "create_project", projFilePath}, `Successfully created project.`)
-	checkCmdLineSucceeded(ctx, t, []string{"mako", "get_project", "-project_name=bigtable"}, `project_name:"bigtable"  project_alias:"Bigtable"  owner_list:"mako@prod.google.com"  owner_list:"user@google.com"  default_issue_tracker:{buganizer_config:{component_id:"123456789"}}`)
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "get_project", "-project_name=bigtable"},
+		`project_name: "bigtable"
+    project_alias: "Bigtable"
+    owner_list: "mako@prod.google.com"
+    owner_list: "user@google.com"
+    default_issue_tracker: <
+      buganizer_config: <
+        component_id: "123456789"
+      >
+    >
+    `)
 
 	textProto = `
 # project_name is always evaluated as lowercase and must be unique
@@ -739,7 +749,18 @@ default_issue_tracker: {
 `
 	projFilePath = writeTextProto(textProto, "test_project")
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "update_project", projFilePath}, `Successfully updated project.`)
-	checkCmdLineSucceeded(ctx, t, []string{"mako", "get_project", "-project_name=BIGTABLE"}, `project_name:"bigtable"  project_alias:"Spanner Bigtable"  owner_list:"user@google.com"  owner_list:"mako@prod.google.com"  owner_list:"spanner@prod.google.com"  default_issue_tracker:{buganizer_config:{component_id:"987654321"}}`)
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "get_project", "-project_name=BIGTABLE"},
+		`project_name: "bigtable"
+     project_alias: "Spanner Bigtable"
+     owner_list: "user@google.com"
+     owner_list:"mako@prod.google.com"
+     owner_list: "spanner@prod.google.com"
+     default_issue_tracker: <
+       buganizer_config: <
+         component_id: "987654321"
+       >
+     >
+     `)
 }
 
 func readRunFilesFile(name string) ([]byte, error) {

@@ -1031,7 +1031,7 @@ func getProject(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, er
 	if err != nil {
 		return subcommands.ExitFailure, err
 	}
-	fmt.Fprint(outWriter, gr.GetProjectInfo().String())
+	fmt.Fprint(outWriter, proto.MarshalTextString(gr.GetProjectInfo()))
 	return subcommands.ExitSuccess, nil
 }
 
