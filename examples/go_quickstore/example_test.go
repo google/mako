@@ -98,7 +98,7 @@ func TestPerformance(t *testing.T) {
 				// Add a Rolling Window Reducer config to calculate the QPS of the wl metric
 				// Read more about the Rolling Window Reducer at https://github.com/google/mako/blob/master/proto/helpers/rolling_window_reducer/rolling_window_reducer.proto
 				InputMetricKeys:    []string{"wl"},
-				OutputMetricKey:    proto.String("wl_qps"),
+				OutputMetricKey:    proto.String("wqps"),
 				WindowOperation:    rpb.RWRConfig_COUNT.Enum(),
 				WindowSize:         proto.Float64(1000),
 				StepsPerWindow:     proto.Int32(1),
