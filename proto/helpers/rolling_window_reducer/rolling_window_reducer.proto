@@ -26,7 +26,8 @@
 // with an input_value (x-val) as the middle of the window and a KeyedValue
 // (y-value) as the window parameter the user is interested in is created.
 //
-// See  go/mako-rwr for more information.
+// See https://github.com/google/mako/blob/master/docs/ROLLING_WINDOW_REDUCER.md
+// for more information.
 
 syntax = "proto2";
 
