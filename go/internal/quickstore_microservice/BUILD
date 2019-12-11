@@ -67,9 +67,9 @@ cc_binary(
 # Therefore, to load this Docker image, you must instead use `bazel build` to build a tar file that
 # can be loaded into Docker. e.g.
 #
-# $ bazel build //internal/quickstore_microservice:quickstore_microservice_mako_image.tar
-# $ docker load -i bazel-bin/internal/quickstore_microservice/quickstore_microservice_mako_image.tar
-# $ docker run <docker arguments> bazel/internal/quickstore_microservice:quickstore_microservice_mako_image
+# $ bazel build //go/internal/quickstore_microservice:quickstore_microservice_mako_image.tar
+# $ docker load -i bazel-bin/go/internal/quickstore_microservice/quickstore_microservice_mako_image.tar
+# $ docker run <docker arguments> bazel/go/internal/quickstore_microservice:quickstore_microservice_mako_image
 #
 # See an example of a full command-line at
 # https://github.com/google/mako/blob/master/docs/GUIDE.md#quickstore-microservice-as-a-docker-image.

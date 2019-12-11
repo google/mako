@@ -50,7 +50,7 @@ cc_library(
     srcs = ["use_mako.cc"],
     hdrs = ["use_mako.h"],
     deps = [
-        "@mako//helpers/cxx/quickstore",
+        "@mako//cxx/quickstore",
     ],
 )
 ```
@@ -62,7 +62,7 @@ go_library(
     srcs = ["usemako.go"],
     importpath = "github.com/your/project/usemako"
     deps = [
-        "@mako//helpers/go/quickstore",
+        "@mako//go/quickstore",
     ],
 )
 ```
@@ -79,8 +79,8 @@ Regardless of the tool you use, when you import Mako from your `.go` files it
 will look roughly like this:
 ```go
 import (
-	"github.com/google/mako/quickstore/go/quickstore"
-	qpb "github.com/google/mako/quickstore/quickstore_proto"
+	"github.com/google/mako/go/quickstore"
+	qpb "github.com/google/mako/proto/quickstore/quickstore_go_proto"
 )
 ```
 
@@ -94,30 +94,30 @@ Quickstore test.
 ## Building the command-line tool
 
 ```bash
-$ bazel build internal/tools/cli:mako
+$ bazel build cli:mako
 ```
 
-The binary will be found in `bazel-bin/internal/tools/cli/*/mako` (the wildcard
+The binary will be found in `bazel-bin/cli/*/mako` (the wildcard
 will differ based on your platform, check the Bazel output). You can copy this
 binary into a more convenient location (e.g. somewhere on your $PATH).
 Alternatively, run directly from Bazel:
 
 ```bash
-$ bazel run internal/tools/cli:mako help
+$ bazel run cli:mako help
 ```
 
 ## Building the Quickstore microservice
 ```bash
-$ bazel build internal/quickstore_microservice:quickstore_microservice_mako
+$ bazel build go/internal/quickstore_microservice:quickstore_microservice_mako
 ```
 
 The binary will be found in
-`bazel-bin/internal/quickstore_microservice/quickstore_microservice_mako`. You
+`bazel-bin/go/internal/quickstore_microservice/quickstore_microservice_mako`. You
 can copy this binary into a more convenient location (e.g. somewhere on your
 $PATH). Alternatively, run directly from Bazel:
 
 ```bash
-$ bazel run internal/quickstore_microservice:quickstore_microservice_mako
+$ bazel run go/internal/quickstore_microservice:quickstore_microservice_mako
 ```
 
 ### Microservice Docker image
@@ -130,19 +130,19 @@ The Quickstore microservice can also be built into a Docker image:
 > microservice in Linux.
 
 ```bash
-$ bazel build internal/quickstore_microservice:quickstore_microservice_mako_image.tar
+$ bazel build go/internal/quickstore_microservice:quickstore_microservice_mako_image.tar
 ```
 
 This image can then be loaded into a Docker client for running:
 
 ```bash
-$ docker load -i bazel-bin/internal/quickstore_microservice/quickstore_microservice_mako_image.tar
+$ docker load -i bazel-bin/go/internal/quickstore_microservice/quickstore_microservice_mako_image.tar
 ```
 
 The container can then be run:
 
 ```bash
-$ docker run <docker arguments> bazel/internal/quickstore_microservice:quickstore_microservice_mako_image
+$ docker run <docker arguments> bazel/go/internal/quickstore_microservice:quickstore_microservice_mako_image
 ```
 
 Read more at

@@ -30,10 +30,10 @@ The following operations can be performed on objects of the above types:
 > **NOTE**: Comprehensive documentation for each method is available in the
 > source files for the interface types.
 > * For the C++ storage library
->   [mako_client.h](../clients/cxx/storage/mako_client.h), see the per-method
->   documentation in [storage.h](../spec/cxx/storage.h).
-> * For the Go storage library [mako.go](../clients/go/storage/mako.go), see the
->   per-method documentation in [storage.go](../spec/go/storage.go).
+>   [mako_client.h](../cxx/clients/storage/mako_client.h), see the per-method
+>   documentation in [storage.h](../cxx/spec/storage.h).
+> * For the Go storage library [mako.go](../go/clients/storage/mako/mako.go), see the
+>   per-method documentation in [storage.go](../go/spec/storage.go).
 
 ## Language and build system support
 

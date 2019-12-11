@@ -70,8 +70,8 @@ Mako runs can have a diverse set of metadata associated with them, including:
 
 When using Quickstore, this data is populated via the `QuickstoreInput` object
 passed to the Quickstore client
-constructors ([C++](../helpers/cxx/quickstore/quickstore.go),
-[Go](../helpers/cxx/quickstore/quickstore.h)). See the comments on 
+constructors ([C++](../cxx/quickstore/quickstore.h),
+[Go](../go/quickstore/quickstore.go)). See the comments on 
 `QuickstoreInput` in
 [quickstore.proto](../proto/quickstore/quickstore.proto) for the full
 set of supported run metadata information.
@@ -101,7 +101,7 @@ To create the benchmark you’ll use the Mako command-line tool. Visit
 the command-line tool.
 
 ```bash
-$ alias mako=<your mako directory>/bazel-bin/internal/tools/cli/mako
+$ alias mako=<your mako directory>/bazel-bin/cli/mako
 ```
 
 You can see all the CLI commands using the ‘help’ subcommand:
@@ -214,7 +214,7 @@ import (
   "context"
 	"fmt"
 	"testing"
-	"github.com/google/mako/helpers/go/quickstore"
+	"github.com/google/mako/go/quickstore"
 	qpb "github.com/google/mako/proto/quickstore/quickstore_go_proto"
 )
 
@@ -259,7 +259,7 @@ listen for client connections:
 
 ```bash
 $ MAKO_PORT=9347  # could be any port
-$ bazel run internal/quickstore_microservice:quickstore_microservice_mako -- --addr="localhost:${MAKO_PORT}"
+$ bazel run go/internal/quickstore_microservice:quickstore_microservice_mako -- --addr="localhost:${MAKO_PORT}"
 ```
 
 Note that this command will fail if you haven’t set up authentication as
@@ -283,7 +283,7 @@ pushed to a repository:
 > microservice in Linux.
 
 ```bash
-$ bazel build internal/quickstore_microservice:quickstore_microservice_mako_image.tar
+$ bazel build go/internal/quickstore_microservice:quickstore_microservice_mako_image.tar
 ```
 
 Documentation about the Docker Bazel rules can be found at
@@ -292,7 +292,7 @@ https://github.com/bazelbuild/rules_docker#using-with-docker-locally.
 To load the tar file output by the above command as a local Docker container:
 
 ```bash
-$ docker load -i bazel-bin/internal/quickstore_microservice/quickstore_microservice_mako_image.tar
+$ docker load -i bazel-bin/go/internal/quickstore_microservice/quickstore_microservice_mako_image.tar
 ```
 
 The image is loaded and ready to run. Inside the container, the microservice
@@ -308,7 +308,7 @@ The full `docker run` command will look something like:
 
 ```bash
 $ MAKO_PORT=9347  # could be any port
-$ docker run --rm -v ~/.config/gcloud/application_default_credentials.json:/root/adc.json -e "GOOGLE_APPLICATION_CREDENTIALS=/root/adc.json" -p ${MAKO_PORT}:9813 bazel/internal/quickstore_microservice:quickstore_microservice_mako_image
+$ docker run --rm -v ~/.config/gcloud/application_default_credentials.json:/root/adc.json -e "GOOGLE_APPLICATION_CREDENTIALS=/root/adc.json" -p ${MAKO_PORT}:9813 bazel/go/internal/quickstore_microservice:quickstore_microservice_mako_image
 ```
 
 As mentioned above, you will need to arrange for the microservice image to be

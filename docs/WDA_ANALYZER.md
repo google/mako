@@ -135,8 +135,8 @@ size is:
 The most convenient way to specify your queries is to provide a single query
 that minimally sets the `RunInfoQuery.benchmark_key` and `RunInfoQuery.limit`
 fields. You can create more complex queries you need them. We recommend that you
-use [tags](/testing/performance/mako/g3doc/guide/tags.md) for these queries
-to help isolate environments under analysis.
+use [tags](CONCEPTS.md#tags) for these queries to help isolate environments
+under analysis.
 
 For example, with these configurations:
 

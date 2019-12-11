@@ -14,9 +14,9 @@ analyzer types are described below.
 ## Configuring analyzers
 
 Analyzers are configured in the
-[`QuickstoreInput`](../quickstore/quickstore.proto) argument to
-the Quickstore constructor ([C++](../quickstore/cxx/quickstore.h),
-[Go](../quickstore/go/quickstore.go)).
+[`QuickstoreInput`](../proto/quickstore/quickstore.proto) argument to
+the Quickstore constructor ([C++](../cxx/quickstore/quickstore.h),
+[Go](../go/quickstore/quickstore.go)).
 
 Here's a simple example:
 
