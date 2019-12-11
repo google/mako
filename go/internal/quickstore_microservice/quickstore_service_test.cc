@@ -59,7 +59,7 @@ TEST(QuickstoreServiceTest, InitHostnameArgIsPassedToStorageFactory) {
   QuickstoreService service(&shutdown_queue, mock_factory.AsStdFunction());
 
   InitInput input;
-  input.set_host_address(want_hostname);
+  input.set_host_address(std::string(want_hostname));
 
   InitOutput unused_output;
 
