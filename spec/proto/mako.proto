@@ -270,7 +270,7 @@ message ProjectInfo {
   // If left blank, project_name will be used.
   optional string project_alias = 2;
 
-  // REQUIRED
+  // CONDITIONALLY REQUIRED
   // List of project owners specified by email addresses. See
   // BenchmarkInfo.owner_list for further specifications.
 
@@ -278,6 +278,8 @@ message ProjectInfo {
   // new benchmark for this project without project ownership will result in a
   // permission denied error. Project and benchmark owners can perform all
   // other benchmark/run operations.
+
+  // This field is required for project creation and updates.
   repeated string owner_list = 3;
 
   // OPTIONAL
