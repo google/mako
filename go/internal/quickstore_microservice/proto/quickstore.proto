@@ -21,12 +21,21 @@ import "proto/quickstore/quickstore.proto";
 import "spec/proto/mako.proto";
 
 service Quickstore {
+  rpc Init(InitInput) returns (InitOutput) {}
   // Stores the inputs into Mako using Quickstore and returns the generated
   // output.
   rpc Store(StoreInput) returns (StoreOutput) {}
   // Shuts down the Quickstore microservice.
   rpc ShutdownMicroservice(ShutdownInput) returns (ShutdownOutput) {}
 }
+
+message InitInput {
+  // OPTIONAL. The Mako service to connect to. Unspecified/empty value will
+  // be interpreted as "https://mako.dev".
+  optional string host_address = 1;
+}
+
+message InitOutput {}
 
 // TODO(b/134582028) Use this proto as input to the internal Quickstore library
 // instead of a multitude of std::vectors.

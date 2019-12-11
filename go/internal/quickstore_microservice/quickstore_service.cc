@@ -14,10 +14,10 @@
 #include "go/internal/quickstore_microservice/quickstore_service.h"
 
 #include <memory>
+#include <functional>
 
 #include "src/google/protobuf/repeated_field.h"
 #include "cxx/clients/storage/mako_client.h"
-#include "cxx/helpers/status/statusor.h"
 #include "cxx/internal/queue_ifc.h"
 #include "cxx/quickstore/internal/store.h"
 
@@ -34,14 +34,35 @@ std::vector<T> MakeVector(Container<T> proto) {
 
 mako::helpers::StatusOr<std::unique_ptr<QuickstoreService>>
 QuickstoreService::Create(
+    const std::string& default_host,
     mako::internal::QueueInterface<bool>* shutdown_queue) {
-  return {absl::make_unique<QuickstoreService>(
-      shutdown_queue, mako::NewMakoClient())};
+  auto storage_factory = [default_host](absl::string_view host) {
+    if (host.empty()) {
+      host = default_host;
+    }
+    return mako::NewMakoClient(host);
+  };
+  return {
+      absl::make_unique<QuickstoreService>(shutdown_queue, storage_factory)};
+}
+
+grpc::Status QuickstoreService::Init(grpc::ServerContext* context,
+                                      const InitInput* request,
+                                      InitOutput* response) {
+  if (initialized_) {
+    return grpc::Status(grpc::StatusCode::ALREADY_EXISTS,
+                        "Quickstore service has already been initialized.");
+  }
+  storage_ = storage_factory_(request->host_address());
+  return grpc::Status::OK;
 }
 
 grpc::Status QuickstoreService::Store(grpc::ServerContext* context,
                                       const StoreInput* request,
                                       StoreOutput* response) {
+  if (storage_ == nullptr) {
+    storage_ = storage_factory_("");
+  }
   *response->mutable_quickstore_output() =
       mako::quickstore::internal::SaveWithStorage(
           storage_.get(), request->quickstore_input(),

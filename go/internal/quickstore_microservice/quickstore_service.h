@@ -16,6 +16,7 @@
 #ifndef GO_INTERNAL_QUICKSTORE_MICROSERVICE_QUICKSTORE_SERVICE_H_
 #define GO_INTERNAL_QUICKSTORE_MICROSERVICE_QUICKSTORE_SERVICE_H_
 
+#include <functional>
 #include <memory>
 
 #include "cxx/helpers/status/statusor.h"
@@ -34,12 +35,17 @@ class QuickstoreService : public Quickstore::Service {
   // Exposed for testing
   explicit QuickstoreService(
       mako::internal::QueueInterface<bool>* shutdown_queue,
-      std::unique_ptr<mako::Storage> storage)
-      : shutdown_queue_(shutdown_queue), storage_(std::move(storage)) {}
+      std::function<std::unique_ptr<mako::Storage>(absl::string_view)>
+          storage_factory)
+      : shutdown_queue_(shutdown_queue), storage_factory_(storage_factory) {}
   ~QuickstoreService() override {}
 
   static mako::helpers::StatusOr<std::unique_ptr<QuickstoreService>> Create(
+      const std::string& default_host,
       mako::internal::QueueInterface<bool>* shutdown_queue);
+
+  grpc::Status Init(grpc::ServerContext* context, const InitInput* request,
+                    InitOutput* response) override;
 
   grpc::Status Store(grpc::ServerContext* context, const StoreInput* request,
                      StoreOutput* response) override;
@@ -49,7 +55,17 @@ class QuickstoreService : public Quickstore::Service {
                                     ShutdownOutput* response) override;
 
  private:
+  bool initialized_ = false;
   mako::internal::QueueInterface<bool>* shutdown_queue_;
+
+  // The storage factory creates a storage instance from a hostname parameter
+  // specifying the target Mako host. Empty hostname parameters may be passed
+  // and must be supported.
+  std::function<std::unique_ptr<mako::Storage>(absl::string_view)>
+      storage_factory_;
+
+  // Storage isn't populated until Init(), or until the first Store() call in
+  // the case that Init is skipped.
   std::unique_ptr<mako::Storage> storage_;
 };
 

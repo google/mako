@@ -24,6 +24,8 @@
 ABSL_FLAG(std::string, addr, "localhost:9813",
           "Address on which to run the Quickstore microservice.");
 
+constexpr char kDefaultHost[] = "https://mako.dev";
+
 static void sigdown(int signo) {
   psignal(signo, "Shutting down, got signal");
   std::exit(0);
@@ -44,6 +46,18 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  absl::string_view default_host = kDefaultHost;
+  const char* env_var_default_host = std::getenv("MAKO_SERVER_ADDRESS");
+  if (env_var_default_host != nullptr) {
+    LOG(INFO) << "Found MAKO_SERVER_ADDRESS set to \"" << env_var_default_host
+              << "\". Overriding default address of \"" << default_host << "\"";
+    default_host = env_var_default_host;
+  }
+
+  LOG(INFO)
+      << "Quickstore will by default connect to the target Mako server at "
+      << default_host << ". The target server may be overridden by a client.";
+
   grpc::ServerBuilder builder;
   builder.SetMaxReceiveMessageSize(std::numeric_limits<int32_t>::max());
   builder.SetMaxSendMessageSize(std::numeric_limits<int32_t>::max());
@@ -54,7 +68,7 @@ int main(int argc, char** argv) {
   mako::internal::Queue<bool> shutdown_queue;
   auto service =
       mako::internal::quickstore_microservice::QuickstoreService::Create(
-          &shutdown_queue)
+          std::string(default_host), &shutdown_queue)
           .value();
   builder.RegisterService(service.get());
 

@@ -39,14 +39,72 @@ constexpr double kM3Min = 1;
 
 using ::mako::EqualsProto;
 using ::mako::proto::Partially;
+using ::testing::ByMove;
 using ::testing::Eq;
+using ::testing::Return;
 
-// Basic test just to verify everything is being piped through correctly.
+// Basic tests just to verify everything is being piped through correctly.
+
+TEST(QuickstoreServiceTest, InitHostnameArgIsPassedToStorageFactory) {
+  mako::internal::Queue<bool> shutdown_queue;
+
+  absl::string_view want_hostname = "http://somefakehostname.com";
+
+  testing::MockFunction<std::unique_ptr<mako::Storage>(absl::string_view)>
+      mock_factory;
+  EXPECT_CALL(mock_factory, Call(want_hostname))
+      .WillOnce(Return(ByMove(
+          absl::make_unique<mako::fake_google3_storage::Storage>())));
+
+  QuickstoreService service(&shutdown_queue, mock_factory.AsStdFunction());
+
+  InitInput input;
+  input.set_host_address(want_hostname);
+
+  InitOutput unused_output;
+
+  // If we instantiate a grpc::ServerContext, its destructor segfaults when run
+  // externally. Until we solve this issue, let's just pass in a pointer. The
+  // service implementation doesn't use the context anyway.
+  grpc::ServerContext* context = nullptr;
+  EXPECT_OK(service.Init(context, &input, &unused_output));
+
+  // Do a store to ensure the storage factory doesn't get called any more than
+  // the once.
+  StoreInput unused_store_input;
+  StoreOutput unused_store_output;
+  EXPECT_OK(service.Store(context, &unused_store_input, &unused_store_output));
+}
+
+TEST(QuickstoreServiceTest, InitSkippedPassesEmptyStringToStorageFactory) {
+  mako::internal::Queue<bool> shutdown_queue;
+
+  absl::string_view want_hostname = "";
+
+  testing::MockFunction<std::unique_ptr<mako::Storage>(absl::string_view)>
+      mock_factory;
+  EXPECT_CALL(mock_factory, Call(want_hostname))
+      .WillOnce(Return(ByMove(
+          absl::make_unique<mako::fake_google3_storage::Storage>())));
+
+  QuickstoreService service(&shutdown_queue, mock_factory.AsStdFunction());
+
+  StoreInput unused_input;
+  StoreOutput unused_output;
+
+  // If we instantiate a grpc::ServerContext, its destructor segfaults when run
+  // externally. Until we solve this issue, let's just pass in a pointer. The
+  // service implementation doesn't use the context anyway.
+  grpc::ServerContext* context = nullptr;
+  EXPECT_OK(service.Store(context, &unused_input, &unused_output));
+}
+
 TEST(QuickstoreServiceTest, Store) {
   mako::internal::Queue<bool> shutdown_queue;
   QuickstoreService service(
-      &shutdown_queue,
-      absl::make_unique<mako::fake_google3_storage::Storage>());
+      &shutdown_queue, [](absl::string_view unused_hostname) {
+        return absl::make_unique<mako::fake_google3_storage::Storage>();
+      });
 
   StoreInput input;
   input.mutable_quickstore_input()->set_benchmark_key("12345");
@@ -208,8 +266,9 @@ TEST(QuickstoreServiceTest, Store) {
 TEST(QuickstoreServiceTest, Shutdown) {
   mako::internal::Queue<bool> shutdown_queue;
   QuickstoreService service(
-      &shutdown_queue,
-      absl::make_unique<mako::fake_google3_storage::Storage>());
+      &shutdown_queue, [](absl::string_view unused_hostname) {
+        return absl::make_unique<mako::fake_google3_storage::Storage>();
+      });
   ShutdownInput input;
   ShutdownOutput output;
   // If we instantiate a grpc::ServerContext, its destructor segfaults when run

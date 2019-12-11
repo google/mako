@@ -50,6 +50,8 @@ import (
 	"flag"
 	"os"
 
+	"fmt"
+
 	log "github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
@@ -89,15 +91,29 @@ type Quickstore struct {
 // the microsevice terminate itself. This function can be ignored in order to leave the microservice
 // running.
 func NewAtAddress(ctx context.Context, input *qpb.QuickstoreInput, address string) (*Quickstore, func(context.Context), error) {
-	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
+	return NewAtHostWithSidecar(ctx, input, "", address)
+}
+
+// NewAtHostWithSidecar creates a new Quickstore that connects to a Quickstore sidecar (aka microservice) at the provided gRPC address. The sidecar will be configured to connect to the Mako server at the provided address.
+//
+// Along with the Quickstore instance, it returns a function that can be called to request
+// the microsevice terminate itself. This function can be ignored in order to leave the microservice
+// running.
+//
+// makoHostAddress may be empty, in which case the sidecar will use the default Mako host ("https://mako.dev") or the one configured with the MAKO_SERVER_ADDRESS environment variable.
+func NewAtHostWithSidecar(ctx context.Context, input *qpb.QuickstoreInput, makoHostAddress string, sidecarAddress string) (*Quickstore, func(context.Context), error) {
+	conn, err := grpc.DialContext(ctx, sidecarAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 
 	client := qspb.NewQuickstoreClient(conn)
+	if _, err := client.Init(ctx, &qspb.InitInput{HostAddress: proto.String(makoHostAddress)}); err != nil {
+		return nil, nil, fmt.Errorf("sidecar Init() error: %v", err)
+	}
 	return &Quickstore{
 			Input:     *input,
-			saverImpl: &grpcSaver{client},
+			saverImpl: &grpcSaver{client, makoHostAddress},
 		}, func(ctx context.Context) {
 			client.ShutdownMicroservice(ctx, &qspb.ShutdownInput{})
 		}, nil
@@ -267,7 +283,8 @@ type saver interface {
 }
 
 type grpcSaver struct {
-	client qspb.QuickstoreClient
+	client      qspb.QuickstoreClient
+	makoAddress string
 }
 
 func (s *grpcSaver) Save(input *qpb.QuickstoreInput,
