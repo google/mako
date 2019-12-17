@@ -90,11 +90,16 @@ git_repository(
 )
 
 # Google Cloud CPP
-http_archive(
+#http_archive(
+#    name = "com_github_googleapis_google_cloud_cpp",
+#    url = "https://github.com/timford/google-cloud-cpp/archive/9b17977678342e055efd838ad4f2df77fd045cd4.zip",
+#    strip_prefix = "google-cloud-cpp-9b17977678342e055efd838ad4f2df77fd045cd4",
+#    sha256 = "d1385c3667e29903999ea3327175014a6b09ff743414ea8ad06f13b68a07317e",
+#)
+git_repository(
     name = "com_github_googleapis_google_cloud_cpp",
-    url = "http://github.com/googleapis/google-cloud-cpp/archive/v0.15.0.tar.gz",
-    strip_prefix = "google-cloud-cpp-0.15.0",
-    sha256 = "23602261630556e6c6283fea300075b40d4711e47ad9627423b01258784247ca",
+    branch = "v0.15.0-with-logging",
+    remote = "https://github.com/timford/google-cloud-cpp.git",
 )
 load("@com_github_googleapis_google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 google_cloud_cpp_deps()
