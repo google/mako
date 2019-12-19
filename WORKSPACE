@@ -92,9 +92,9 @@ git_repository(
 # Google Cloud CPP
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
-    url = "https://github.com/timford/google-cloud-cpp/archive/9bc62a09ee5180e6b3ea562d762063e7272079c1.zip",
-    strip_prefix = "google-cloud-cpp-9bc62a09ee5180e6b3ea562d762063e7272079c1",
-    sha256 = "b418ccd741997f66a92085be23152bf1c9f481d5973a80288ede09a8133c4b8e",
+    url = "https://github.com/timford/google-cloud-cpp/archive/c5af9fd21c32222ccc34c7ba8545df79f89f5550.zip",
+    strip_prefix = "google-cloud-cpp-c5af9fd21c32222ccc34c7ba8545df79f89f5550",
+    sha256 = "69f7268568a95546f429edac07add2343e657baa6698f12d391446f214de5656",
 )
 load("@com_github_googleapis_google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 google_cloud_cpp_deps()
