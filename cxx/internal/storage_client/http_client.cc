@@ -51,7 +51,7 @@ namespace mako {
 namespace internal {
 namespace {
 
-constexpr int kPayloadLogCharLimit = 1000;
+constexpr int kPayloadLogCharLimit = 100000;
 
 enum class Methods { kGet, kPost };
 
