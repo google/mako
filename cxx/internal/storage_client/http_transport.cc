@@ -117,7 +117,7 @@ helpers::Status HttpTransport::Call(absl::string_view orig_path,
     // Disable 100-continue feature because the client doesn't handle it
     // correctly. Suppress this when talking to HTTP servers that don't support
     // it (e.g. Go's httptest.Server).
-    headers.push_back({"Expect:", ""});
+    headers.push_back({"Expect", ""});
   }
 
   // Set bearer token for OAuth2 authentication.
