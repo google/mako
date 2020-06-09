@@ -13,6 +13,9 @@ http_archive(
     sha256 = "1e622ce4b84b88b6d2cdf1db38d1a634fe2392d74f0b7b74ff98f3a51838ee53",
 )
 
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+protobuf_deps()
+
 http_archive(
     name = "bazel_skylib",
     strip_prefix = "bazel-skylib-0.9.0",
@@ -89,6 +92,28 @@ git_repository(
     shallow_since = "1557776538 +0300"
 )
 
+http_archive(
+    name = "boringssl",
+    strip_prefix = "boringssl-18637c5f37b87e57ebde0c40fe19c1560ec88813",
+    url = "https://github.com/google/boringssl/archive/18637c5f37b87e57ebde0c40fe19c1560ec88813.zip",
+    sha256 = "bd923e59fca0d2b50db09af441d11c844c5e882a54c68943b7fc39a8cb5dd211",
+)
+
+# grpc
+# Must be after boringssl so grpc doesn't pull in its own version of boringssl
+http_archive(
+    name = "com_github_grpc_grpc",
+    urls = ["https://github.com/grpc/grpc/archive/v1.29.1.tar.gz"],
+    strip_prefix = "grpc-1.29.1",
+    #sha256 = "11ac793c562143d52fd440f6549588712badc79211cdc8c509b183cb69bddad8",
+)
+
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+grpc_deps()
+
+load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+grpc_extra_deps()
+
 # Google Cloud CPP
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
@@ -110,25 +135,6 @@ http_archive(
     build_file = "@//:curl.BUILD",
 )
 
-http_archive(
-    name = "boringssl",
-    strip_prefix = "boringssl-18637c5f37b87e57ebde0c40fe19c1560ec88813",
-    url = "https://github.com/google/boringssl/archive/18637c5f37b87e57ebde0c40fe19c1560ec88813.zip",
-    sha256 = "bd923e59fca0d2b50db09af441d11c844c5e882a54c68943b7fc39a8cb5dd211",
-)
-
-# grpc
-# Must be after boringssl so grpc doesn't pull in its own version of boringssl
-http_archive(
-    name = "com_github_grpc_grpc",
-    urls = ["https://github.com/grpc/grpc/archive/v1.22.0.tar.gz"],
-    strip_prefix = "grpc-1.22.0",
-    sha256 = "11ac793c562143d52fd440f6549588712badc79211cdc8c509b183cb69bddad8",
-)
-
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-grpc_deps()
-
 # ===== re2 =====
 http_archive(
     name = "com_googlesource_code_re2",
@@ -139,9 +145,6 @@ http_archive(
         "https://github.com/google/re2/archive/c4f65071cc07eb34d264b25f7b9bbb679c4d5a5a.tar.gz",
     ],
 )
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-protobuf_deps()
 
 http_archive(
     name = "io_bazel_rules_go",
