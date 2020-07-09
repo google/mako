@@ -1,0 +1,148 @@
+// The messages used when communicating with the Mako storage service.
+//
+// We have made an effort to separate "wire" messages from Storage API messages
+// by wrapping Storage API messages (e.g. the BenchmarkInfo payload of a
+// CreateBenchmarkInfo call) in *Request messages. This separation of concerns
+// allows the two to vary independently.
+//
+// An example that illustrates this need is the "sudo" feature, which allows
+// storage admins to execute Storage API operations as if they were another
+// user. Without dedicated *Request methods, we would have to either add
+// `sudo_run_as` fields to each method payload type (BenchmarkInfo,
+// RunInfoQuery, etc) or resort to other kludges (e.g. wrapping a
+// CreateBenchmarkInfo call with sudo into a special SudoCreateBenchmarkInfo
+// call).
+//
+// Messages defined in this file should only be needed by users who are writing
+// new storage clients.
+//
+// Since we already have mako.*Response messages, for now we have chosen not
+// to wrap the responses in new *Response messages.
+//
+// This interface is currently in package mako.internal and is
+// visibility-restricted, but we may choose to make this interface available to
+// customers in the future. In contrast, storage_internal_service.proto and
+// storage_internal.proto contain the private interface we will never make
+// available to customers.
+syntax = "proto2";
+
+package mako.internal;
+
+import "spec/proto/mako.proto";
+
+// Options that apply to all/most storage requests.
+//
+message StorageRequestOptions {
+  // Request that the server handle this request as if it came from the user
+  // specified in this field. The value should be an email address. The server
+  // will reject the request if the real caller is not a server admin.
+  optional string sudo_run_as = 1;
+}
+
+message CreateProjectInfoRequest {
+  optional mako.ProjectInfo payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message UpdateProjectInfoRequest {
+  optional mako.ProjectInfo payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message GetProjectInfoRequest {
+  optional mako.ProjectInfo payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message ListProjectInfoRequest {
+  optional mako.ProjectInfoQuery payload = 2;
+
+  optional StorageRequestOptions request_options = 1;
+}
+
+message QueryProjectInfoRequest {
+  optional mako.ProjectInfoQuery payload = 2;
+
+  optional StorageRequestOptions request_options = 1;
+}
+
+message CreateBenchmarkInfoRequest {
+  optional mako.BenchmarkInfo payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message UpdateBenchmarkInfoRequest {
+  optional mako.BenchmarkInfo payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message QueryBenchmarkInfoRequest {
+  optional mako.BenchmarkInfoQuery payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message DeleteBenchmarkInfoRequest {
+  optional mako.BenchmarkInfoQuery payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message CountBenchmarkInfoRequest {
+  optional mako.BenchmarkInfoQuery payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message CreateRunInfoRequest {
+  optional mako.RunInfo payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message UpdateRunInfoRequest {
+  optional mako.RunInfo payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message QueryRunInfoRequest {
+  optional mako.RunInfoQuery payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message DeleteRunInfoRequest {
+  optional mako.RunInfoQuery payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message CountRunInfoRequest {
+  optional mako.RunInfoQuery payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message CreateSampleBatchRequest {
+  optional mako.SampleBatch payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message QuerySampleBatchRequest {
+  optional mako.SampleBatchQuery payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}
+
+message DeleteSampleBatchRequest {
+  optional mako.SampleBatchQuery payload = 1;
+
+  optional StorageRequestOptions request_options = 2;
+}

@@ -47,8 +47,9 @@ int main(int argc, char** argv) {
   }
 
   absl::string_view default_host = kDefaultHost;
-  const char* env_var_default_host = std::getenv("MAKO_SERVER_ADDRESS");
-  if (env_var_default_host != nullptr) {
+  auto env_var_default_host =
+      absl::NullSafeStringView(std::getenv("MAKO_SERVER_ADDRESS"));
+  if (!env_var_default_host.empty()) {
     LOG(INFO) << "Found MAKO_SERVER_ADDRESS set to \"" << env_var_default_host
               << "\". Overriding default address of \"" << default_host << "\"";
     default_host = env_var_default_host;

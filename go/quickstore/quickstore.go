@@ -53,8 +53,8 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
+	"github.com/golang/protobuf/proto"
 
 	qspb "github.com/google/mako/go/internal/quickstore_microservice/proto/quickstore_go_proto"
 	qpb "github.com/google/mako/proto/quickstore/quickstore_go_proto"

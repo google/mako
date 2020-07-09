@@ -77,8 +77,9 @@ std::unique_ptr<RollingWindowReducer> HelperCreateRWRInstance(
 std::unique_ptr<RollingWindowReducer> HelperCreateRWRRatioInstance(
     std::vector<std::string> input_metric_keys,
     std::vector<std::string> denominator_input_metric_keys,
-    const std::string& output_metric_key, RWRConfig_WindowOperation window_operation,
-    double window_size, int steps_per_window, bool zero_for_empty_window,
+    const std::string& output_metric_key,
+    RWRConfig_WindowOperation window_operation, double window_size,
+    int steps_per_window, bool zero_for_empty_window,
     int percentile_milli = 0) {
   RWRConfig config;
   for (const auto& k : input_metric_keys) {
@@ -97,7 +98,8 @@ std::unique_ptr<RollingWindowReducer> HelperCreateRWRRatioInstance(
 }
 
 SamplePoint HelperCreateSamplePoint(
-    double x_val, const std::vector<std::pair<std::string, double>>& value_pairs) {
+    double x_val,
+    const std::vector<std::pair<std::string, double>>& value_pairs) {
   SamplePoint sp;
   sp.set_input_value(x_val);
   for (const auto& val_pair : value_pairs) {
@@ -120,8 +122,7 @@ RWRAddPointsInput HelperCreateRWRAddPointsInput(
 }
 
 RWRAddPointsInput HelperCreateRWRAddPointsInputWithErrors(
-    const std::string& sampler_name,
-    const std::vector<double>& values) {
+    const std::string& sampler_name, const std::vector<double>& values) {
   RWRAddPointsInput input;
   for (const double value : values) {
     SampleError se;
@@ -137,7 +138,8 @@ RWRAddPointsInput HelperCreateRWRAddPointsInputWithErrors(
 // We match metric_keys to x_vals to value_tuples using the index into each
 // vector.
 RWRAddPointsInput HelperCreateRWRAddPointsInputs(
-    const std::vector<std::string>& metric_keys, const std::vector<double>& x_vals,
+    const std::vector<std::string>& metric_keys,
+    const std::vector<double>& x_vals,
     const std::vector<std::vector<double>>& value_tuples) {
   RWRAddPointsInput input;
   EXPECT_EQ(x_vals.size(), value_tuples.size());
@@ -170,8 +172,8 @@ MATCHER_P(HelperDoubleNear, expected,
 }
 
 MATCHER_P2(KeyedValueIs, key, value,
-           absl::StrCat("has key ", DescribeMatcher<std::string>(key), " and value ",
-                        DescribeMatcher<double>(value))) {
+           absl::StrCat("has key ", DescribeMatcher<std::string>(key),
+                        " and value ", DescribeMatcher<double>(value))) {
   *result_listener << "has key = " << arg.value_key()
                    << " and value = " << arg.value();
   return Matches(key)(arg.value_key()) && Matches(value)(arg.value());

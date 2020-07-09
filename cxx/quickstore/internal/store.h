@@ -36,8 +36,8 @@ mako::quickstore::QuickstoreOutput Save(
     const std::vector<mako::SamplePoint>& points,
     const std::vector<mako::SampleError>& errors,
     const std::vector<mako::KeyedValue>& run_aggregates,
-    const std::vector<std::string>& aggregate_value_keys,
-    const std::vector<std::string>& aggregate_types,
+    const std::vector<::std::string>& aggregate_value_keys,
+    const std::vector<::std::string>& aggregate_types,
     const std::vector<double>& aggregate_values);
 
 mako::quickstore::QuickstoreOutput SaveWithStorage(
@@ -46,8 +46,8 @@ mako::quickstore::QuickstoreOutput SaveWithStorage(
     const std::vector<mako::SamplePoint>& points,
     const std::vector<mako::SampleError>& errors,
     const std::vector<mako::KeyedValue>& run_aggregates,
-    const std::vector<std::string>& aggregate_value_keys,
-    const std::vector<std::string>& aggregate_types,
+    const std::vector<::std::string>& aggregate_value_keys,
+    const std::vector<::std::string>& aggregate_types,
     const std::vector<double>& aggregate_values);
 
 ///// FOR TESTING /////

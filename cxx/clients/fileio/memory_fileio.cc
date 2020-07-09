@@ -22,6 +22,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 
 namespace mako {
@@ -39,15 +40,15 @@ FileIO::FileIO()
       writing_(false),
       read_idx_(-1) {}
 
-void FileIO::SetError(const std::string& err_msg) {
+void FileIO::SetError(absl::string_view err_msg) {
   if (err_msg.empty()) {
-    error_ = err_msg;
+    error_ = std::string(err_msg);
   } else {
     error_ = absl::StrCat(error_prefix_, err_msg);
   }
 }
 
-bool FileIO::Open(const std::string& path, mako::FileIO::AccessMode mode) {
+bool FileIO::Open(absl::string_view path, mako::FileIO::AccessMode mode) {
   if (!open_error_.empty()) {
     SetError(open_error_);
     return false;
@@ -75,11 +76,11 @@ bool FileIO::Open(const std::string& path, mako::FileIO::AccessMode mode) {
     read_idx_ = 0;
   }
   // Save the path we're operating on.
-  path_ = path;
+  path_ = std::string(path);
   return true;
 }
 
-bool FileIO::Write(const std::string& serialized_record) {
+bool FileIO::Write(absl::string_view serialized_record) {
   if (!write_error_.empty()) {
     SetError(write_error_);
     return false;
@@ -94,7 +95,7 @@ bool FileIO::Write(const std::string& serialized_record) {
     SetError("File cannot be written to. It has been deleted.");
     return false;
   }
-  file->push_back(serialized_record);
+  file->push_back(std::string(serialized_record));
   return true;
 }
 
@@ -136,7 +137,6 @@ bool FileIO::Read(std::string* serialized_record) {
   return true;
 }
 
-
 bool FileIO::Read(google::protobuf::Message* record) {
   if (!read_error_.empty()) {
     SetError(read_error_);
@@ -153,13 +153,13 @@ bool FileIO::Read(google::protobuf::Message* record) {
   return false;
 }
 
-FileIO::File* FileIO::GetFileForPath(const std::string& path)
-    EXCLUSIVE_LOCKS_REQUIRED(files_mu_) {
+FileIO::File* FileIO::GetFileForPath(absl::string_view path)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(files_mu_) {
   auto search = files_->find(path);
   return search == files_->end() ? nullptr : search->second.get();
 }
 
-bool FileIO::Delete(const std::string& path) {
+bool FileIO::Delete(absl::string_view path) {
   if (!delete_error_.empty()) {
     SetError(delete_error_);
     return false;

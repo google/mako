@@ -40,8 +40,9 @@ class Aggregator {
   // Compute aggregates
   // Returned std::string contains error message, if empty then operation was
   // successful.
-  virtual std::string Aggregate(const mako::AggregatorInput& aggregator_input,
-                           mako::AggregatorOutput* aggregator_output) = 0;
+  virtual std::string Aggregate(
+      const mako::AggregatorInput& aggregator_input,
+      mako::AggregatorOutput* aggregator_output) = 0;
 
   virtual ~Aggregator() {}
 };

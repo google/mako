@@ -93,8 +93,8 @@ class Quickstore {
   // is optional, as the aggregates will get computed by this class.
   //
   // A std::string is returned with an error if the operation was unsucessful.
-  virtual std::string AddSamplePoint(double xval,
-                                const std::map<std::string, double>& yvals);
+  virtual std::string AddSamplePoint(
+      double xval, const std::map<std::string, double>& yvals);
   virtual std::string AddSamplePoint(const mako::SamplePoint& point);
 
   // Add an error at the specified xval.
@@ -124,7 +124,8 @@ class Quickstore {
   // automatically calculated.
   //
   // A std::string is returned with an error if the operation was unsucessful.
-  virtual std::string AddRunAggregate(const std::string& value_key, double value);
+  virtual std::string AddRunAggregate(const std::string& value_key,
+                                      double value);
 
   // Add an aggregate for a specific metric.
   // If value_key is:
@@ -155,7 +156,8 @@ class Quickstore {
   //
   // A std::string is returned with an error if the operation was unsucessful.
   virtual std::string AddMetricAggregate(const std::string& value_key,
-                                    const std::string& aggregate_type, double value);
+                                         const std::string& aggregate_type,
+                                         double value);
 
   // Add an analyzer input for the appropriate analyzer.
   //

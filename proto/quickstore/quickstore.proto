@@ -25,7 +25,7 @@ import "spec/proto/mako.proto";
 
 option java_package = "com.google.testing.performance.mako.helpers";
 
-// NEXT_ID: 24
+// NEXT_ID: 25
 message QuickstoreInput {
   // REQUIRED
   // Associates this data with a benchmark.
@@ -44,6 +44,7 @@ message QuickstoreInput {
   optional int64 build_id = 20;
   optional double duration_time_ms = 3;
   repeated string tags = 4;
+  repeated string historical_context_tags = 24;
   optional string hover_text = 14;
   optional string description = 6;
   optional string test_pass_id = 18;

@@ -93,7 +93,7 @@ class Aggregator : public mako::Aggregator {
   // Returned std::string contains error message, if empty then operation was
   // successful.
   std::string Aggregate(const mako::AggregatorInput& aggregator_input,
-                   mako::AggregatorOutput* aggregator_output) override;
+                        mako::AggregatorOutput* aggregator_output) override;
 
  protected:
   // An internal mechanism to allow simple extensions to this aggregator.
@@ -115,7 +115,8 @@ class Aggregator : public mako::Aggregator {
   // TODO(b/29609023): Move the important pieces of the standard aggregator to
   // mako/helpers/advanced.
   typedef std::function<std::string(
-      const mako::SamplePoint&, std::map<std::string, std::vector<double> >*,
+      const mako::SamplePoint&,
+      std::map<std::string, std::vector<double> >*,
       std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >*)>
       PerSamplePointCallback;
   void SetPerSamplePointCallback(PerSamplePointCallback cb) {
@@ -127,7 +128,8 @@ class Aggregator : public mako::Aggregator {
   std::string AppendToBuffer(
       const std::string& value_key, const double value,
       std::map<std::string, std::vector<double> >* buffers,
-      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >* stats_map);
+      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >*
+          stats_map);
 
  private:
   struct SampleCounts {
@@ -137,10 +139,10 @@ class Aggregator : public mako::Aggregator {
   };
 
   bool Ignored(const std::list<mako::Range>& sorted_ignore_list,
-               const mako::SamplePoint& sample_point);
+               double input_value);
 
   std::string Init(const mako::AggregatorInput& aggregator_input,
-              std::list<mako::Range>* sorted_ignore_list);
+                   std::list<mako::Range>* sorted_ignore_list);
   std::string Complete(
       const mako::AggregatorInput& aggregator_input,
       const SampleCounts& sample_counts,
@@ -152,27 +154,33 @@ class Aggregator : public mako::Aggregator {
       const mako::AggregatorInput& aggregator_input,
       const std::list<mako::Range>& sorted_ignore_list,
       SampleCounts* sample_counts,
-      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >* stats_map);
+      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >*
+          stats_map);
   std::string ProcessFile(
       const std::list<mako::Range>& sorted_ignore_list,
-      const std::string& file_path, mako::FileIO* fio,
-      SampleCounts* sample_counts,
-      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >* stats_map,
+      const std::string& file_path, const StandardAggregatorOptions& options,
+      mako::FileIO* fio, SampleCounts* sample_counts,
+      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >*
+          stats_map,
       absl::Duration* fileio_read_time);
   std::string ProcessRecord(
       const std::list<mako::Range>& sorted_ignore_list,
       const mako::SampleRecord& sample_record,
+      const StandardAggregatorOptions& options,
       std::map<std::string, std::vector<double> >* buffers,
       SampleCounts* sample_counts,
-      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >* stats_map);
+      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >*
+          stats_map);
   std::string ProcessBuffer(
       const std::string& value_key, const std::vector<double>& buffer,
-      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >* stats_map);
+      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >*
+          stats_map);
 
   // Used to synchronize access to the underlying map.
   ThreadsafeRunningStats* GetOrCreateRunningStats(
       const std::string& value_key,
-      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >* stats_map);
+      std::map<std::string, std::unique_ptr<ThreadsafeRunningStats> >*
+          stats_map);
 
   std::unique_ptr<mako::FileIO> fileio_;
 

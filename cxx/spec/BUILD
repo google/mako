@@ -30,6 +30,7 @@ cc_library(
     name = "fileio",
     hdrs = ["fileio.h"],
     deps = [
+        "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
     ],
 )

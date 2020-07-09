@@ -30,7 +30,8 @@ class Dashboard {
   // Returns:
   //   Error details or empty std::string for no error
   virtual std::string AggregateChart(
-      const mako::DashboardAggregateChartInput& input, std::string* link) const;
+      const mako::DashboardAggregateChartInput& input,
+      std::string* link) const;
 
   // Generates a URL to a run chart.
   // Args:
@@ -39,7 +40,7 @@ class Dashboard {
   // Returns:
   //   Error details or empty std::string for no error
   virtual std::string RunChart(const mako::DashboardRunChartInput& input,
-                          std::string* link) const;
+                               std::string* link) const;
 
   // Generates a URL to a compare aggregate chart, which is an aggregate
   // chart showing data across multiple benchmarks.
@@ -60,7 +61,8 @@ class Dashboard {
   // Returns:
   //   Error details or empty std::string for no error
   virtual std::string CompareRunChart(
-      const mako::DashboardCompareRunChartInput& input, std::string* link) const;
+      const mako::DashboardCompareRunChartInput& input,
+      std::string* link) const;
 
   // Generates a URL to a visualization of an analyzer execution, which is
   // a place showing how the analyzer operated on the run and any historical

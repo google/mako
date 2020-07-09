@@ -4,7 +4,7 @@
 
 The Threshold analyzer evaluates data that is within expected bounds. For
 example, you might specify that 95% of requests to your SUT take between 1 and 2
-seconds.
+seconds. These mininum and maximum bounds are both inclusive.
 
 **Pros**
 

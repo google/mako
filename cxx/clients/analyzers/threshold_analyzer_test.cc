@@ -171,7 +171,8 @@ bool SuccessfulStatus(const AnalyzerOutput& output) {
          output.status().code() == mako::Status_Code_SUCCESS;
 }
 
-void HelperAddSamplePoints(std::string value_key, const std::vector<double>& data,
+void HelperAddSamplePoints(std::string value_key,
+                           const std::vector<double>& data,
                            RunBundle* run_bundle) {
   for (auto& d : data) {
     auto sample_batch = run_bundle->add_batch_list();

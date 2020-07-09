@@ -32,10 +32,10 @@ struct RunData {
 
 helpers::StatusOr<std::vector<RunData>> ExtractDataAndRemoveEmptyResults(
     const DataFilter& data_filter,
-    const std::vector<const RunInfo*>& sorted_runs);
+    const std::vector<const RunBundle*>& sorted_run_bundles);
 
-std::vector<const RunInfo*> SortRuns(const AnalyzerInput& input,
-                                     const RunOrder& run_order);
+std::vector<const RunBundle*> SortRunBundles(const AnalyzerInput& input,
+                                       const RunOrder& run_order);
 
 }  // namespace internal
 }  // namespace mako

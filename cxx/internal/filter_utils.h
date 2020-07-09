@@ -79,7 +79,9 @@ inline std::ostream& operator<<(std::ostream& stream, const DataPoint& point) {
 // returned. If the data is missing and DataFilter.ignore_missing_data = true,
 // then an empty string is returned and the result vector is empty.
 //
-std::string ApplyFilter(const mako::RunInfo& run_info,
+std::string ApplyFilter(
+    const mako::BenchmarkInfo& benchmark_info,
+    const mako::RunInfo& run_info,
     const std::vector<const mako::SampleBatch*>& sample_batches,
     const mako::DataFilter& data_filter, bool sort_data,
     std::vector<DataPoint>* results);
@@ -88,15 +90,17 @@ std::string ApplyFilter(const mako::RunInfo& run_info,
 // SampleBatch pointers... for example,
 // google::protobuf::RepeatedPtrField<SampleBatch>::pointer_begin/end
 template <typename SampleBatchIt>
-std::string ApplyFilter(const mako::RunInfo& run_info,
-                   SampleBatchIt sample_batches_begin,
-                   SampleBatchIt sample_batches_end,
-                   const mako::DataFilter& data_filter, bool sort_data,
-                   std::vector<DataPoint>* results) {
+std::string ApplyFilter(const mako::BenchmarkInfo& benchmark_info,
+                        const mako::RunInfo& run_info,
+                        SampleBatchIt sample_batches_begin,
+                        SampleBatchIt sample_batches_end,
+                        const mako::DataFilter& data_filter, bool sort_data,
+                        std::vector<DataPoint>* results) {
   std::vector<const mako::SampleBatch*> sample_batches(sample_batches_begin,
                                                            sample_batches_end);
 
-  return ApplyFilter(run_info, sample_batches, data_filter, sort_data, results);
+  return ApplyFilter(benchmark_info, run_info, sample_batches, data_filter,
+                     sort_data, results);
 }
 
 }  // namespace internal

@@ -28,7 +28,9 @@
 #include "absl/time/time.h"
 #include "cxx/internal/proto_validation.h"
 #include "cxx/internal/storage_client/retrying_storage_request.h"
+#include "cxx/internal/storage_client/transport.h"
 #include "proto/internal/mako_internal.pb.h"
+#include "proto/internal/storage_client/storage.pb.h"
 #include "spec/proto/mako.pb.h"
 
 ABSL_FLAG(
@@ -76,20 +78,6 @@ using ::mako_internal::SudoStorageRequest;
 
 constexpr char kNoError[] = "";
 constexpr char kMakoStorageServer[] = "mako.dev";
-constexpr char kCreateBenchmarkPath[] = "/storage/benchmark-info/create";
-constexpr char kQueryBenchmarkPath[] = "/storage/benchmark-info/query";
-constexpr char kModificationBenchmarkPath[] = "/storage/benchmark-info/update";
-constexpr char kDeleteBenchmarkPath[] = "/storage/benchmark-info/delete";
-constexpr char kCountBenchmarkPath[] = "/storage/benchmark-info/count";
-constexpr char kCreateRunInfoPath[] = "/storage/run-info/create";
-constexpr char kQueryRunInfoPath[] = "/storage/run-info/query";
-constexpr char kModificationRunInfoPath[] = "/storage/run-info/update";
-constexpr char kDeleteRunInfoPath[] = "/storage/run-info/delete";
-constexpr char kCountRunInfoPath[] = "/storage/run-info/count";
-constexpr char kCreateSampleBatchPath[] = "/storage/sample-batch/create";
-constexpr char kQuerySampleBatchPath[] = "/storage/sample-batch/query";
-constexpr char kDeleteSampleBatchPath[] = "/storage/sample-batch/delete";
-constexpr char kSudoPath[] = "/storage/sudo";
 
 // NOTE: Total time may exceed this by up to kRPCDeadline + kMaxSleep.
 constexpr absl::Duration kDefaultOperationTimeout = absl::Minutes(3);
@@ -111,126 +99,94 @@ std::string ResolveClientToolTag() {
   return client_tool_tag;
 }
 
-void SetSudoStorageRequestPayload(const BenchmarkInfo& benchmark,
-                                  SudoStorageRequest* request) {
-  *request->mutable_benchmark() = benchmark;
-}
+template <typename Request, typename Response>
+bool RetryingStorageRequest(
+    Request* request, Response* response, internal::StorageTransport* transport,
+    helpers::Status (internal::StorageTransport::*method)(absl::Duration,
+                                                          const Request&,
+                                                          Response*),
+    internal::StorageRetryStrategy* retry_strategy,
+    absl::string_view telemetry_action) {
+  const std::string& run_as =
+      absl::GetFlag(FLAGS_mako_internal_sudo_run_as);
+  if (!run_as.empty()) {
+    request->mutable_request_options()->set_sudo_run_as(run_as);
+  }
 
-void SetSudoStorageRequestPayload(const BenchmarkInfoQuery& benchmark_query,
-                                  SudoStorageRequest* request) {
-  *request->mutable_benchmark_query() = benchmark_query;
-}
-
-void SetSudoStorageRequestPayload(const RunInfo& run,
-                                  SudoStorageRequest* request) {
-  *request->mutable_run() = run;
-}
-
-void SetSudoStorageRequestPayload(const RunInfoQuery& run_query,
-                                  SudoStorageRequest* request) {
-  *request->mutable_run_query() = run_query;
-}
-
-void SetSudoStorageRequestPayload(const SampleBatch& batch,
-                                  SudoStorageRequest* request) {
-  *request->mutable_batch() = batch;
-}
-
-void SetSudoStorageRequestPayload(const SampleBatchQuery& batch_query,
-                                  SudoStorageRequest* request) {
-  *request->mutable_batch_query() = batch_query;
+  return internal::RetryingStorageRequest(*request, response, transport, method,
+                                          retry_strategy, telemetry_action);
 }
 
 template <typename Request, typename Response>
-bool RetryingStorageRequest(const Request& request, const std::string& url,
-                            Response* response,
-                            internal::StorageTransport* transport,
-                            internal::StorageRetryStrategy* retry_strategy,
-                            SudoStorageRequest::Type type) {
-  static auto* actions = new absl::flat_hash_map<std::string, std::string>(
-      {{kCreateBenchmarkPath, "Storage.CreateBenchmarkInfo"},
-       {kQueryBenchmarkPath, "Storage.QueryBenchmarkInfo"},
-       {kModificationBenchmarkPath, "Storage.UpdateBenchmarkInfo"},
-       {kDeleteBenchmarkPath, "Storage.DeleteBenchmarkInfo"},
-       {kCountBenchmarkPath, "Storage.CountBenchmarkInfo"},
-       {kCreateRunInfoPath, "Storage.CreateRunInfo"},
-       {kQueryRunInfoPath, "Storage.QueryRunInfo"},
-       {kModificationRunInfoPath, "Storage.UpdateRunInfo"},
-       {kDeleteRunInfoPath, "Storage.DeleteRunInfo"},
-       {kCountRunInfoPath, "Storage.CountRunInfo"},
-       {kCreateSampleBatchPath, "Storage.CreateSampleBatch"},
-       {kQuerySampleBatchPath, "Storage.QuerySampleBatch"},
-       {kDeleteSampleBatchPath, "Storage.DeleteSampleBatch"}});
-
-  std::string telemetry_action = actions->at(url);
-  const std::string& run_as = absl::GetFlag(FLAGS_mako_internal_sudo_run_as);
-  if (run_as.empty()) {
-    return internal::RetryingStorageRequest(
-        request, url, telemetry_action, response, transport, retry_strategy);
+bool RetryingStorageQuery(Request* request, Response* response,
+                          internal::StorageTransport* transport,
+                          helpers::Status (internal::StorageTransport::*method)(
+                              absl::Duration, const Request&, Response*),
+                          internal::StorageRetryStrategy* retry_strategy,
+                          absl::string_view telemetry_action) {
+  bool success = RetryingStorageRequest(
+      request, response, transport, method, retry_strategy, telemetry_action);
+  // Ensure that query responses always have the cursor set.
+  // This matches the behavior of the server, but ensures it works even when
+  // different transports are used.
+  if (!response->has_cursor()) {
+    response->set_cursor("");
   }
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(type);
-  sudo_req.set_run_as(run_as);
-  SetSudoStorageRequestPayload(request, &sudo_req);
-  return internal::RetryingStorageRequest(sudo_req, kSudoPath, telemetry_action,
-                                          response, transport, retry_strategy);
+  return success;
 }
 
-template <typename Response>
-bool UploadRunInfo(const RunInfo& run_info, const std::string& path,
-                   internal::StorageTransport* transport,
+template <typename Request, typename Response>
+bool UploadRunInfo(Request* request, internal::StorageTransport* transport,
+                   helpers::Status (internal::StorageTransport::*method)(
+                       absl::Duration, const Request&, Response*),
+                   Response* response,
                    internal::StorageRetryStrategy* retry_strategy,
-                   Response* response, SudoStorageRequest::Type type) {
+                   absl::string_view telemetry_action) {
   // Look for mako_internal_additional_tags in both flags and environment
-  // variables.  If found in both places, prefer the value from the flags.
-  const char* env_var_additional_tags =
-      std::getenv("MAKO_INTERNAL_ADDITIONAL_TAGS");
+  // variables. If found in both places, prefer the value from the flags.
   std::vector<std::string> additional_tags =
       absl::GetFlag(FLAGS_mako_internal_additional_tags);
-  if (additional_tags.empty() && env_var_additional_tags) {
-    additional_tags =
-        absl::StrSplit(env_var_additional_tags, ',', absl::SkipWhitespace());
+  if (additional_tags.empty()) {
+    additional_tags = absl::StrSplit(absl::NullSafeStringView(std::getenv(
+                                         "MAKO_INTERNAL_ADDITIONAL_TAGS")),
+                                     ',', absl::SkipWhitespace());
   }
   // Look for mako_internal_test_pass_id_override in both flags and
-  // environment variables.  If found in both places, prefer the value from the
+  // environment variables. If found in both places, prefer the value from the
   // flags.
-  const char* env_var_test_pass_id_override =
-      std::getenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE");
   std::string test_pass_id_override =
       absl::GetFlag(FLAGS_mako_internal_test_pass_id_override);
-  if (test_pass_id_override.empty() && env_var_test_pass_id_override) {
-    test_pass_id_override = env_var_test_pass_id_override;
+  if (test_pass_id_override.empty()) {
+    test_pass_id_override = std::string(absl::NullSafeStringView(
+        std::getenv("MAKO_INTERNAL_TEST_PASS_ID_OVERRIDE")));
   }
   if (additional_tags.empty() && test_pass_id_override.empty()) {
-    return RetryingStorageRequest(run_info, path, response, transport,
-                                  retry_strategy, type);
+    return RetryingStorageRequest(request, response, transport, method,
+                                  retry_strategy, telemetry_action);
   }
-  // copy proto to modify it based on global flags
-  RunInfo final_run_info = run_info;
   // add any additional tags requested by flag, ensuring that all tags are
   // unique and ordered as given using a std::set (vs an absl::flat_hash_set,
   // which is unordered)
-  std::vector<absl::string_view> tags(run_info.tags().begin(),
-                                      run_info.tags().end());
-  std::set<absl::string_view> unique_tags(run_info.tags().begin(),
-                                          run_info.tags().end());
+  std::vector<std::string> tags(request->payload().tags().begin(),
+                                request->payload().tags().end());
+  std::set<std::string> unique_tags(request->payload().tags().begin(),
+                                    request->payload().tags().end());
   for (const std::string& tag : additional_tags) {
     absl::string_view no_whitespace_tag = absl::StripAsciiWhitespace(tag);
     LOG(INFO) << "Adding new tag " << no_whitespace_tag << " to run";
-    auto res = unique_tags.insert(no_whitespace_tag);
+    auto res = unique_tags.insert(std::string(no_whitespace_tag));
     if (res.second) {
       tags.emplace_back(no_whitespace_tag);
     }
   }
-  final_run_info.clear_tags();
+  request->mutable_payload()->clear_tags();
   for (const auto& tag : tags) {
-    *final_run_info.add_tags() = std::string(tag);
+    *request->mutable_payload()->add_tags() = std::string(tag);
   }
   // TODO(b/136285571) reference this limit from some common location where it
   // is defined (instead of redefining it here)
   int tag_limit = 20;
-  if (final_run_info.tags_size() > tag_limit) {
+  if (request->payload().tags_size() > tag_limit) {
     std::string err_msg =
         "This run has too many tags; cannot add it to mako storage!";
     LOG(ERROR) << err_msg;
@@ -241,12 +197,12 @@ bool UploadRunInfo(const RunInfo& run_info, const std::string& path,
 
   if (!test_pass_id_override.empty()) {
     LOG(INFO) << "Overriding test pass id for run: changing "
-              << final_run_info.test_pass_id() << " to "
+              << request->payload().test_pass_id() << " to "
               << test_pass_id_override << ".";
-    final_run_info.set_test_pass_id(test_pass_id_override);
+    request->mutable_payload()->set_test_pass_id(test_pass_id_override);
   }
-  return RetryingStorageRequest(final_run_info, path, response, transport,
-                                retry_strategy, type);
+  return RetryingStorageRequest(request, response, transport, method,
+                                retry_strategy, telemetry_action);
 }
 
 }  // namespace
@@ -265,126 +221,178 @@ Storage::Storage(
   transport_->set_client_tool_tag(ResolveClientToolTag());
 }
 
-// TODO(b/141321581): Replace with mako::internal implementation once
-// annoucement is ready.
 bool Storage::CreateProjectInfo(const ProjectInfo& project_info,
                                 mako::CreationResponse* creation_response) {
-  auto status = creation_response->mutable_status();
-  status->set_code(Status_Code_FAIL);
-  status->set_fail_message("Not yet implemented.");
-  status->set_retry(false);
-  return false;
+  constexpr absl::string_view telemetry_action = "Storage.CreateProjectInfo";
+  internal::CreateProjectInfoRequest request;
+  *request.mutable_payload() = project_info;
+  return RetryingStorageRequest(
+      &request, creation_response, transport_.get(),
+      &mako::internal::StorageTransport::CreateProjectInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
-// TODO(b/141321581): Replace with mako::internal implementation once
-// annoucement is ready.
 bool Storage::UpdateProjectInfo(const ProjectInfo& project_info,
                                 mako::ModificationResponse* mod_response) {
-  auto status = mod_response->mutable_status();
-  status->set_code(Status_Code_FAIL);
-  status->set_fail_message("Not yet implemented.");
-  status->set_retry(false);
-  return false;
+  constexpr absl::string_view telemetry_action = "Storage.UpdateProjectInfo";
+  internal::UpdateProjectInfoRequest request;
+  *request.mutable_payload() = project_info;
+  return RetryingStorageRequest(
+      &request, mod_response, transport_.get(),
+      &mako::internal::StorageTransport::UpdateProjectInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
-// TODO(b/141321581): Replace with mako::internal implementation once
-// annoucement is ready.
-bool Storage::GetProjectInfo(const ProjectInfo& project_info,
-                             mako::ProjectInfoGetResponse* response) {
-  auto status = response->mutable_status();
-  status->set_code(Status_Code_FAIL);
-  status->set_fail_message("Not yet implemented.");
-  status->set_retry(false);
-  return false;
+bool Storage::GetProjectInfo(const mako::ProjectInfo& project_info,
+                             mako::ProjectInfoGetResponse* get_response) {
+  constexpr absl::string_view telemetry_action = "Storage.GetProjectInfo";
+  internal::GetProjectInfoRequest request;
+  *request.mutable_payload() = project_info;
+  return RetryingStorageRequest(
+      &request, get_response, transport_.get(),
+      &mako::internal::StorageTransport::GetProjectInfo,
+      retry_strategy_.get(), telemetry_action);
+}
+
+bool Storage::GetProjectInfoByName(
+    const std::string& project_name,
+    mako::ProjectInfoGetResponse* get_response) {
+  mako::ProjectInfo project_info;
+  project_info.set_project_name(project_name);
+  return GetProjectInfo(project_info, get_response);
+}
+
+bool Storage::QueryProjectInfo(
+    const mako::ProjectInfoQuery& project_info_query,
+    mako::ProjectInfoQueryResponse* query_response) {
+  constexpr absl::string_view telemetry_action = "Storage.QueryProjectInfo";
+  internal::QueryProjectInfoRequest request;
+  *request.mutable_payload() = project_info_query;
+  return RetryingStorageQuery(
+      &request, query_response, transport_.get(),
+      &mako::internal::StorageTransport::QueryProjectInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::CreateBenchmarkInfo(const BenchmarkInfo& benchmark_info,
                                   CreationResponse* creation_response) {
-  const std::string& path = kCreateBenchmarkPath;
-  return RetryingStorageRequest(benchmark_info, path, creation_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::CREATE_BENCHMARK_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.CreateBenchmarkInfo";
+  internal::CreateBenchmarkInfoRequest request;
+  *request.mutable_payload() = benchmark_info;
+  return RetryingStorageRequest(
+      &request, creation_response, transport_.get(),
+      &mako::internal::StorageTransport::CreateBenchmarkInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::UpdateBenchmarkInfo(const BenchmarkInfo& benchmark_info,
                                   ModificationResponse* mod_response) {
-  const std::string& path = kModificationBenchmarkPath;
-  return RetryingStorageRequest(benchmark_info, path, mod_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::UPDATE_BENCHMARK_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.UpdateBenchmarkInfo";
+  internal::UpdateBenchmarkInfoRequest request;
+  *request.mutable_payload() = benchmark_info;
+  return RetryingStorageRequest(
+      &request, mod_response, transport_.get(),
+      &mako::internal::StorageTransport::UpdateBenchmarkInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::QueryBenchmarkInfo(const BenchmarkInfoQuery& benchmark_info_query,
                                  BenchmarkInfoQueryResponse* query_response) {
-  const std::string& path = kQueryBenchmarkPath;
-  return RetryingStorageRequest(benchmark_info_query, path, query_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::QUERY_BENCHMARK_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.QueryBenchmarkInfo";
+  internal::QueryBenchmarkInfoRequest request;
+  *request.mutable_payload() = benchmark_info_query;
+  return RetryingStorageQuery(
+      &request, query_response, transport_.get(),
+      &mako::internal::StorageTransport::QueryBenchmarkInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::DeleteBenchmarkInfo(
     const BenchmarkInfoQuery& benchmark_info_query,
     ModificationResponse* mod_response) {
-  const std::string& path = kDeleteBenchmarkPath;
-  return RetryingStorageRequest(benchmark_info_query, path, mod_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::DELETE_BENCHMARK_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.DeleteBenchmarkInfo";
+  internal::DeleteBenchmarkInfoRequest request;
+  *request.mutable_payload() = benchmark_info_query;
+  return RetryingStorageRequest(
+      &request, mod_response, transport_.get(),
+      &mako::internal::StorageTransport::DeleteBenchmarkInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::CountBenchmarkInfo(const BenchmarkInfoQuery& benchmark_info_query,
                                  CountResponse* count_response) {
-  const std::string& path = kCountBenchmarkPath;
-  return RetryingStorageRequest(benchmark_info_query, path, count_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::COUNT_BENCHMARK_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.CountBenchmarkInfo";
+  internal::CountBenchmarkInfoRequest request;
+  *request.mutable_payload() = benchmark_info_query;
+  return RetryingStorageRequest(
+      &request, count_response, transport_.get(),
+      &mako::internal::StorageTransport::CountBenchmarkInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::CreateRunInfo(const RunInfo& run_info,
                             CreationResponse* creation_response) {
-  return UploadRunInfo(run_info, kCreateRunInfoPath, transport_.get(),
-                       retry_strategy_.get(), creation_response,
-                       SudoStorageRequest::CREATE_RUN_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.CreateRunInfo";
+  internal::CreateRunInfoRequest request;
+  *request.mutable_payload() = run_info;
+  return UploadRunInfo(&request, transport_.get(),
+                       &mako::internal::StorageTransport::CreateRunInfo,
+                       creation_response, retry_strategy_.get(),
+                       telemetry_action);
 }
 
 bool Storage::UpdateRunInfo(const RunInfo& run_info,
                             ModificationResponse* mod_response) {
-  return UploadRunInfo(run_info, kModificationRunInfoPath, transport_.get(),
-                       retry_strategy_.get(), mod_response,
-                       SudoStorageRequest::UPDATE_RUN_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.UpdateRunInfo";
+  internal::UpdateRunInfoRequest request;
+  *request.mutable_payload() = run_info;
+  return UploadRunInfo(&request, transport_.get(),
+                       &mako::internal::StorageTransport::UpdateRunInfo,
+                       mod_response, retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::QueryRunInfo(const RunInfoQuery& run_info_query,
                            RunInfoQueryResponse* query_response) {
-  const std::string& path = kQueryRunInfoPath;
-  return RetryingStorageRequest(run_info_query, path, query_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::QUERY_RUN_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.QueryRunInfo";
+  internal::QueryRunInfoRequest request;
+  *request.mutable_payload() = run_info_query;
+  return RetryingStorageQuery(
+      &request, query_response, transport_.get(),
+      &mako::internal::StorageTransport::QueryRunInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::DeleteRunInfo(const RunInfoQuery& run_info_query,
                             ModificationResponse* mod_response) {
-  const std::string& path = kDeleteRunInfoPath;
-  return RetryingStorageRequest(run_info_query, path, mod_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::DELETE_RUN_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.DeleteRunInfo";
+  internal::DeleteRunInfoRequest request;
+  *request.mutable_payload() = run_info_query;
+  return RetryingStorageRequest(
+      &request, mod_response, transport_.get(),
+      &mako::internal::StorageTransport::DeleteRunInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::CountRunInfo(const RunInfoQuery& run_info_query,
                            CountResponse* count_response) {
-  const std::string& path = kCountRunInfoPath;
-  return RetryingStorageRequest(run_info_query, path, count_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::COUNT_RUN_INFO);
+  constexpr absl::string_view telemetry_action = "Storage.CountRunInfo";
+  internal::CountRunInfoRequest request;
+  *request.mutable_payload() = run_info_query;
+  return RetryingStorageRequest(
+      &request, count_response, transport_.get(),
+      &mako::internal::StorageTransport::CountRunInfo,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::CreateSampleBatch(const SampleBatch& sample_batch,
                                 CreationResponse* creation_response) {
-  const std::string& path = kCreateSampleBatchPath;
+  constexpr absl::string_view telemetry_action = "Storage.CreateSampleBatch";
   // Make a copy every time to keep code simpler and readable. Cost of copy in
   // the absolute worst case (50000 metrics) (~4ms) is small
   // compared to the cost of the request to the server (~200ms).
-  SampleBatch modified_batch = sample_batch;
-  for (auto& point : *modified_batch.mutable_sample_point_list()) {
+  internal::CreateSampleBatchRequest request;
+  *request.mutable_payload() = sample_batch;
+  for (auto& point : *request.mutable_payload()->mutable_sample_point_list()) {
     if (point.aux_data_size() > 0) {
       LOG_FIRST_N(WARNING, 1)
           << "Attempting to create a SampleBatch which contains SamplePoints "
@@ -398,25 +406,32 @@ bool Storage::CreateSampleBatch(const SampleBatch& sample_batch,
       internal::StripAuxData(&point);
     }
   }
-  return RetryingStorageRequest(modified_batch, path, creation_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::CREATE_SAMPLE_BATCH);
+  return RetryingStorageRequest(
+      &request, creation_response, transport_.get(),
+      &mako::internal::StorageTransport::CreateSampleBatch,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::QuerySampleBatch(const SampleBatchQuery& sample_batch_query,
                                SampleBatchQueryResponse* query_response) {
-  const std::string& path = kQuerySampleBatchPath;
-  return RetryingStorageRequest(sample_batch_query, path, query_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::QUERY_SAMPLE_BATCH);
+  constexpr absl::string_view telemetry_action = "Storage.QuerySampleBatch";
+  internal::QuerySampleBatchRequest request;
+  *request.mutable_payload() = sample_batch_query;
+  return RetryingStorageQuery(
+      &request, query_response, transport_.get(),
+      &mako::internal::StorageTransport::QuerySampleBatch,
+      retry_strategy_.get(), telemetry_action);
 }
 
 bool Storage::DeleteSampleBatch(const SampleBatchQuery& sample_batch_query,
                                 ModificationResponse* mod_response) {
-  const std::string& path = kDeleteSampleBatchPath;
-  return RetryingStorageRequest(sample_batch_query, path, mod_response,
-                                transport_.get(), retry_strategy_.get(),
-                                SudoStorageRequest::DELETE_SAMPLE_BATCH);
+  constexpr absl::string_view telemetry_action = "Storage.DeleteSampleBatch";
+  internal::DeleteSampleBatchRequest request;
+  *request.mutable_payload() = sample_batch_query;
+  return RetryingStorageRequest(
+      &request, mod_response, transport_.get(),
+      &mako::internal::StorageTransport::DeleteSampleBatch,
+      retry_strategy_.get(), telemetry_action);
 }
 
 std::string Storage::GetMetricValueCountMax(int* metric_count_max) {
@@ -432,6 +447,13 @@ std::string Storage::GetSampleErrorCountMax(int* sample_error_max) {
 std::string Storage::GetBatchSizeMax(int* batch_size_max) {
   *batch_size_max = kBatchSizeMax;
   return kNoError;
+}
+
+std::string Storage::GetHostname() {
+  if (hostname_.has_value()) {
+    return *hostname_;
+  }
+  return transport_->GetHostname();
 }
 
 std::string ApplyHostnameFlagOverrides(const std::string& hostname) {

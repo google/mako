@@ -27,6 +27,7 @@ class Clock {
   virtual ~Clock() {}
   virtual absl::Time TimeNow() = 0;
   virtual void Sleep(absl::Duration d) = 0;
+  virtual void SleepUntil(absl::Time wakeup_time) = 0;
 };
 
 }  // namespace external_helpers

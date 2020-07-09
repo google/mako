@@ -193,7 +193,7 @@ std::string RunAnalyzers(
       for (auto& regression : regressions) {
         run_key_to_regressions[regression.run_key()].push_back(regression);
       }
-      for (auto it : run_key_to_regressions) {
+      for (const auto& it : run_key_to_regressions) {
         const std::string& run_key = it.first;
         const std::vector<AnalyzerOutput>& regressions = it.second;
         const std::string run_key_desc =
@@ -230,7 +230,7 @@ std::string RunAnalyzers(
         analyzer_name = absl::StrCat("unnamed_#", ++unnnamed_analyzer_counter);
       }
       absl::StrAppend(&summary_output,
-                      absl::StrFormat("visualize regression '%s': %s\n",
+                      absl::StrFormat("visualize regression '%s': %s \n",
                                       analyzer_name, link));
     }
   }

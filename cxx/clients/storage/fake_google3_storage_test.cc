@@ -14,11 +14,13 @@
 #include "cxx/clients/storage/fake_google3_storage.h"
 
 #include <set>
+#include <vector>
 
 #include "src/google/protobuf/text_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/str_cat.h"
 #include "cxx/testing/protocol-buffer-matchers.h"
 #include "spec/proto/mako.pb.h"
 
@@ -31,6 +33,7 @@ using ::mako::proto::Partially;
 using ::testing::ElementsAre;
 using ::mako::RunOrder::BUILD_ID;
 using ::mako::RunOrder::TIMESTAMP;
+using ::testing::Pointwise;
 
 class FakeGoogle3StorageTest : public ::testing::Test {
  protected:
@@ -44,8 +47,8 @@ mako::ProjectInfo CreateProjectInfo() {
       R"pb(
         project_name: "foo_project"
         project_alias: "Project Foo"
-        owner_list: "user@google.com"
-        owner_list: "group@google.com"
+        owner_list: "user@user.com"
+        owner_list: "group@group.com"
         default_issue_tracker: {
           buganizer_config: { component_id: "123456789" }
         }
@@ -518,6 +521,61 @@ TEST_F(FakeGoogle3StorageTest, QueryRunInfoByKey) {
   mako::RunInfoQuery q;
   q.set_run_key(key);
   q.set_benchmark_key("ignore_me");
+  ASSERT_TRUE(s_.QueryRunInfo(q, &resp));
+  ASSERT_EQ(1, resp.run_info_list_size());
+  ASSERT_EQ(mako::Status::SUCCESS, resp.status().code());
+  ASSERT_EQ(key, resp.run_info_list(0).run_key());
+  ASSERT_EQ("the one", resp.run_info_list(0).description());
+}
+
+TEST_F(FakeGoogle3StorageTest, QueryRunInfoByTestPassID) {
+  mako::CreationResponse create_resp;
+
+  // Create a dummy run
+  ASSERT_TRUE(s_.CreateRunInfo(CreateRunInfo(), &create_resp));
+
+  // Create the run
+  mako::RunInfo ri = CreateRunInfo();
+  ri.set_description("the one");
+  const std::string test_pass_id = "tp1";
+  ri.set_test_pass_id(test_pass_id);
+  ASSERT_TRUE(s_.CreateRunInfo(ri, &create_resp));
+  std::string key = create_resp.key();
+
+  // another dummy
+  ASSERT_TRUE(s_.CreateRunInfo(CreateRunInfo(), &create_resp));
+
+  mako::RunInfoQueryResponse resp;
+  mako::RunInfoQuery q;
+  q.set_test_pass_id(test_pass_id);
+  ASSERT_TRUE(s_.QueryRunInfo(q, &resp));
+  ASSERT_EQ(1, resp.run_info_list_size());
+  ASSERT_EQ(mako::Status::SUCCESS, resp.status().code());
+  ASSERT_EQ(key, resp.run_info_list(0).run_key());
+  ASSERT_EQ("the one", resp.run_info_list(0).description());
+}
+
+TEST_F(FakeGoogle3StorageTest, QueryRunInfoByAlertKey) {
+  mako::CreationResponse create_resp;
+
+  // Create a dummy run
+  ASSERT_TRUE(s_.CreateRunInfo(CreateRunInfo(), &create_resp));
+
+  // Create the run
+  mako::RunInfo ri = CreateRunInfo();
+  ri.set_description("the one");
+  auto* ao = ri.mutable_test_output()->add_analyzer_output_list();
+  const std::string alert_key = "ak1";
+  *ao->mutable_analysis_triage_info()->add_alert_keys() = alert_key;
+  ASSERT_TRUE(s_.CreateRunInfo(ri, &create_resp));
+  std::string key = create_resp.key();
+
+  // another dummy
+  ASSERT_TRUE(s_.CreateRunInfo(CreateRunInfo(), &create_resp));
+
+  mako::RunInfoQueryResponse resp;
+  mako::RunInfoQuery q;
+  q.set_alert_key(alert_key);
   ASSERT_TRUE(s_.QueryRunInfo(q, &resp));
   ASSERT_EQ(1, resp.run_info_list_size());
   ASSERT_EQ(mako::Status::SUCCESS, resp.status().code());
@@ -1056,10 +1114,29 @@ TEST_F(FakeGoogle3StorageTest, CreateAndGetProjectInfo) {
   EXPECT_EQ(mako::Status::FAIL, cr.status().code());
 
   // Get project by name. Check equality.
-  mako::ProjectInfo query_project;
-  query_project.set_project_name(good_project.project_name());
-  EXPECT_TRUE(s_.GetProjectInfo(query_project, &gr));
+  EXPECT_TRUE(s_.GetProjectInfoByName(good_project.project_name(), &gr));
   EXPECT_THAT(gr.project_info(), EqualsProto(good_project));
+}
+
+TEST_F(FakeGoogle3StorageTest, StagedProjectCannotBeCreated) {
+  mako::ProjectInfo p;
+  google::protobuf::TextFormat::ParseFromString(
+      R"pb(
+        project_name: "Project Foo"
+        project_alias: "Project Foo"
+        owner_list: "user@user.com"
+        owner_list: "group@group.com"
+        default_issue_tracker: {
+          buganizer_config: { component_id: "123456789" }
+        }
+      )pb",
+      &p);
+
+  s_.FakeStageProjects({p});
+
+  mako::CreationResponse cr;
+  EXPECT_FALSE(s_.CreateProjectInfo(p, &cr));
+  EXPECT_EQ(mako::Status::FAIL, cr.status().code());
 }
 
 TEST_F(FakeGoogle3StorageTest, UpdateAndGetProjectInfo) {
@@ -1087,9 +1164,7 @@ TEST_F(FakeGoogle3StorageTest, UpdateAndGetProjectInfo) {
   EXPECT_EQ(mako::Status::SUCCESS, mr.status().code());
 
   // Get project by name. Check equality.
-  mako::ProjectInfo query_project;
-  query_project.set_project_name(modified_project.project_name());
-  EXPECT_TRUE(s_.GetProjectInfo(query_project, &gr));
+  EXPECT_TRUE(s_.GetProjectInfoByName(modified_project.project_name(), &gr));
   modified_project.set_project_name(
       absl::AsciiStrToLower(modified_project.project_name()));
   EXPECT_THAT(gr.project_info(), EqualsProto(modified_project));
@@ -1097,11 +1172,93 @@ TEST_F(FakeGoogle3StorageTest, UpdateAndGetProjectInfo) {
 
 TEST_F(FakeGoogle3StorageTest, GetNonexistentProjectInfo) {
   mako::ProjectInfoGetResponse gr;
-  mako::ProjectInfo query_project;
-  query_project.set_project_name("foo");
-  EXPECT_FALSE(s_.GetProjectInfo(query_project, &gr));
-  EXPECT_EQ(mako::Status::FAIL, gr.status().code());
+
+  // If the project does not exist, GetProjectInfo returns an empty ProjectInfo
+  // with no error.
+  EXPECT_TRUE(s_.GetProjectInfoByName("foo", &gr));
+  EXPECT_EQ(mako::Status::SUCCESS, gr.status().code());
   EXPECT_FALSE(gr.has_project_info());
+}
+
+TEST_F(FakeGoogle3StorageTest, QueryProjectInfoByName) {
+  auto pi = CreateProjectInfo();
+  s_.FakeStageProjects({pi});
+
+  mako::ProjectInfoQuery query;
+  query.set_project_name("foo_project");
+  mako::ProjectInfoQueryResponse qr;
+
+  EXPECT_TRUE(s_.QueryProjectInfo(query, &qr));
+  EXPECT_EQ(mako::Status::SUCCESS, qr.status().code());
+  EXPECT_EQ(qr.project_info_list_size(), 1);
+  EXPECT_THAT(qr.project_info_list(0), EqualsProto(pi));
+}
+
+TEST_F(FakeGoogle3StorageTest, QueryProjectInfoEmpty) {
+  std::vector<mako::ProjectInfo> project_infos;
+  for (int i = 0; i < 5; ++i) {
+    auto pi = CreateProjectInfo();
+    pi.set_project_name(absl::StrCat("project-", i));
+    project_infos.push_back(pi);
+  }
+  s_.FakeStageProjects(project_infos);
+
+  mako::ProjectInfoQuery query;
+  mako::ProjectInfoQueryResponse qr;
+
+  EXPECT_TRUE(s_.QueryProjectInfo(query, &qr));
+  EXPECT_EQ(mako::Status::SUCCESS, qr.status().code());
+
+  EXPECT_THAT(project_infos, Pointwise(EqualsProto(), qr.project_info_list()));
+}
+
+TEST_F(FakeGoogle3StorageTest, StageFakeProject) {
+  mako::ProjectInfo project;
+  project.set_project_name("fake");
+  project.add_owner_list("foo@bar.com");
+  mako::ProjectInfoGetResponse gr;
+
+  // If the project does not exist, GetProjectInfo returns an empty ProjectInfo
+  // with no error.
+  EXPECT_TRUE(s_.GetProjectInfo(project, &gr));
+  EXPECT_EQ(mako::Status::SUCCESS, gr.status().code());
+  EXPECT_FALSE(gr.has_project_info());
+
+  s_.FakeStageProjects({project});
+  EXPECT_TRUE(s_.GetProjectInfo(project, &gr));
+  EXPECT_THAT(project, EqualsProto(gr.project_info()));
+}
+
+TEST_F(FakeGoogle3StorageTest, RunInfoQueryResponseHasCursor) {
+  RunInfoQuery query;
+  RunInfoQueryResponse response;
+
+  ASSERT_TRUE(s_.QueryRunInfo(query, &response));
+  EXPECT_TRUE(response.has_cursor());
+}
+
+TEST_F(FakeGoogle3StorageTest, BenchmarkInfoQueryResponseHasCursor) {
+  BenchmarkInfoQuery query;
+  BenchmarkInfoQueryResponse response;
+
+  ASSERT_TRUE(s_.QueryBenchmarkInfo(query, &response));
+  EXPECT_TRUE(response.has_cursor());
+}
+
+TEST_F(FakeGoogle3StorageTest, SampleBatchQueryResponseHasCursor) {
+  SampleBatchQuery query;
+  SampleBatchQueryResponse response;
+
+  ASSERT_TRUE(s_.QuerySampleBatch(query, &response));
+  EXPECT_TRUE(response.has_cursor());
+}
+
+TEST_F(FakeGoogle3StorageTest, ProjectInfoQueryResponseHasCursor) {
+  ProjectInfoQuery query;
+  ProjectInfoQueryResponse response;
+
+  ASSERT_TRUE(s_.QueryProjectInfo(query, &response));
+  EXPECT_TRUE(response.has_cursor());
 }
 
 }  // namespace

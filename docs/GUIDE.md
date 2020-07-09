@@ -7,8 +7,9 @@ If you haven’t yet read [CONCEPTS.md](./CONCEPTS.md), please do before
 proceeding.
 
 > **NOTE**: Mako performance tests write data to the Mako service,
-https://mako.dev. Running example performance tests, or authoring your own, will
-require special access to the service. Please read ACCESS.md before proceeding.
+> https://mako.dev. Running example performance tests, or authoring your own,
+> will require special access to the service. Please read
+> [ACCESS.md](./ACCESS.md) before proceeding.
 
 ## Preparing your performance test data
 
@@ -51,7 +52,7 @@ A set of key-value aggregates. Each key-value pair represents a single
 measurement for the entire run. Here’s an example of some custom aggregate data:
 
 Aggregate Metric          | Value
-------------------------- | ------------------
+------------------------- | -------
 Average Throughput (KB/s) | 4312.84
 Branch miss percentage    | 1.048
 Page faults               | 42383
@@ -69,12 +70,11 @@ Mako runs can have a diverse set of metadata associated with them, including:
 * description
 
 When using Quickstore, this data is populated via the `QuickstoreInput` object
-passed to the Quickstore client
-constructors ([C++](../cxx/quickstore/quickstore.h),
-[Go](../go/quickstore/quickstore.go)). See the comments on 
-`QuickstoreInput` in
-[quickstore.proto](../proto/quickstore/quickstore.proto) for the full
-set of supported run metadata information.
+passed to the Quickstore client constructors
+([C++](../cxx/quickstore/quickstore.h), [Go](../go/quickstore/quickstore.go)).
+See the comments on `QuickstoreInput` in
+[quickstore.proto](../proto/quickstore/quickstore.proto) for the full set of
+supported run metadata information.
 
 Now that you understand the kinds of data that Mako can work with, think about
 how your data can be made to fit into Mako’s concepts. By the end of this guide,
@@ -93,10 +93,15 @@ To learn how to establish credentials to authenticate to https://mako.dev, read
 
 Now that you have an idea of the kinds of data you’ll be storing in Mako and
 you’ve set up authentication, it’s time to create your benchmark in
-https://mako.dev. Before proceeding, see [ACCESS.md](./ACCESS.md) to learn how to
-get access to create benchmarks.
+https://mako.dev. Before proceeding, see [ACCESS.md](./ACCESS.md) to learn how
+to get access to create benchmarks.
 
-To create the benchmark you’ll use the Mako command-line tool. Visit
+First, if your team does not have an existing Mako project, create one and
+configure benchmarks to be under it. A team should have a single Mako project so
+that the set of child benchmarks can be associated with the team. All benchmarks
+must belong to an existing Mako project.
+
+To create a project, you’ll use the Mako command-line tool. Visit
 [BUILDING.md](BUILDING.md#building-the-command-line-tool) to learn how to build
 the command-line tool.
 
@@ -105,18 +110,47 @@ $ alias mako=<your mako directory>/bazel-bin/cli/mako
 ```
 
 You can see all the CLI commands using the ‘help’ subcommand:
+
 ```bash
 $ mako help
 ```
 
-We’re going to use the `create_benchmark` subcommand. To see the help for this
-subcommand:
+Create a configuration file named `project.config`. See the following example
+with comments.
+
+```
+# project_name is always evaluated as lowercase and must be unique
+project_name: "mako example project"
+
+# project_alias is the display name of the project and will be shown in
+# https://mako.dev. It does not have to be unique.
+project_alias: "Mako Example Project"
+
+# owner_list contains the list of project owners
+owner_list: "team@yourdomain.com"
+owner_list: "user@yourdomain.com"
+```
+
+Use the `create_project` subcommand to create the project from the config file.
+
+```bash
+$ mako create_project path/to/project.config
+```
+
+If the subcommand completes successfully, the project has been created with
+unique name as `project_name`. You can begin creating benchmarks under it by
+specifying the `project_name` in the benchmarks. This is explained below.
+
+To create a benchmark, we’re going to use the `create_benchmark` subcommand. To
+see the help for this subcommand:
+
 ```bash
 $ mako help create_benchmark
 ```
 
 Let’s leave the path blank so that we can create the benchmark from a template.
 Execute:
+
 ```bash
 $ mako create_benchmark
 ```
@@ -130,7 +164,8 @@ configuration with a description of your own data.
 ```
 benchmark_name: "Example Benchmark"
 
-project_name: "Mako Example Project"
+# Specify your project here. If the project_name does not exist, the command will fail.
+project_name: "mako example project"
 
 owner_list: "yourusername@yourdomain.com"
 owner_list: "anotheruser@yourdomain.com"
@@ -212,16 +247,16 @@ package main
 
 import (
   "context"
-	"fmt"
-	"testing"
-	"github.com/google/mako/go/quickstore"
-	qpb "github.com/google/mako/proto/quickstore/quickstore_go_proto"
+    "fmt"
+    "testing"
+    "github.com/google/mako/go/quickstore"
+    qpb "github.com/google/mako/proto/quickstore/quickstore_go_proto"
 )
 
 func TestPerformance(t *testing.T) {
-	// This is just a stub for now to get the import working, we’ll fill it out later.
-	_, _, _ := quickstore.NewAtAddress(context.Background(), "localhost:9813",&qpb.QuickstoreInput{})
-	fmt.Println("Imported Quickstore")
+    // This is just a stub for now to get the import working, we’ll fill it out later.
+    _, _, _ := quickstore.NewAtAddress(context.Background(), "localhost:9813",&qpb.QuickstoreInput{})
+    fmt.Println("Imported Quickstore")
 }
 EOF
 ```
@@ -247,8 +282,8 @@ your test that uses Quickstore.
 The Go Quickstore client library, when building with `go build/test`, does not
 stand alone -- it requires a running Quickstore microservice. When using Bazel,
 the Quickstore client library is completely self-contained, so C++ and Go Bazel
-users can ignore this section. Read more about the need for the microservice
-in [CONCEPTS.md](./CONCEPTS.md#microservice).
+users can ignore this section. Read more about the need for the microservice in
+[CONCEPTS.md](./CONCEPTS.md#microservice).
 
 The microservice is a C++ binary that is built with Bazel. For building
 directions, see
@@ -277,7 +312,7 @@ Skip this step if you are happy with the microservice as a binary.
 To build the microservice into a Docker image that can be loaded locally or
 pushed to a repository:
 
-> **WARNING**:  Docker does not run natively in OSX, so building the image from
+> **WARNING**: Docker does not run natively in OSX, so building the image from
 > OSX will require cross-compiling for Linux. We have not yet determined how to
 > configure Bazel accordingly, so for now we recommend only building the
 > microservice in Linux.
@@ -296,8 +331,8 @@ $ docker load -i bazel-bin/go/internal/quickstore_microservice/quickstore_micros
 ```
 
 The image is loaded and ready to run. Inside the container, the microservice
-will listen on the `9813` port for incoming connections. We can map that to
-a specific external port with the `-p` flag: `-p ${MAKO_PORT}:9813`.
+will listen on the `9813` port for incoming connections. We can map that to a
+specific external port with the `-p` flag: `-p ${MAKO_PORT}:9813`.
 
 Also, the Docker container's environment is going to need access to your
 credentials for authentication. Read about making credentials available to the

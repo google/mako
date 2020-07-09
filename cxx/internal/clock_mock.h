@@ -34,9 +34,9 @@ class ClockMock : public helpers::Clock {
         .WillByDefault(testing::Invoke(this, &ClockMock::SetTime));
   }
 
-  MOCK_METHOD0(TimeNow, absl::Time());
-  MOCK_METHOD1(Sleep, void(absl::Duration d));
-  MOCK_METHOD1(SleepUntil, void(absl::Time wakeup_time));
+  MOCK_METHOD(absl::Time, TimeNow, (), (override));
+  MOCK_METHOD(void, Sleep, (absl::Duration d), (override));
+  MOCK_METHOD(void, SleepUntil, (absl::Time wakeup_time), (override));
 
   absl::Time current_time() const { return now_; }
 

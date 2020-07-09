@@ -40,6 +40,8 @@ using mako::analyzers::threshold_analyzer::ThresholdAnalyzerInput;
 using mako::analyzers::threshold_analyzer::ThresholdAnalyzerOutput;
 using mako::analyzers::threshold_analyzer::ThresholdConfigResult;
 
+constexpr char Analyzer::kThresholdType[];
+
 Analyzer::Analyzer(const ThresholdAnalyzerInput& analyzer_input)
     : config_(analyzer_input) {}
 
@@ -172,8 +174,8 @@ bool Analyzer::DoAnalyze(const mako::AnalyzerInput& analyzer_input,
     const RunOrder run_order =
         config_.cross_run_config().run_info_query_list(0).run_order();
     // Sort runs ascending by the specified field order.
-    const std::vector<const RunInfo*> sorted_runs =
-        internal::SortRuns(analyzer_input, run_order);
+    const std::vector<const RunBundle*> sorted_run_bundles =
+        internal::SortRunBundles(analyzer_input, run_order);
 
     // Record some properties about the historical window being used in this
     // analysis that allow us to approximately re-create the historical window
@@ -182,12 +184,16 @@ bool Analyzer::DoAnalyze(const mako::AnalyzerInput& analyzer_input,
     switch (run_order) {
       case RunOrder::UNSPECIFIED:
       case RunOrder::TIMESTAMP:
-        config_out.set_min_timestamp_ms(sorted_runs.front()->timestamp_ms());
-        config_out.set_max_timestamp_ms(sorted_runs.back()->timestamp_ms());
+        config_out.set_min_timestamp_ms(
+            sorted_run_bundles.front()->run_info().timestamp_ms());
+        config_out.set_max_timestamp_ms(
+            sorted_run_bundles.back()->run_info().timestamp_ms());
         break;
       case RunOrder::BUILD_ID:
-        config_out.set_min_build_id(sorted_runs.front()->build_id());
-        config_out.set_max_build_id(sorted_runs.back()->build_id());
+        config_out.set_min_build_id(
+            sorted_run_bundles.front()->run_info().build_id());
+        config_out.set_max_build_id(
+            sorted_run_bundles.back()->run_info().build_id());
         break;
     }
   }
@@ -211,7 +217,8 @@ bool Analyzer::DoAnalyze(const mako::AnalyzerInput& analyzer_input,
     }
 
     auto error_string = mako::internal::ApplyFilter(
-        run_info, batches, config.data_filter(), false, &results);
+        run_bundle.benchmark_info(), run_info, batches, config.data_filter(),
+        false, &results);
 
     if (error_string.length() > 0) {
       std::stringstream ss;
@@ -259,8 +266,8 @@ bool Analyzer::DoAnalyze(const mako::AnalyzerInput& analyzer_input,
         }
 
         auto error_string = mako::internal::ApplyFilter(
-            cross_run_bundle.run_info(), cross_run_batch, config.data_filter(),
-            false, &run_results);
+            cross_run_bundle.benchmark_info(), cross_run_bundle.run_info(),
+            cross_run_batch, config.data_filter(), false, &run_results);
 
         if (error_string.length() > 0) {
           std::stringstream ss;

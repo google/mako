@@ -30,9 +30,19 @@ PROTO_INPUT(
   pgpb.BenchmarkInfo)
 
 PROTO_INPUT(
+  mako::ProjectInfo,
+  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
+  pgpb.ProjectInfo)
+
+PROTO_INPUT(
   mako::RunInfo,
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.RunInfo)
+
+PROTO_INPUT(
+  mako::ProjectInfoQuery,
+  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
+  pgpb.ProjectInfoQuery)
 
 PROTO_INPUT(
   mako::BenchmarkInfoQuery,
@@ -70,6 +80,11 @@ PROTO_IN_OUT(
   pgpb.CountResponse)
 
 PROTO_IN_OUT(
+  mako::ProjectInfoQueryResponse,
+  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
+  pgpb.ProjectInfoQueryResponse)
+
+PROTO_IN_OUT(
   mako::BenchmarkInfoQueryResponse,
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.BenchmarkInfoQueryResponse)
@@ -84,17 +99,13 @@ PROTO_IN_OUT(
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.SampleBatchQueryResponse)
 
-PROTO_INPUT(
-  mako::ProjectInfo,
-  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
-  pgpb.ProjectInfo)
-
 PROTO_IN_OUT(
   mako::ProjectInfoGetResponse,
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.ProjectInfoGetResponse)
 
 C_PROTO_VECTOR_INPUT_SLICE(mako::BenchmarkInfo)
+C_PROTO_VECTOR_INPUT_SLICE(mako::ProjectInfo)
 C_PROTO_VECTOR_INPUT_SLICE(mako::RunInfo)
 C_PROTO_VECTOR_INPUT_SLICE(mako::SampleBatch)
 
@@ -131,12 +142,14 @@ C_PROTO_VECTOR_INPUT_SLICE(mako::SampleBatch)
 
 %unignore mako::fake_google3_storage::Storage::FakeClear;
 %unignore mako::fake_google3_storage::Storage::FakeStageBenchmarks;
+%unignore mako::fake_google3_storage::Storage::FakeStageProjects;
 %unignore mako::fake_google3_storage::Storage::FakeStageRuns;
 %unignore mako::fake_google3_storage::Storage::FakeStageBatches;
 
 %unignore mako::fake_google3_storage::Storage::CreateProjectInfo;
 %unignore mako::fake_google3_storage::Storage::UpdateProjectInfo;
 %unignore mako::fake_google3_storage::Storage::GetProjectInfo;
+%unignore mako::fake_google3_storage::Storage::QueryProjectInfo;
 
 %import "cxx/spec/storage.h"
 %include "cxx/clients/storage/fake_google3_storage.h"

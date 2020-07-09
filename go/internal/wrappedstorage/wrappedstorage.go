@@ -104,6 +104,15 @@ func (s *Simple) UpdateProjectInfo(_ context.Context, pi *pgpb.ProjectInfo) (*pg
 	runtime.KeepAlive(s)
 	return mr, nil
 }
+func (s *Simple) QueryProjectInfo(_ context.Context, piq *pgpb.ProjectInfoQuery) (*pgpb.ProjectInfoQueryResponse, error) {
+	piqr := &pgpb.ProjectInfoQueryResponse{}
+	if !s.wrapper.QueryProjectInfo(piq, piqr) {
+		return piqr, errors.New(piqr.GetStatus().GetFailMessage())
+	}
+	// go/mako-go-swig-finalizer-problem
+	runtime.KeepAlive(s)
+	return piqr, nil
+}
 
 func (s *Simple) GetProjectInfo(_ context.Context, pi *pgpb.ProjectInfo) (*pgpb.ProjectInfoGetResponse, error) {
 	gr := &pgpb.ProjectInfoGetResponse{}
@@ -331,6 +340,7 @@ type SimpleSwigWrap interface {
 	CreateProjectInfo(*pgpb.ProjectInfo, *pgpb.CreationResponse) bool
 	UpdateProjectInfo(*pgpb.ProjectInfo, *pgpb.ModificationResponse) bool
 	GetProjectInfo(*pgpb.ProjectInfo, *pgpb.ProjectInfoGetResponse) bool
+	QueryProjectInfo(*pgpb.ProjectInfoQuery, *pgpb.ProjectInfoQueryResponse) bool
 
 	CreateBenchmarkInfo(*pgpb.BenchmarkInfo, *pgpb.CreationResponse) bool
 	UpdateBenchmarkInfo(*pgpb.BenchmarkInfo, *pgpb.ModificationResponse) bool

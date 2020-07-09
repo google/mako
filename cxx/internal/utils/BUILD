@@ -23,8 +23,6 @@ cc_test(
 cc_library(
     name = "googleinit",
     hdrs = ["googleinit.h"],
-    deps = [
-    ],
 )
 
 cc_library(

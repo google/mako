@@ -33,6 +33,7 @@
 
 namespace mako {
 namespace internal {
+namespace {
 
 // Shutdown only called once
 // SamplerBoss returns some samplers who have written data to fileio.
@@ -164,10 +165,10 @@ TEST_F(RunAnalyzersTest, Success) {
       .WillRepeatedly(Return(true));
   EXPECT_CALL(mock_analyzer, Analyze(_, _)).WillRepeatedly(Return(true));
 
-  std::string err = RunAnalyzers(
-      benchmark_info_, run_info_, batches,
-      /*attach_e_divisive_regressions_to_changepoints=*/false, &s_, &d_,
-      {&mock_analyzer}, &test_output);
+  std::string err =
+      RunAnalyzers(benchmark_info_, run_info_, batches,
+                   /*attach_e_divisive_regressions_to_changepoints=*/false, &s_,
+                   &d_, {&mock_analyzer}, &test_output);
 
   // Validate
   ASSERT_EQ("", err);
@@ -190,10 +191,10 @@ TEST_F(RunAnalyzersTest, ConstructHistoryErrorStatus) {
       .WillRepeatedly(DoAll(SetArgPointee<1>(mock_output), Return(false)));
   EXPECT_CALL(mock_analyzer, Analyze(_, _)).WillRepeatedly(Return(true));
 
-  std::string err = RunAnalyzers(
-      benchmark_info_, run_info_, batches,
-      /*attach_e_divisive_regressions_to_changepoints=*/false, &s_, &d_,
-      {&mock_analyzer}, &test_output);
+  std::string err =
+      RunAnalyzers(benchmark_info_, run_info_, batches,
+                   /*attach_e_divisive_regressions_to_changepoints=*/false, &s_,
+                   &d_, {&mock_analyzer}, &test_output);
 
   // Validate
   ASSERT_EQ("", err);
@@ -221,10 +222,10 @@ TEST_F(RunAnalyzersTest, AnalyzeError) {
   EXPECT_CALL(mock_analyzer, Analyze(_, _))
       .WillRepeatedly(DoAll(SetArgPointee<1>(mock_output), Return(false)));
 
-  std::string err = RunAnalyzers(
-      benchmark_info_, run_info_, batches,
-      /*attach_e_divisive_regressions_to_changepoints=*/false, &s_, &d_,
-      {&mock_analyzer}, &test_output);
+  std::string err =
+      RunAnalyzers(benchmark_info_, run_info_, batches,
+                   /*attach_e_divisive_regressions_to_changepoints=*/false, &s_,
+                   &d_, {&mock_analyzer}, &test_output);
 
   // Validate
   ASSERT_EQ("", err);
@@ -257,10 +258,10 @@ TEST_F(RunAnalyzersTest, RunAnalyzersSimpleThresholdPass) {
   mako::threshold_analyzer::Analyzer threshold_analyzer(input);
   analyzers.push_back(&threshold_analyzer);
 
-  std::string err = RunAnalyzers(
-      benchmark_info_, run_info_, batches,
-      /*attach_e_divisive_regressions_to_changepoints=*/false, &s_, &d_,
-      analyzers, &test_output);
+  std::string err =
+      RunAnalyzers(benchmark_info_, run_info_, batches,
+                   /*attach_e_divisive_regressions_to_changepoints=*/false, &s_,
+                   &d_, analyzers, &test_output);
 
   // Validate
   ASSERT_EQ("", err);
@@ -290,10 +291,10 @@ TEST_F(RunAnalyzersTest,
   mako::threshold_analyzer::Analyzer threshold_analyzer(input);
   analyzers.push_back(&threshold_analyzer);
 
-  std::string err = RunAnalyzers(
-      benchmark_info_, run_info_, batches,
-      /*attach_e_divisive_regressions_to_changepoints=*/false, &s_, &d_,
-      analyzers, &test_output);
+  std::string err =
+      RunAnalyzers(benchmark_info_, run_info_, batches,
+                   /*attach_e_divisive_regressions_to_changepoints=*/false, &s_,
+                   &d_, analyzers, &test_output);
 
   // Validate
   ASSERT_EQ("", err);
@@ -317,10 +318,10 @@ TEST_F(RunAnalyzersTest,
   mako::threshold_analyzer::Analyzer threshold_analyzer(input);
   analyzers.push_back(&threshold_analyzer);
 
-  std::string err = RunAnalyzers(
-      benchmark_info_, run_info_, batches,
-      /*attach_e_divisive_regressions_to_changepoints=*/false, &s_, &d_,
-      analyzers, &test_output);
+  std::string err =
+      RunAnalyzers(benchmark_info_, run_info_, batches,
+                   /*attach_e_divisive_regressions_to_changepoints=*/false, &s_,
+                   &d_, analyzers, &test_output);
 
   // Validate
   ASSERT_EQ("", err);
@@ -366,10 +367,10 @@ TEST_F(RunAnalyzersTest, NoDuplicateRuns) {
 
   mako::TestOutput test_output;
   std::vector<SampleBatch> batches;
-  std::string err = RunAnalyzers(
-      benchmark_info_, run_info_, batches,
-      /*attach_e_divisive_regressions_to_changepoints=*/false, &s_, &d_,
-      {&mock_analyzer}, &test_output);
+  std::string err =
+      RunAnalyzers(benchmark_info_, run_info_, batches,
+                   /*attach_e_divisive_regressions_to_changepoints=*/false, &s_,
+                   &d_, {&mock_analyzer}, &test_output);
   ASSERT_EQ("", err);
 }
 
@@ -396,10 +397,10 @@ TEST_F(RunAnalyzersTest, RunAnalyzersVisualizeAnalysis) {
   mako::threshold_analyzer::Analyzer threshold_analyzer_two(input);
   analyzers.push_back(&threshold_analyzer_two);
 
-  std::string err = RunAnalyzers(
-      benchmark_info_, run_info_, batches,
-      /*attach_e_divisive_regressions_to_changepoints=*/false, &s_, &d_,
-      analyzers, &test_output);
+  std::string err =
+      RunAnalyzers(benchmark_info_, run_info_, batches,
+                   /*attach_e_divisive_regressions_to_changepoints=*/false, &s_,
+                   &d_, analyzers, &test_output);
 
   // Validate
   ASSERT_EQ("", err);
@@ -418,5 +419,6 @@ TEST_F(RunAnalyzersTest, RunAnalyzersVisualizeAnalysis) {
   ASSERT_NE("", test_output.analyzer_output_list(1).output());
 }
 
+}  // namespace
 }  // namespace internal
 }  // namespace mako

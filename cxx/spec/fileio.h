@@ -19,6 +19,7 @@
 #include <string>
 
 #include "src/google/protobuf/message.h"
+#include "absl/strings/string_view.h"
 
 namespace mako {
 
@@ -61,7 +62,7 @@ class FileIO {
   //
   // Returns true for success. If false is returned, call Error() to get the
   // error message.
-  virtual bool Open(const std::string& path, AccessMode mode) = 0;
+  virtual bool Open(absl::string_view path, AccessMode mode) = 0;
 
   // Write appends the given record to the opened file.
   //
@@ -75,7 +76,7 @@ class FileIO {
   virtual bool Write(const google::protobuf::Message& record) = 0;
 
   // Overload exposed for CLIF and SWIG.
-  virtual bool Write(const std::string& serialized_record) = 0;
+  virtual bool Write(absl::string_view serialized_record) = 0;
 
   // Read reads the next record in the opened file.
   //
@@ -122,7 +123,7 @@ class FileIO {
   //
   // Returns true for success. If false is returned, call Error() to get the
   // error message.
-  virtual bool Delete(const std::string& path) = 0;
+  virtual bool Delete(absl::string_view path) = 0;
 
   // Makes another default instance of this FileIO().
   //

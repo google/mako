@@ -30,9 +30,19 @@ PROTO_INPUT(
   pgpb.BenchmarkInfo)
 
 PROTO_INPUT(
+  mako::ProjectInfo,
+  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
+  pgpb.ProjectInfo)
+
+PROTO_INPUT(
   mako::RunInfo,
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.RunInfo)
+
+PROTO_INPUT(
+  mako::ProjectInfoQuery,
+  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
+  pgpb.ProjectInfoQuery)
 
 PROTO_INPUT(
   mako::BenchmarkInfoQuery,
@@ -70,6 +80,11 @@ PROTO_IN_OUT(
   pgpb.CountResponse)
 
 PROTO_IN_OUT(
+  mako::ProjectInfoQueryResponse,
+  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
+  pgpb.ProjectInfoQueryResponse)
+
+PROTO_IN_OUT(
   mako::BenchmarkInfoQueryResponse,
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.BenchmarkInfoQueryResponse)
@@ -84,16 +99,10 @@ PROTO_IN_OUT(
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.SampleBatchQueryResponse)
 
-PROTO_INPUT(
-  mako::ProjectInfo,
-  pgpb "github.com/google/mako/spec/proto/mako_go_proto",
-  pgpb.ProjectInfo)
-
 PROTO_IN_OUT(
   mako::ProjectInfoGetResponse,
   pgpb "github.com/google/mako/spec/proto/mako_go_proto",
   pgpb.ProjectInfoGetResponse)
-
 
 // Exposed API
 %ignoreall
@@ -101,7 +110,7 @@ PROTO_IN_OUT(
 %unignore mako;
 %unignore mako::google3_storage;
 %unignore mako::google3_storage::Storage;
-%unignore mako::google3_storage::Storage::Storage(const string&);
+%unignore mako::google3_storage::Storage::Storage(const std::string&);
 %unignore mako::google3_storage::Storage::~Storage;
 
 %unignore mako::google3_storage::Storage::CreateBenchmarkInfo;
@@ -128,6 +137,7 @@ PROTO_IN_OUT(
 %unignore mako::google3_storage::Storage::CreateProjectInfo;
 %unignore mako::google3_storage::Storage::UpdateProjectInfo;
 %unignore mako::google3_storage::Storage::GetProjectInfo;
+%unignore mako::google3_storage::Storage::QueryProjectInfo;
 
 %unignore mako::google3_storage::Storage::last_call_server_elapsed_time;
 

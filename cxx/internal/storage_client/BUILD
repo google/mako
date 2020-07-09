@@ -58,6 +58,9 @@ cc_library(
     hdrs = ["transport.h"],
     deps = [
         "//cxx/helpers/status",
+        "//proto/internal:mako_internal_cc_proto",
+        "//proto/internal/storage_client:storage_cc_proto",
+        "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_protobuf//:protobuf",
@@ -87,10 +90,23 @@ cc_library(
     deps = [
         ":transport",
         "//cxx/helpers/status",
+        "//proto/internal:mako_internal_cc_proto",
+        "//proto/internal/storage_client:storage_cc_proto",
+        "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
+    name = "http_paths",
+    srcs = ["http_paths.cc"],
+    hdrs = ["http_paths.h"],
+    deps = [
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -100,12 +116,15 @@ cc_library(
     hdrs = ["http_transport.h"],
     deps = [
         ":http_client",
+        ":http_paths",
         ":oauth_token_provider",
         ":transport",
         ":url",
         "//cxx/helpers/status",
         "//cxx/helpers/status:statusor",
+        "//proto/internal:mako_internal_cc_proto",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_absl//absl/time",
@@ -123,7 +142,6 @@ cc_library(
         "//cxx/helpers/status",
         "//cxx/helpers/status:statusor",
         "@com_github_googleapis_google_cloud_cpp//google/cloud/storage:storage_client",
-        "@com_github_googleapis_google_cloud_cpp_common//google/cloud:google_cloud_cpp_common",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/types:optional",
@@ -139,7 +157,6 @@ cc_test(
     deps = [
         ":google_oauth_fetcher",
         "//cxx/helpers/status:status_matchers",
-        "@com_github_googleapis_google_cloud_cpp_common//google/cloud:google_cloud_cpp_common",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
     ],

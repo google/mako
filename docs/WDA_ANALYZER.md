@@ -23,7 +23,12 @@ As a user you need to [configure](#configuration):
 *   An optional direction bias (bigger is better, smaller is better).
 *   A tolerance via multiple parameters ([described below](#mean_vs_median)).
 
-[TOC]
+The Mako server will render a
+[visualization](./ANALYZERS.md#analyzer-visualization) of your WDA analysis.
+Here is an example of a passing run. The contents of this screenshot are
+explained below.
+
+![WDA Visualization](./images/wda_visualization.png)
 
 ## Configuration
 
@@ -351,7 +356,9 @@ This tolerance is compared to the median delta (`recent - historic`).
 it will ignore outlier aggregates, even when they are very large. Both median
 and MAD are generally more resilient to noise.
 
-## const_term
+## WDA Parameters
+
+### const_term
 
 `MeanToleranceParams.const_term` and `MedianToleranceParams.const_term` act as
 constant terms of the tolerance equations, while other terms may vary with
@@ -374,7 +381,7 @@ increase in this latency may not warrant a regression. Setting `const_term` to
 5ms would prevent a regression from being flagged in this case, regardless of
 what the other parameters are set to.
 
-## mean_coeff
+### mean_coeff
 
 `MeanToleranceParams.mean_coeff` is a coefficient of the historic mean term.
 
@@ -388,7 +395,7 @@ free. Just set it to a percentage of change that would be acceptable.
 If your data has noise, you should also add the [`stddev_coeff`](#stddev_coeff)
 term.
 
-## stddev_coeff
+### stddev_coeff
 
 `MeanToleranceParams.stddev_coeff` is a coefficient of the historic standard
 deviation term.
@@ -415,7 +422,7 @@ However, if your data is not well categorized as a normal distribution (e.g.
 bimodal or uniform distribution), you may want to experiment with values in the
 range 1.0 to 2.0.
 
-## median_coeff
+### median_coeff
 
 `MedianToleranceParams.median_coeff` is a coefficient of the historic median
 term.
@@ -430,7 +437,7 @@ acceptable.
 
 If your data has noise, you should also add the [`mad_coeff`](#mad_coeff) term.
 
-## mad_coeff
+### mad_coeff
 
 `MedianToleranceParams.mad_coeff` is a coefficient of the historic median
 absolute deviation (MAD) term. If you are unfamiliar with MAD, it is similar to
@@ -456,7 +463,7 @@ recommended.
 If your recent window is very large, the median of recent values may not be very
 affected by noise, so you may choose to leave `mad_coeff` unset (0.0).
 
-## Selecting aggregate data via filter {#data_filter}
+### Selecting aggregate data via filter {#data_filter}
 
 Each `ToleranceCheck` accepts a single `data_filter` field. This field selects
 the data that will be analyzed. For example, you could select metric y1's mean,
@@ -495,7 +502,7 @@ median of many run means. However, you can also filter by median and choose
 `MedianToleranceParams`, which compares the recent and historic median of many
 run medians.
 
-## Direction Bias
+### Direction Bias
 
 The `ToleranceCheck.direction_bias` field provides a setting for direction bias:
 
@@ -506,7 +513,7 @@ The `ToleranceCheck.direction_bias` field provides a setting for direction bias:
 *   `NO_BIAS` (default) means that any absolute delta above tolerance is a
     regression.
 
-## ANDing and ORing Tolerance Checks
+### ANDing and ORing Tolerance Checks
 
 In most cases, providing one or more `ToleranceChecks` where each check has a
 single `*ToleranceParams` field is effective. In this case every one of the

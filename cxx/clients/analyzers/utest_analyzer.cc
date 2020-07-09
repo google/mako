@@ -18,8 +18,6 @@
 #include <memory>
 #include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -28,7 +26,9 @@
 #include "src/google/protobuf/repeated_field.h"
 #include "src/google/protobuf/text_format.h"
 #include "spec/proto/mako.pb.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/container/node_hash_map.h"
 #include "absl/strings/str_cat.h"
 #include "cxx/clients/analyzers/util.h"
 #include "cxx/internal/filter_utils.h"
@@ -69,7 +69,7 @@ std::pair<DataFilter, DataFilter> ConfigToDataFilters(
   return result;
 }
 
-double TiesCorrectionFactor(const std::unordered_map<int, int>& tie_counts,
+double TiesCorrectionFactor(const absl::flat_hash_map<int, int>& tie_counts,
                             int n) {
   // Based on Nonparametric Statistics for Non-Statisticians: A Step-By-Step
   // Approach By Gregory W. Corder, Dale I. Foreman. pp.100-101
@@ -124,13 +124,13 @@ class StatsCalculator {
     // Keep track of how many times we encounter a tie among N values.
     // tie_counts[X] is the number of times we saw a tie between X values
     // (whatever that value may have been).
-    std::unordered_map<int, int> tie_counts;
+    absl::flat_hash_map<int, int> tie_counts;
   };
 
   // Return stats for a given absolute shift value.
-  StatsCalculator::Statistics GetStatsShiftValue(const std::string& a_metric_key,
-                                                 const std::string& b_metric_key,
-                                                 double shift_value) const;
+  StatsCalculator::Statistics GetStatsShiftValue(
+      const std::string& a_metric_key, const std::string& b_metric_key,
+      double shift_value) const;
 
   // Return stats for a given relative shift value.
   StatsCalculator::Statistics GetStatsRelativeShiftValue(
@@ -140,14 +140,14 @@ class StatsCalculator {
  private:
   struct Sample {
     // Run keys for runs we want to include in this sample
-    std::unordered_set<std::string> run_key_list;
+    absl::flat_hash_set<std::string> run_key_list;
 
     // Map from a metric_key to all its associated raw data
-    std::unordered_map<std::string, std::vector<double>> sample_data;
+    absl::node_hash_map<std::string, std::vector<double>> sample_data;
 
     // Map from a metric_key to which data filter we are using to fetch raw data
     // from each run.
-    std::unordered_map<std::string, mako::DataFilter> sample_data_filter;
+    absl::node_hash_map<std::string, mako::DataFilter> sample_data_filter;
   };
 
   // Add relevant data points from the bundle into extracted_data
@@ -189,52 +189,20 @@ StatsCalculator::StatsCalculator(const UTestAnalyzerInput& config,
   }
 
   // Extract data from RunInfoQuery A/B-sample results
-  if (analyzer_input.historical_run_map_size() > 0) {
-    const auto& run_map = analyzer_input.historical_run_map();
+  const auto& run_map = analyzer_input.historical_run_map();
 
-    auto it = run_map.find(kSampleAKey);
-    if (it != run_map.end()) {
-      for (const RunBundle& bundle : it->second.historical_run_list()) {
-        sample_[kSampleA].run_key_list.insert(bundle.run_info().run_key());
-        AddBundleData(bundle, kSampleA);
-      }
+  auto it = run_map.find(kSampleAKey);
+  if (it != run_map.end()) {
+    for (const RunBundle& bundle : it->second.historical_run_list()) {
+      sample_[kSampleA].run_key_list.insert(bundle.run_info().run_key());
+      AddBundleData(bundle, kSampleA);
     }
-    it = run_map.find(kSampleBKey);
-    if (it != run_map.end()) {
-      for (const RunBundle& bundle : it->second.historical_run_list()) {
-        sample_[kSampleB].run_key_list.insert(bundle.run_info().run_key());
-        AddBundleData(bundle, kSampleB);
-      }
-    }
-  } else if (analyzer_input.historical_run_list_size() > 0) {
-    // TODO(b/132447974): Deprecate after migrating users who run U-Test
-    // analyzers by inserting the run bundles in list rather than in map.
-    for (const RunInfoQuery& query : config.a_sample().run_query_list()) {
-      sample_[kSampleA].run_key_list.insert(query.run_key());
-    }
-    for (const RunInfoQuery& query : config.b_sample().run_query_list()) {
-      sample_[kSampleB].run_key_list.insert(query.run_key());
-    }
-
-    for (const RunBundle& bundle : analyzer_input.historical_run_list()) {
-      bool aSampleBundle =
-          sample_[kSampleA].run_key_list.find(bundle.run_info().run_key()) !=
-          sample_[kSampleA].run_key_list.end();
-      bool bSampleBundle =
-          sample_[kSampleB].run_key_list.find(bundle.run_info().run_key()) !=
-          sample_[kSampleB].run_key_list.end();
-      if (!aSampleBundle && !bSampleBundle) {
-        LOG(WARNING)
-            << "A RunInfoQuery was defined without a run key in the "
-               "UTestConfig, but only run keys are supported when using the "
-               "historical run list. Consider using the historical run map.";
-      }
-      if (aSampleBundle) {
-        AddBundleData(bundle, kSampleA);
-      }
-      if (bSampleBundle) {
-        AddBundleData(bundle, kSampleB);
-      }
+  }
+  it = run_map.find(kSampleBKey);
+  if (it != run_map.end()) {
+    for (const RunBundle& bundle : it->second.historical_run_list()) {
+      sample_[kSampleB].run_key_list.insert(bundle.run_info().run_key());
+      AddBundleData(bundle, kSampleB);
     }
   }
 
@@ -249,12 +217,13 @@ StatsCalculator::StatsCalculator(const UTestAnalyzerInput& config,
 // Adds data from RunBundle to the appropriate samples
 void StatsCalculator::AddBundleData(const RunBundle& data_bundle,
                                     const SampleIndex s_index) {
-  for (auto it : sample_[s_index].sample_data_filter) {
+  for (const auto& it : sample_[s_index].sample_data_filter) {
     const std::string& value_key = it.first;
     const auto& data_filter = it.second;
     std::vector<internal::DataPoint> results;
     std::string err = mako::internal::ApplyFilter(
-        data_bundle.run_info(), data_bundle.batch_list().pointer_begin(),
+        data_bundle.benchmark_info(), data_bundle.run_info(),
+        data_bundle.batch_list().pointer_begin(),
         data_bundle.batch_list().pointer_end(), data_filter, false, &results);
     if (!err.empty()) {
       LOG(ERROR) << absl::StrCat("Run data extraction failed for run_key(",
@@ -311,7 +280,7 @@ StatsCalculator::Statistics StatsCalculator::GetStats(
   // tie_counts[X] is the number of times we saw a tie between X values
   // (whatever that value may have been). We don't actually need the values
   // themselves for our calculations.
-  std::unordered_map<int, int> tie_counts;
+  absl::flat_hash_map<int, int> tie_counts;
 
   // Iterate through both samples
   auto iter_a = sample_a.begin();
@@ -467,26 +436,22 @@ bool Analyzer::DoAnalyze(const AnalyzerInput& analyzer_input,
     return false;
   }
 
-  if (!analyzer_input.has_run_to_be_analyzed()) {
-    SetAnalyzerOutputWithError(analyzer_output, &config_out,
-                               "AnalyzerInput missing run_to_be_analyzed.");
+  if ((config_.a_sample().include_current_run() ||
+       config_.b_sample().include_current_run()) &&
+      !analyzer_input.run_to_be_analyzed().has_run_info()) {
+    SetAnalyzerOutputWithError(
+        analyzer_output, &config_out,
+        "Sample includes current run but AnalyzerInput.run_to_be_analyzed is "
+        "missing.");
     LOG(INFO) << "END: UTest Analyzer";
     return false;
   }
 
-  if (!analyzer_input.run_to_be_analyzed().has_run_info()) {
-    SetAnalyzerOutputWithError(analyzer_output, &config_out,
-                               "RunBundle missing run_info.");
-    LOG(INFO) << "END: UTest Analyzer";
-    return false;
-  }
-
-  if (analyzer_input.historical_run_map_size() > 0 &&
-      analyzer_input.historical_run_list_size() > 0) {
-    SetAnalyzerOutputWithError(analyzer_output, &config_out,
-                               "AnalyzerInput run map and run list are both "
-                               "nonempty. Only one can be used.");
-    LOG(INFO) << "END: UTest Analyzer";
+  if (analyzer_input.historical_run_list_size() > 0) {
+    SetAnalyzerOutputWithError(
+        analyzer_output, &config_out,
+        "AnalyzerInput run list is nonempty. Only the map can be used.");
+    LOG(INFO) << "END: TTest Analyzer";
     return false;
   }
 
@@ -540,18 +505,18 @@ bool Analyzer::DoAnalyze(const AnalyzerInput& analyzer_input,
 }
 
 std::string Analyzer::AnalyzeUTestConfig(const std::string& config_name,
-                                    const StatsCalculator& s_calc,
-                                    const UTestConfig& config,
-                                    UTestConfigResult* result) {
+                                         const StatsCalculator& s_calc,
+                                         const UTestConfig& config,
+                                         UTestConfigResult* result) {
   std::stringstream check_output;
   check_output << "Start u-test analysis for: " << config_name << ".\n";
 
   const std::string a_value_key = config.has_a_metric_key()
-                                 ? config.a_metric_key()
-                                 : config.a_data_filter().value_key();
+                                      ? config.a_metric_key()
+                                      : config.a_data_filter().value_key();
   const std::string b_value_key = config.has_b_metric_key()
-                                 ? config.b_metric_key()
-                                 : config.b_data_filter().value_key();
+                                      ? config.b_metric_key()
+                                      : config.b_data_filter().value_key();
 
   *result->mutable_config() = config;
   if (config.has_config_name()) {

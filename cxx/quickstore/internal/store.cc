@@ -83,7 +83,8 @@ QuickstoreOutput InternalQuickstore::Save() {
   static absl::Mutex count_mutex(absl::kConstInit);
   static absl::BitGen* gen = new absl::BitGen;
   static int count = 0;
-  const std::string& par_dir = input_.has_temp_dir() ? input_.temp_dir() : "/tmp";
+  const std::string& par_dir =
+      input_.has_temp_dir() ? input_.temp_dir() : "/tmp";
   {
     absl::MutexLock lock(&count_mutex);
     std::string tmp_dir = JoinPath(
@@ -201,6 +202,9 @@ std::string InternalQuickstore::CreateAndUpdateRunInfo() {
   }
   for (const auto& tag : input_.tags()) {
     *run_info_.add_tags() = tag;
+  }
+  for (const auto& tag : input_.historical_context_tags()) {
+    *run_info_.add_historical_context_tags() = tag;
   }
 
   if (input_.has_hover_text()) {
@@ -571,6 +575,7 @@ QuickstoreOutput Save(const QuickstoreInput& input,
                       const std::vector<std::string>& aggregate_value_keys,
                       const std::vector<std::string>& aggregate_types,
                       const std::vector<double>& aggregate_values) {
+
   auto s = mako::NewMakoClient();
   return SaveWithStorage(s.get(), input, points, errors, run_aggregates,
                          aggregate_value_keys, aggregate_types,

@@ -39,7 +39,7 @@ void AddQueryInt(const std::string& k, int v,
 }
 
 std::string AddDataFilter(const mako::DataFilter& df, int idx,
-                     std::vector<std::string>* query_parameters) {
+                          std::vector<std::string>* query_parameters) {
   std::string idxS = "";
   if (idx >= 0) {
     idxS = std::to_string(idx);
@@ -133,7 +133,8 @@ Dashboard::Dashboard(absl::string_view hostname) : hostname_(hostname) {
 Dashboard::Dashboard() : Dashboard(kHostUrl) {}
 
 std::string Dashboard::AggregateChart(
-    const mako::DashboardAggregateChartInput& input, std::string* link) const {
+    const mako::DashboardAggregateChartInput& input,
+    std::string* link) const {
   if (!input.has_benchmark_key() || input.benchmark_key().empty()) {
     return "DashboardAggregateChartInput.benchmark_key empty or missing.";
   }
@@ -186,7 +187,7 @@ std::string Dashboard::AggregateChart(
 }
 
 std::string Dashboard::RunChart(const mako::DashboardRunChartInput& input,
-                           std::string* link) const {
+                                std::string* link) const {
   if (!input.has_run_key() || input.run_key().empty()) {
     return "DashboardRunChartInput.run_key missing.";
   }
@@ -258,7 +259,8 @@ std::string Dashboard::CompareAggregateChart(
 }
 
 std::string Dashboard::CompareRunChart(
-    const mako::DashboardCompareRunChartInput& input, std::string* link) const {
+    const mako::DashboardCompareRunChartInput& input,
+    std::string* link) const {
   if (input.run_keys_size() == 0) {
     return "DashboardCompareRunChartInput run_keys empty.";
   }

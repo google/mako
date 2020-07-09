@@ -113,10 +113,41 @@ class Storage : public mako::Storage {
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
+  //
+  // TODO(b/152349398): Unlike other Mako entities, GetProjectInfo returns
+  // an empty project in the response rather than an error. Fix to conform to
+  // behavior of other entities once QueryProjectInfo is supported.
   bool GetProjectInfo(const mako::ProjectInfo& project_info,
                       mako::ProjectInfoGetResponse* response) override;
 
-  // Creates a new BenchmarkInfo record in Mako storage via the
+  // Gets an existing ProjectInfo record in Mako storage via the
+  // StorageTransport.
+  //
+  // Returns false if message fails or backend fails. More details found in
+  // response's Status protobuf.
+  //
+  // More details can be found in interface documentation.
+  //
+  // TODO(b/152349398): Unlike other Mako entities, GetProjectInfoName
+  // returns an empty project in the response rather than an error if
+  // project_name does not exist. Fix to conform to behavior of other entities
+  // once QueryProjectInfo is supported.
+  bool GetProjectInfoByName(const std::string& project_name,
+                            mako::ProjectInfoGetResponse* get_response);
+
+  // Queries for existing ProjectInfo records in Mako storage via the
+  // StorageTransport.
+  //
+  // ProjectInfoQuery arg must contain all required fields described in
+  // mako.proto.
+  //
+  // Returns false if message fails or backend fails. More details found in
+  // response's Status protobuf.
+  //
+  // More details can be found in interface documentation.
+  bool QueryProjectInfo(const mako::ProjectInfoQuery& project_info_query,
+                        mako::ProjectInfoQueryResponse* query_response);
+
   // StorageTransport.
   //
   // BenchmarkInfoQuery arg must contain all required fields described in
@@ -316,7 +347,7 @@ class Storage : public mako::Storage {
   // The hostname backing this Storage implementation.
   //
   // More details can be found in interface documentation.
-  std::string GetHostname() override { return transport_->GetHostname(); }
+  std::string GetHostname() override;
 
   // Returns the number of seconds that the last message call took (according to
   // the server). This is exposed for tests of this library to use and should
@@ -331,6 +362,9 @@ class Storage : public mako::Storage {
   std::unique_ptr<mako::internal::StorageTransport> transport_;
 
   std::unique_ptr<mako::internal::StorageRetryStrategy> retry_strategy_;
+
+ private:
+  absl::optional<std::string> hostname_;
 };
 
 std::string ApplyHostnameFlagOverrides(const std::string& hostname);
@@ -342,5 +376,6 @@ extern absl::Flag<std::string> FLAGS_mako_internal_storage_host;
 extern absl::Flag<std::string> FLAGS_mako_internal_sudo_run_as;
 
 extern absl::Flag<std::string> FLAGS_mako_internal_test_pass_id_override;
-extern absl::Flag<std::vector<std::string> > FLAGS_mako_internal_additional_tags;
+extern absl::Flag<std::vector<std::string> >
+    FLAGS_mako_internal_additional_tags;
 #endif  // CXX_CLIENTS_STORAGE_GOOGLE3_STORAGE_H_

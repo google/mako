@@ -27,6 +27,7 @@ namespace internal {
 namespace {
 
 using mako::Aggregate;
+using mako::BenchmarkInfo;
 using mako::DataFilter;
 using mako::KeyedValue;
 using mako::LabeledRange;
@@ -53,6 +54,7 @@ const std::array<int, 3> kpercentile_milli_rank{{70000, 80000, 90000}};
 
 // Metric 1 values
 const char* kmetric_1_key = "m1";
+const char* kmetric_1_label = "metric_1";
 const double kmetric_1_count = 2;
 const double kmetric_1_min = 1;
 const double kmetric_1_max = 10;
@@ -66,6 +68,7 @@ const std::array<double, 3> kmetric_1_percentiles{{7, 8, 9}};
 
 // Metric 2 values
 const char* kmetric_2_key = "m2";
+const char* kmetric_2_label = "metric_2";
 const double kmetric_2_count = 3;
 const double kmetric_2_min = 2;
 const double kmetric_2_max = 20;
@@ -81,13 +84,16 @@ const std::array<double, 3> kmetric_2_percentiles{{70, 80, 90}};
 // (No aggregates calculated)
 // Same input_value as metric 2.
 const char* kmetric_3_key = "m3";
+const char* kmetric_3_label = "metric_3";
 // See HelperCreateMetric3Values() for actual values.
 // See HelperCreateMetric3ValuesNotInIgnoreRange() as well.
 
 // Custom aggregates
 const char* kcustom_aggregate_1_key = "ca1";
+const char* kcustom_aggregate_1_label = "custom_aggregate_1";
 const double kcustom_aggregate_1_value = 23.1;
 const char* kcustom_aggregate_2_key = "ca2";
+const char* kcustom_aggregate_2_label = "custom_aggregate_2";
 const double kcustom_aggregate_2_value = 46.2;
 
 std::vector<DataPoint> HelperCreateMetric1Values() {
@@ -271,6 +277,31 @@ RunInfo HelperCreateRunInfo() {
   return run_info;
 }
 
+ValueInfo HelperCreateValueInfo(std::string value_key, std::string label) {
+  ValueInfo ret;
+  ret.set_value_key(value_key);
+  ret.set_label(label);
+  return ret;
+}
+
+BenchmarkInfo HelperCreateBenchmarkInfo() {
+  BenchmarkInfo benchmark_info;
+
+  *benchmark_info.add_metric_info_list() =
+      HelperCreateValueInfo(kmetric_1_key, kmetric_1_label);
+  *benchmark_info.add_metric_info_list() =
+      HelperCreateValueInfo(kmetric_2_key, kmetric_2_label);
+  *benchmark_info.add_metric_info_list() =
+      HelperCreateValueInfo(kmetric_3_key, kmetric_3_label);
+
+  *benchmark_info.add_custom_aggregation_info_list() =
+      HelperCreateValueInfo(kcustom_aggregate_1_key, kcustom_aggregate_1_label);
+  *benchmark_info.add_custom_aggregation_info_list() =
+      HelperCreateValueInfo(kcustom_aggregate_2_key, kcustom_aggregate_2_label);
+
+  return benchmark_info;
+}
+
 bool Success(std::string s) {
   VLOG(2) << s;
   return s.length() == 0;
@@ -282,8 +313,8 @@ TEST_F(FilterUtilsTest, DataFilterMissingDataType) {
   std::vector<DataPoint> tmp;
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, DataFilterMissingValueKey) {
@@ -292,8 +323,8 @@ TEST_F(FilterUtilsTest, DataFilterMissingValueKey) {
   std::vector<DataPoint> tmp;
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, DataFilterMissingValueKeyError) {
@@ -302,8 +333,8 @@ TEST_F(FilterUtilsTest, DataFilterMissingValueKeyError) {
   std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, DataFilterMissingValueKeyBenchmarkScore) {
@@ -312,8 +343,208 @@ TEST_F(FilterUtilsTest, DataFilterMissingValueKeyBenchmarkScore) {
   std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, DataFilterBadLabelSamplePoints) {
+  DataFilter data_filter;
+  data_filter.set_label("wrong_label");
+  data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
+  std::vector<DataPoint> tmp;
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+
+  data_filter.set_ignore_missing_data(false);
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, DataFilterBadLabelCustomAggregate) {
+  DataFilter data_filter;
+  data_filter.set_label("wrong_label");
+  data_filter.set_data_type(mako::DataFilter::CUSTOM_AGGREGATE);
+  std::vector<DataPoint> tmp;
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+
+  data_filter.set_ignore_missing_data(false);
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, DataFilterBadLabelPercentileAggregate) {
+  DataFilter data_filter;
+  data_filter.set_label("wrong_label");
+  data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_PERCENTILE);
+  std::vector<DataPoint> tmp;
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+
+  data_filter.set_ignore_missing_data(false);
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, DataFilterBadLabelMetricAggregate) {
+  DataFilter data_filter;
+  data_filter.set_label("wrong_label");
+  data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_COUNT);
+  std::vector<DataPoint> tmp;
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+
+  data_filter.set_ignore_missing_data(false);
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, DataFilterSamplePointsDoesNotUseCustomAggInfoList) {
+  DataFilter data_filter;
+  data_filter.set_label(kmetric_1_label);
+  data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
+  std::vector<DataPoint> tmp;
+
+  BenchmarkInfo benchmark_info;
+  *benchmark_info.add_custom_aggregation_info_list() =
+      HelperCreateValueInfo(kmetric_1_key, kmetric_1_label);
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      benchmark_info, HelperCreateRunInfo(), HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
+
+  data_filter.set_ignore_missing_data(false);
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      benchmark_info, HelperCreateRunInfo(), HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, DataFilterCustomAggDoesNotUseMetricInfoList) {
+  DataFilter data_filter;
+  data_filter.set_label(kcustom_aggregate_1_label);
+  data_filter.set_data_type(mako::DataFilter::CUSTOM_AGGREGATE);
+  std::vector<DataPoint> tmp;
+
+  BenchmarkInfo benchmark_info;
+  *benchmark_info.add_metric_info_list() =
+      HelperCreateValueInfo(kcustom_aggregate_1_key, kcustom_aggregate_1_label);
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      benchmark_info, HelperCreateRunInfo(), HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
+
+  data_filter.set_ignore_missing_data(false);
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      benchmark_info, HelperCreateRunInfo(), HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, DataFilterPercentileAggDoesNotUseCustomAggInfoList) {
+  DataFilter data_filter;
+  data_filter.set_label(kmetric_1_label);
+  data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_PERCENTILE);
+  std::vector<DataPoint> tmp;
+
+  BenchmarkInfo benchmark_info;
+  *benchmark_info.add_custom_aggregation_info_list() =
+      HelperCreateValueInfo(kmetric_1_key, kmetric_1_label);
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      benchmark_info, HelperCreateRunInfo(), HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
+
+  data_filter.set_ignore_missing_data(false);
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      benchmark_info, HelperCreateRunInfo(), HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, DataFilterMetricAggDoesNotUseCustomAggInfoList) {
+  DataFilter data_filter;
+  data_filter.set_label(kmetric_1_label);
+  data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_COUNT);
+  std::vector<DataPoint> tmp;
+
+  BenchmarkInfo benchmark_info;
+  *benchmark_info.add_custom_aggregation_info_list() =
+      HelperCreateValueInfo(kmetric_1_key, kmetric_1_label);
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      benchmark_info, HelperCreateRunInfo(), HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
+
+  data_filter.set_ignore_missing_data(false);
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      benchmark_info, HelperCreateRunInfo(), HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, ValueKeyLabelMismatchSamplePoints) {
+  DataFilter data_filter;
+  data_filter.set_label(kmetric_1_label);
+  data_filter.set_value_key("wrong_key");
+  data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
+  std::vector<DataPoint> tmp;
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, ValueKeyLabelMismatchCustomAggregate) {
+  DataFilter data_filter;
+  data_filter.set_label(kcustom_aggregate_1_label);
+  data_filter.set_value_key("wrong_key");
+  data_filter.set_data_type(mako::DataFilter::CUSTOM_AGGREGATE);
+  std::vector<DataPoint> tmp;
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, ValueKeyLabelMismatchPercentileAggregate) {
+  DataFilter data_filter;
+  data_filter.set_label(kmetric_1_label);
+  data_filter.set_value_key("wrong_key");
+  data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_COUNT);
+  std::vector<DataPoint> tmp;
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
+}
+
+TEST_F(FilterUtilsTest, ValueKeyLabelMismatchMetricAggregate) {
+  DataFilter data_filter;
+  data_filter.set_label(kmetric_1_label);
+  data_filter.set_value_key("wrong_key");
+  data_filter.set_data_type(mako::DataFilter::METRIC_AGGREGATE_COUNT);
+  std::vector<DataPoint> tmp;
+
+  ASSERT_FALSE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, RunInfoMissingAggregate) {
@@ -326,15 +557,17 @@ TEST_F(FilterUtilsTest, RunInfoMissingAggregate) {
   run_info.clear_aggregate();
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, RunInfoMissingBenchmarkScore) {
@@ -349,16 +582,19 @@ TEST_F(FilterUtilsTest, RunInfoMissingBenchmarkScore) {
       ->clear_benchmark_score();
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   run_info.mutable_aggregate()->mutable_run_aggregate()->set_benchmark_score(1);
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, RunInfoMissingErrorCount) {
@@ -373,17 +609,20 @@ TEST_F(FilterUtilsTest, RunInfoMissingErrorCount) {
       ->clear_error_sample_count();
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   run_info.mutable_aggregate()->mutable_run_aggregate()->set_error_sample_count(
       1);
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, RunInfoMissingRunAggregate) {
@@ -402,45 +641,54 @@ TEST_F(FilterUtilsTest, RunInfoMissingRunAggregate) {
 
   data_filter.set_data_type(mako::DataFilter::CUSTOM_AGGREGATE);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_data_type(mako::DataFilter::ERROR_COUNT);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_data_type(mako::DataFilter::BENCHMARK_SCORE);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   // Missing run aggregates will error if ignore_missing_data = false
   data_filter.set_ignore_missing_data(false);
 
   data_filter.set_data_type(mako::DataFilter::CUSTOM_AGGREGATE);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_data_type(mako::DataFilter::ERROR_COUNT);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_data_type(mako::DataFilter::BENCHMARK_SCORE);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   // But works with a good run_info.
   run_info = HelperCreateRunInfo();
 
   data_filter.set_data_type(mako::DataFilter::CUSTOM_AGGREGATE);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_data_type(mako::DataFilter::ERROR_COUNT);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_data_type(mako::DataFilter::BENCHMARK_SCORE);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, MissingCustomAggregateIgnored) {
@@ -453,22 +701,22 @@ TEST_F(FilterUtilsTest, MissingCustomAggregateIgnored) {
 
   // Request was successful, but results are empty
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
   ASSERT_TRUE(tmp.empty());
 
   tmp.clear();
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   // A different key works.
   tmp.clear();
   data_filter.set_value_key(kcustom_aggregate_2_key);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
   ASSERT_FALSE(tmp.empty());
 }
 
@@ -479,19 +727,19 @@ TEST_F(FilterUtilsTest, InvalidCustomAggregateKey) {
   std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   data_filter.set_value_key(kcustom_aggregate_2_key);
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, InvalidMetricAggregate) {
@@ -501,13 +749,13 @@ TEST_F(FilterUtilsTest, InvalidMetricAggregate) {
   std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, PercentileNoSuchMetric) {
@@ -520,19 +768,19 @@ TEST_F(FilterUtilsTest, PercentileNoSuchMetric) {
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   data_filter.set_ignore_missing_data(true);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   // But with a valid metric key, should work
   data_filter.set_value_key(kmetric_1_key);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, NoSuchPercentileMilliRank) {
@@ -545,20 +793,20 @@ TEST_F(FilterUtilsTest, NoSuchPercentileMilliRank) {
   std::vector<DataPoint> tmp;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   // Set to a valid milli_rank
   data_filter.set_percentile_milli_rank(kpercentile_milli_rank[0]);
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, NoPercentilesForAggregateOrMetrics) {
@@ -581,11 +829,13 @@ TEST_F(FilterUtilsTest, NoPercentilesForAggregateOrMetrics) {
   run_info.mutable_aggregate()->clear_percentile_milli_rank_list();
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   data_filter.set_ignore_missing_data(false);
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, MetricMissingPercentile) {
@@ -606,14 +856,15 @@ TEST_F(FilterUtilsTest, MetricMissingPercentile) {
   }
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 
   // But calling for metric 2 should be fine.
   data_filter.set_value_key(kmetric_2_key);
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-
-      run_info, HelperCreateSampleBatches(), data_filter, false, &tmp)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, MetricMissingKey) {
@@ -623,13 +874,13 @@ TEST_F(FilterUtilsTest, MetricMissingKey) {
   std::vector<DataPoint> tmp;
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 
   data_filter.set_percentile_milli_rank(kpercentile_milli_rank[0]);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &tmp)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &tmp)));
 }
 
 TEST_F(FilterUtilsTest, SamplePointMetricMissingValue) {
@@ -647,14 +898,14 @@ TEST_F(FilterUtilsTest, SamplePointMetricMissingValue) {
   clear_sample_batches.push_back(&metric_2_batch);
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), clear_sample_batches, data_filter, false,
-      &results)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(), clear_sample_batches,
+      data_filter, false, &results)));
 
   // Add value then should return success.
   keyed_value->set_value(2);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), clear_sample_batches, data_filter, false,
-      &results)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(), clear_sample_batches,
+      data_filter, false, &results)));
 }
 
 TEST_F(FilterUtilsTest, SamplePointMetricMissingValueKey) {
@@ -672,14 +923,14 @@ TEST_F(FilterUtilsTest, SamplePointMetricMissingValueKey) {
   clear_sample_batches.push_back(&metric_2_batch);
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), clear_sample_batches, data_filter, false,
-      &results)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(), clear_sample_batches,
+      data_filter, false, &results)));
 
   // Add value key then should return success.
   keyed_value->set_value_key(kmetric_2_key);
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), clear_sample_batches, data_filter, false,
-      &results)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(), clear_sample_batches,
+      data_filter, false, &results)));
 }
 
 TEST_F(FilterUtilsTest, IgnoreRangeMissingRange) {
@@ -695,7 +946,8 @@ TEST_F(FilterUtilsTest, IgnoreRangeMissingRange) {
   }
 
   ASSERT_FALSE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &results)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &results)));
 }
 
 TEST_F(FilterUtilsTest, NoIgnoreRanges) {
@@ -708,7 +960,8 @@ TEST_F(FilterUtilsTest, NoIgnoreRanges) {
   run_info.clear_ignore_range_list();
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, HelperCreateSampleBatches(), data_filter, false, &results)));
+      HelperCreateBenchmarkInfo(), run_info, HelperCreateSampleBatches(),
+      data_filter, false, &results)));
 
   // Ignore range should have been ignored, all points should exist.
   ASSERT_EQ(HelperCreateMetric1Values(), results);
@@ -721,8 +974,21 @@ TEST_F(FilterUtilsTest, Metric1SamplePoints) {
   std::vector<DataPoint> results;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &results)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &results)));
+
+  ASSERT_EQ(HelperCreateMetric1ValuesNotInIgnoreRange(), results);
+}
+
+TEST_F(FilterUtilsTest, Metric1LabelSamplePoints) {
+  DataFilter data_filter;
+  data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
+  data_filter.set_label(kmetric_1_label);
+  std::vector<DataPoint> results;
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &results)));
 
   ASSERT_EQ(HelperCreateMetric1ValuesNotInIgnoreRange(), results);
 }
@@ -734,8 +1000,20 @@ TEST_F(FilterUtilsTest, Metric2SamplePoints) {
   std::vector<DataPoint> results;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &results)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &results)));
+  ASSERT_EQ(HelperCreateMetric2ValuesNotInIgnoreRange(), results);
+}
+
+TEST_F(FilterUtilsTest, Metric2LabelSamplePoints) {
+  DataFilter data_filter;
+  data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
+  data_filter.set_label(kmetric_2_label);
+  std::vector<DataPoint> results;
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &results)));
   ASSERT_EQ(HelperCreateMetric2ValuesNotInIgnoreRange(), results);
 }
 
@@ -746,8 +1024,20 @@ TEST_F(FilterUtilsTest, Metric3SamplePoints) {
   std::vector<DataPoint> results;
 
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-      &results)));
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &results)));
+  ASSERT_EQ(HelperCreateMetric3ValuesNotInIgnoreRange(), results);
+}
+
+TEST_F(FilterUtilsTest, Metric3LabelSamplePoints) {
+  DataFilter data_filter;
+  data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
+  data_filter.set_label(kmetric_3_label);
+  std::vector<DataPoint> results;
+
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+      HelperCreateSampleBatches(), data_filter, false, &results)));
   ASSERT_EQ(HelperCreateMetric3ValuesNotInIgnoreRange(), results);
 }
 
@@ -756,6 +1046,7 @@ TEST_F(FilterUtilsTest, Aggregates) {
     std::string test_name;
     mako::DataFilter_DataType data_type;
     std::string metric_name;
+    std::string metric_label;
     double expected_value;
     int pmr;
   };
@@ -764,57 +1055,65 @@ TEST_F(FilterUtilsTest, Aggregates) {
       {
           // Run Aggregates
           {"BenchmarkScore", mako::DataFilter::BENCHMARK_SCORE,
-           kmetric_1_key, krun_benchmark_score},
+           kmetric_1_key, kmetric_1_label, krun_benchmark_score},
           {"CustomAggregate1", mako::DataFilter::CUSTOM_AGGREGATE,
-           kcustom_aggregate_1_key, kcustom_aggregate_1_value},
+           kcustom_aggregate_1_key, kcustom_aggregate_1_label,
+           kcustom_aggregate_1_value},
           {"CustomAggregate2", mako::DataFilter::CUSTOM_AGGREGATE,
-           kcustom_aggregate_2_key, kcustom_aggregate_2_value},
+           kcustom_aggregate_2_key, kcustom_aggregate_2_label,
+           kcustom_aggregate_2_value},
           {"ErrorCount", mako::DataFilter::ERROR_COUNT, kmetric_1_key,
-           kerror_count},
+           kmetric_1_label, kerror_count},
 
           // Metric 1 Aggregates
           {"Count1", mako::DataFilter::METRIC_AGGREGATE_COUNT,
-           kmetric_1_key, kmetric_1_count},
+           kmetric_1_key, kmetric_1_label, kmetric_1_count},
           {"Min1", mako::DataFilter::METRIC_AGGREGATE_MIN, kmetric_1_key,
-           kmetric_1_min},
+           kmetric_1_label, kmetric_1_min},
           {"Max1", mako::DataFilter::METRIC_AGGREGATE_MAX, kmetric_1_key,
-           kmetric_1_max},
+           kmetric_1_label, kmetric_1_max},
           {"Mean1", mako::DataFilter::METRIC_AGGREGATE_MEAN, kmetric_1_key,
-           kmetric_1_mean},
+           kmetric_1_label, kmetric_1_mean},
           {"Median1", mako::DataFilter::METRIC_AGGREGATE_MEDIAN,
-           kmetric_1_key, kmetric_1_median},
+           kmetric_1_key, kmetric_1_label, kmetric_1_median},
           {"Stddev1", mako::DataFilter::METRIC_AGGREGATE_STDDEV,
-           kmetric_1_key, kmetric_1_stddev},
+           kmetric_1_key, kmetric_1_label, kmetric_1_stddev},
           {"Mad1", mako::DataFilter::METRIC_AGGREGATE_MAD, kmetric_1_key,
-           kmetric_1_mad},
+           kmetric_1_label, kmetric_1_mad},
           {"Percentile1_0", mako::DataFilter::METRIC_AGGREGATE_PERCENTILE,
-           kmetric_1_key, kmetric_1_percentiles[0], kpercentile_milli_rank[0]},
+           kmetric_1_key, kmetric_1_label, kmetric_1_percentiles[0],
+           kpercentile_milli_rank[0]},
           {"Percentile1_1", mako::DataFilter::METRIC_AGGREGATE_PERCENTILE,
-           kmetric_1_key, kmetric_1_percentiles[1], kpercentile_milli_rank[1]},
+           kmetric_1_key, kmetric_1_label, kmetric_1_percentiles[1],
+           kpercentile_milli_rank[1]},
           {"Percentile1_2", mako::DataFilter::METRIC_AGGREGATE_PERCENTILE,
-           kmetric_1_key, kmetric_1_percentiles[2], kpercentile_milli_rank[2]},
+           kmetric_1_key, kmetric_1_label, kmetric_1_percentiles[2],
+           kpercentile_milli_rank[2]},
 
           // Metric 2 Aggregates
           {"Count2", mako::DataFilter::METRIC_AGGREGATE_COUNT,
-           kmetric_2_key, kmetric_2_count},
+           kmetric_2_key, kmetric_2_label, kmetric_2_count},
           {"Min2", mako::DataFilter::METRIC_AGGREGATE_MIN, kmetric_2_key,
-           kmetric_2_min},
+           kmetric_2_label, kmetric_2_min},
           {"Max2", mako::DataFilter::METRIC_AGGREGATE_MAX, kmetric_2_key,
-           kmetric_2_max},
+           kmetric_2_label, kmetric_2_max},
           {"Mean2", mako::DataFilter::METRIC_AGGREGATE_MEAN, kmetric_2_key,
-           kmetric_2_mean},
+           kmetric_2_label, kmetric_2_mean},
           {"Median2", mako::DataFilter::METRIC_AGGREGATE_MEDIAN,
-           kmetric_2_key, kmetric_2_median},
+           kmetric_2_key, kmetric_2_label, kmetric_2_median},
           {"Stddev2", mako::DataFilter::METRIC_AGGREGATE_STDDEV,
-           kmetric_2_key, kmetric_2_stddev},
+           kmetric_2_key, kmetric_2_label, kmetric_2_stddev},
           {"Mad2", mako::DataFilter::METRIC_AGGREGATE_MAD, kmetric_2_key,
-           kmetric_2_mad},
+           kmetric_2_label, kmetric_2_mad},
           {"Percentile2_0", mako::DataFilter::METRIC_AGGREGATE_PERCENTILE,
-           kmetric_2_key, kmetric_2_percentiles[0], kpercentile_milli_rank[0]},
+           kmetric_2_key, kmetric_2_label, kmetric_2_percentiles[0],
+           kpercentile_milli_rank[0]},
           {"Percentile2_1", mako::DataFilter::METRIC_AGGREGATE_PERCENTILE,
-           kmetric_2_key, kmetric_2_percentiles[1], kpercentile_milli_rank[1]},
+           kmetric_2_key, kmetric_2_label, kmetric_2_percentiles[1],
+           kpercentile_milli_rank[1]},
           {"Percentile2_2", mako::DataFilter::METRIC_AGGREGATE_PERCENTILE,
-           kmetric_2_key, kmetric_2_percentiles[2], kpercentile_milli_rank[2]},
+           kmetric_2_key, kmetric_2_label, kmetric_2_percentiles[2],
+           kpercentile_milli_rank[2]},
       },
   };
 
@@ -826,18 +1125,33 @@ TEST_F(FilterUtilsTest, Aggregates) {
     std::vector<DataPoint> results;
 
     EXPECT_TRUE(Success(mako::internal::ApplyFilter(
-        HelperCreateRunInfo(), HelperCreateSampleBatches(), data_filter, false,
-        &results)))
-        << test.test_name;
+        HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+        HelperCreateSampleBatches(), data_filter, false, &results)))
+        << test.test_name << " using value_key";
     EXPECT_EQ(PackInPair(test.expected_value), results) << test.test_name;
+  }
+
+  for (const auto& test : tests) {
+    DataFilter data_filter;
+    data_filter.set_data_type(test.data_type);
+    data_filter.set_label(test.metric_label);
+    data_filter.set_percentile_milli_rank(test.pmr);
+    std::vector<DataPoint> results;
+    
+    EXPECT_TRUE(Success(mako::internal::ApplyFilter(
+        HelperCreateBenchmarkInfo(), HelperCreateRunInfo(),
+        HelperCreateSampleBatches(), data_filter, false, &results)))
+        << test.test_name;
+    EXPECT_EQ(PackInPair(test.expected_value), results)
+        << test.test_name << " using label";
   }
 }
 
-TEST_F(FilterUtilsTest, SortedResults) {
-  std::string metric_name = "my_metric_name";
+TEST_F(FilterUtilsTest, SortedResultsValueKey) {
+  std::string metric_key = "my_metric_key";
   DataFilter data_filter;
   data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
-  data_filter.set_value_key(metric_name);
+  data_filter.set_value_key(metric_key);
   std::vector<DataPoint> results;
 
   std::vector<DataPoint> metric_values{
@@ -858,7 +1172,7 @@ TEST_F(FilterUtilsTest, SortedResults) {
     SamplePoint* point = batch.add_sample_point_list();
     point->set_input_value(a.x_value);
     KeyedValue* value = point->add_metric_value_list();
-    value->set_value_key(metric_name);
+    value->set_value_key(metric_key);
     value->set_value(a.y_value);
   }
   sample_batches.push_back(&batch);
@@ -868,13 +1182,68 @@ TEST_F(FilterUtilsTest, SortedResults) {
 
   // Sort = False, so should NOT be equal.
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, sample_batches, data_filter, false, &results)));
+      HelperCreateBenchmarkInfo(), run_info, sample_batches, data_filter, false,
+      &results)));
   ASSERT_NE(metric_values, results);
 
   // Sort = True, so should be equal.
   results.clear();
   ASSERT_TRUE(Success(mako::internal::ApplyFilter(
-      run_info, sample_batches, data_filter, true, &results)));
+      HelperCreateBenchmarkInfo(), run_info, sample_batches, data_filter, true,
+      &results)));
+  ASSERT_EQ(metric_values, results);
+}
+
+TEST_F(FilterUtilsTest, SortedResultsLabel) {
+  std::string metric_key = "my_metric_key";
+  std::string metric_label = "my_metric_label";
+  DataFilter data_filter;
+  data_filter.set_data_type(mako::DataFilter::METRIC_SAMPLEPOINTS);
+  data_filter.set_label(metric_label);
+  std::vector<DataPoint> results;
+
+  std::vector<DataPoint> metric_values{
+      DataPoint(10, 2), DataPoint(1000, 4), DataPoint(1, 9),
+      DataPoint(4, 8),  DataPoint(2, 1),
+  };
+
+  // Clear all ignore regions.
+  auto run_info = HelperCreateRunInfo();
+  run_info.clear_ignore_range_list();
+
+  // Add data to SampleBatch
+  std::vector<const SampleBatch*> sample_batches;
+  SampleBatch batch;
+  batch.set_benchmark_key(kbenchmark_key);
+  batch.set_run_key(krun_key);
+  for (auto& a : metric_values) {
+    SamplePoint* point = batch.add_sample_point_list();
+    point->set_input_value(a.x_value);
+    KeyedValue* value = point->add_metric_value_list();
+    value->set_value_key(metric_key);
+    value->set_value(a.y_value);
+  }
+  sample_batches.push_back(&batch);
+
+  // Add metric label mapping to BenchmarkInfo
+  BenchmarkInfo benchmark_info;
+  *benchmark_info.add_metric_info_list() =
+      HelperCreateValueInfo(metric_key, metric_label);
+
+  // Sort the metrics
+  std::sort(metric_values.begin(), metric_values.end(), CompareDataPoint);
+
+  // Sort = False, so should NOT be equal.
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      benchmark_info, run_info, sample_batches, data_filter, false,
+      &results)));
+  ASSERT_NE(metric_values, results);
+
+  // Sort = True, so should be equal.
+  results.clear();
+  ASSERT_TRUE(Success(mako::internal::ApplyFilter(
+      benchmark_info, run_info, sample_batches, data_filter, true,
+      &results)));
   ASSERT_EQ(metric_values, results);
 }
 

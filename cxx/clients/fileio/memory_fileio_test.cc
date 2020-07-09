@@ -13,11 +13,13 @@
 // limitations under the license.
 #include "cxx/clients/fileio/memory_fileio.h"
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "spec/proto/mako.pb.h"
 
 namespace mako {
 namespace memory_fileio {
+namespace {
 
 class MemoryFileioTest : public ::testing::Test {
  protected:
@@ -367,5 +369,7 @@ TEST(FileIOTest, WriteStringReadProto) {
   ASSERT_EQ(17, k2.value());
   ASSERT_TRUE(fio.Close()) << fio.Error();
 }
+
+}  // namespace
 }  // namespace memory_fileio
 }  // namespace mako

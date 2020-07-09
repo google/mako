@@ -130,8 +130,9 @@ class Downsampler : public mako::Downsampler {
   // Perform downsampling
   // Returned std::string contains error message, if empty then operation was
   // successful.
-  std::string Downsample(const mako::DownsamplerInput& downsampler_input,
-                    mako::DownsamplerOutput* downsampler_output) override;
+  std::string Downsample(
+      const mako::DownsamplerInput& downsampler_input,
+      mako::DownsamplerOutput* downsampler_output) override;
 
  private:
   // Set the PRNG seed. This is primarily to make the PRNG deterministic for
@@ -164,11 +165,12 @@ mako::SampleBatch* GetNewBatch(
     mako::DownsamplerOutput* downsampler_output, int64_t* batch_size_bytes);
 
 template <typename T>
-static std::string AddBatch(const std::string& benchmark_key, const std::string& run_key,
-                       const int batch_size_max, const int field_number,
-                       T* record, mako::SampleBatch** batch,
-                       int64_t* batch_size_bytes,
-                       mako::DownsamplerOutput* downsampler_output) {
+static std::string AddBatch(const std::string& benchmark_key,
+                            const std::string& run_key,
+                            const int batch_size_max, const int field_number,
+                            T* record, mako::SampleBatch** batch,
+                            int64_t* batch_size_bytes,
+                            mako::DownsamplerOutput* downsampler_output) {
   mako::internal::StripAuxData(record);
   int64_t record_size_bytes = record->ByteSizeLong();
   // See https://developers.google.com/protocol-buffers/docs/encoding#embedded

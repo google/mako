@@ -70,6 +70,12 @@ message SudoStorageRequest {
     CREATE_SAMPLE_BATCH = 11;
     QUERY_SAMPLE_BATCH = 12;
     DELETE_SAMPLE_BATCH = 13;
+
+    CREATE_PROJECT_INFO = 14;
+    UPDATE_PROJECT_INFO = 15;
+    GET_PROJECT_INFO = 16;
+    LIST_PROJECT_INFO = 17;
+    QUERY_PROJECT_INFO = 18;
   }
   optional Type type = 1;
   optional string run_as = 2;
@@ -80,6 +86,8 @@ message SudoStorageRequest {
     mako.RunInfoQuery run_query = 6;
     mako.SampleBatch batch = 7;
     mako.SampleBatchQuery batch_query = 8;
+    mako.ProjectInfo project = 9;
+    mako.ProjectInfoQuery project_query = 10;
   }
 }
 
@@ -93,6 +101,7 @@ message BatchInsertDataRequest {
   repeated mako.BenchmarkInfo benchmark_info_list = 1;
   repeated mako.RunInfo run_info_list = 2;
   repeated mako.SampleBatch sample_batch_list = 3;
+  repeated mako.ProjectInfo project_info_list = 4;
 }
 
 message BatchInsertDataResponse {

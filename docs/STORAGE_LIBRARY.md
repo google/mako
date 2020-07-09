@@ -10,16 +10,19 @@ Authentication is required to use the Mako storage library. Read more at
 [AUTHENTICATION.md](AUTHENTICATION.md).
 
 The following objects can be manipulated using the Mako storage library:
-* BenchmarkInfo - corresponding to a Mako [benchmark](CONCEPTS.md#benchmarks)
-* RunInfo - corresponding to a Mako [run(CONCEPTS.md#runs)]
-* SampleBatch - a bundle of sample point data from a run. Each run has up to 6
-  of these.
+
+*   ProjectInfo - corresponding to a Mako [project](CONCEPTS.md#projects)
+*   BenchmarkInfo - corresponding to a Mako [benchmark](CONCEPTS.md#benchmarks)
+*   RunInfo - corresponding to a Mako [run](CONCEPTS.md#runs)
+*   SampleBatch - a bundle of sample point data from a run. Each run has up to 6
+    of these.
 
 > **NOTE** The definitions of each of those types can be found in
 > [mako.proto](../spec/proto/mako.proto), along with per-type documentation in
 > the comments.
 
-The following operations can be performed on objects of the above types:
+The following operations are common for the above types:
+
 * Query - fetch specific objects by key, or fetch all objects matching a filter.
 * Count - count objects matching a filter. This performs much better than a
   Query.
@@ -49,32 +52,32 @@ mentioned below, as well as in-file documentation.
 > server limits. If you're using the storage library directly, you'll have to
 > do this yourself.
 
-* A maximum of 100,000 runs per benchmark will retain sample data. If this
-  maximum is reached, the system will prune the oldest runs periodically in
-  order to maintain this limit for each benchmark. Pruned runs will have all
-  SampleBatches associated with the run deleted, but the RunInfo entity will
-  still be present (aggregates will be available, but individual data points
-  will be missing). Also see the benchmark's BenchmarkInfo.retained_run_tag
-  field to prevent special runs from getting deleted.
-* A maximum of 1000 RunInfo creations per hour for a single benchmark. This
-  limit is enforced via server failure response.
-* A maximum of 20 RunInfo.tags values per run. This limit is enforced via server
-  failure response.
-* A maximum of 1 MB for a single serialized BenchmarkInfo, RunInfo, or
-  SampleBatch. This limit is enforced via server failure response. The standard
-  Downsampler handles the size of SampleBatch data.
-* A maximum of 6 SampleBatchs per run . The limit is enforced via server failure
-  response. The standard Downsampler handles this.
-* A maximum of 50,000 metric values per run. This is the total count of
-  SamplePoint.metric_value_list fields populated for all SampleBatchs written
-  for a single run. The standard Downsampler handles this. The limit is enforced
-  via server failure response.
-* A maximum of 5,000 SampleErrors per run . The limit is enforced via server
-  failure response. The standard Downsampler handles this.
-* A maximum of 1000 Metrics (actually ValueInfos) per benchmark. This limit is
-  enforced via server failure response.
-* A maximum of 800 KB for SampleAnnotations per run. The limit is enforced in
-  the standard Downsampler by dropping annotations that exceed the limit.
+*   A maximum of 100,000 runs per benchmark will retain sample data. If this
+    maximum is reached, the system will prune the oldest runs periodically in
+    order to maintain this limit for each benchmark. Pruned runs will have all
+    SampleBatches associated with the run deleted, but the RunInfo entity will
+    still be present (aggregates will be available, but individual data points
+    will be missing). Also see the benchmark's BenchmarkInfo.retained_run_tag
+    field to prevent special runs from getting deleted.
+*   A maximum of 1000 RunInfo creations per hour for a single benchmark. This
+    limit is enforced via server failure response.
+*   A maximum of 20 RunInfo.tags values per run. This limit is enforced via
+    server failure response.
+*   A maximum of 1 MB for a single serialized ProjectInfo, BenchmarkInfo,
+    RunInfo, or SampleBatch. This limit is enforced via server failure response.
+    The standard Downsampler handles the size of SampleBatch data.
+*   A maximum of 6 SampleBatchs per run . The limit is enforced via server
+    failure response. The standard Downsampler handles this.
+*   A maximum of 50,000 metric values per run. This is the total count of
+    SamplePoint.metric_value_list fields populated for all SampleBatchs written
+    for a single run. The standard Downsampler handles this. The limit is
+    enforced via server failure response.
+*   A maximum of 5,000 SampleErrors per run . The limit is enforced via server
+    failure response. The standard Downsampler handles this.
+*   A maximum of 1000 Metrics (actually ValueInfos) per benchmark. This limit is
+    enforced via server failure response.
+*   A maximum of 800 KB for SampleAnnotations per run. The limit is enforced in
+    the standard Downsampler by dropping annotations that exceed the limit.
 
 ## Cursors and Limits
 

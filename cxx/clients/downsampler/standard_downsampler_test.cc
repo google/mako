@@ -22,7 +22,9 @@
 #include "glog/logging.h"
 #include "src/google/protobuf/descriptor.h"
 #include "src/google/protobuf/repeated_field.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "cxx/clients/fileio/memory_fileio.h"
 #include "cxx/internal/filter_utils.h"
@@ -89,7 +91,8 @@ int CountErrors(
 }
 
 SampleRecord CreateSampleRecord(
-    double input_value, const std::vector<std::pair<std::string, double>>& metrics,
+    double input_value,
+    const std::vector<std::pair<std::string, double>>& metrics,
     const std::vector<std::pair<std::string, std::string>>& aux_data = {}) {
   SampleRecord sr;
   SamplePoint* sp = sr.mutable_sample_point();
@@ -123,7 +126,7 @@ DownsamplerInput CreateDownsamplerInput(
   di.mutable_run_info()->set_run_key("run_key");
   di.mutable_run_info()->set_timestamp_ms(123456);
 
-  di.set_sample_error_count_max(kSampleErrorCountMax);
+  di.set_sample_error_count_max(sample_error_count_max);
   di.set_metric_value_count_max(metric_value_count_max);
   di.set_batch_size_max(batch_size_max);
 
@@ -772,8 +775,8 @@ std::vector<double> GetInputsWithMetric(
   std::vector<internal::DataPoint> results;
 
   auto err_str = mako::internal::ApplyFilter(
-      mako::RunInfo{}, batches.pointer_begin(), batches.pointer_end(),
-      data_filter, no_sort_data, &results);
+      mako::BenchmarkInfo{}, mako::RunInfo{}, batches.pointer_begin(),
+      batches.pointer_end(), data_filter, no_sort_data, &results);
 
   EXPECT_EQ("", err_str);
 
@@ -902,15 +905,15 @@ TEST_F(StandardMetricDownsamplerTest, SampleBatchSizeTest) {
   int expected_batch_size = expected_point_size + 2;
   int num_points = 1000 / expected_batch_size;
   for (int i = 0; i < num_points; ++i) {
-    std::string err = AddBatch("benchmark", "run", 1000, field->index(), &p, &batch,
-                          &calculated_batch_size, &out);
+    std::string err = AddBatch("benchmark", "run", 1000, field->index(), &p,
+                               &batch, &calculated_batch_size, &out);
     ASSERT_EQ("", err);
     ASSERT_EQ(expected_batch, batch) << "New batch created unexpectedly.";
     ASSERT_EQ(expected_batch_size * (i + 1), calculated_batch_size);
     ASSERT_EQ(expected_batch_size * (i + 1), batch->ByteSizeLong());
   }
-  std::string err = AddBatch("benchmark", "run", 1000, field->index(), &p, &batch,
-                        &calculated_batch_size, &out);
+  std::string err = AddBatch("benchmark", "run", 1000, field->index(), &p,
+                             &batch, &calculated_batch_size, &out);
   ASSERT_EQ("", err);
   ASSERT_NE(expected_batch, batch) << "New batch should have been created.";
 }
@@ -935,8 +938,9 @@ TEST_F(StandardMetricDownsamplerTest, PointBiggerThanSampleBatchMaxSizeTest) {
 
   int64_t calculated_batch_size = 0;
   auto field = batch->GetDescriptor()->FindFieldByName("sample_point_list");
-  std::string err = AddBatch("benchmark", "run", expected_point_size, field->index(),
-                        &p, &batch, &calculated_batch_size, &out);
+  std::string err =
+      AddBatch("benchmark", "run", expected_point_size, field->index(), &p,
+               &batch, &calculated_batch_size, &out);
   ASSERT_NE("", err) << "Point should have been too big to put in a batch";
   ASSERT_EQ(0, batch->sample_point_list_size());
 }
@@ -1221,14 +1225,19 @@ TEST_F(StandardMetricDownsamplerTest, UniformSampleEdgeCase) {
   // important, as long as kMetricValueCountMax/2 is not divisible by 3.
   constexpr int kMetricValueCountMax = 5000;
 
+  // Since the downsampler is stochastic, there's a chance a degenerate
+  // downsampling could produce a failing test. We make the downsampling
+  // deterministic by hardcoding the seed.
+  ReseedDownsampler();
+
   std::vector<std::string> file_names;
-  for (int i=0; i < kNumSampleFiles; i++) {
+  for (int i = 0; i < kNumSampleFiles; i++) {
     std::string file_name = absl::StrCat("file", i);
     file_names.push_back(file_name);
     mako::memory_fileio::FileIO fio;
     ASSERT_TRUE(fio.Open(file_name, fio.kWrite));
-    for (int j=0; j < kNumPointsPerFile; j++) {
-      int index = j*kNumSampleFiles + i;
+    for (int j = 0; j < kNumPointsPerFile; j++) {
+      int index = j * kNumSampleFiles + i;
       // Each file contains points falling into two metric sets. This makes each
       // metric set's fair share of metrics kMetricValueCountMax / 2.
       // One of the points has 3 metrics. Since kMetricValueCountMax / 2 is not
@@ -1259,6 +1268,95 @@ TEST_F(StandardMetricDownsamplerTest, UniformSampleEdgeCase) {
     }
   }
   ASSERT_LT(min_input_value, kNumPointsPerFile / 10);
+}
+
+TEST_F(StandardMetricDownsamplerTest, FirstNErrorsSaved) {
+  constexpr int kMaxErrors = 10000;
+
+  std::vector<std::string> file_names;
+  std::string file_name = "file";
+  file_names.push_back(file_name);
+  mako::memory_fileio::FileIO fio;
+  ASSERT_TRUE(fio.Open(file_name, fio.kWrite));
+
+  // Create kMaxErrors errors with input value 0, then kMaxErrors errors with
+  // input value 1.
+  for (int i = 0; i < kMaxErrors; i++) {
+    mako::SampleRecord record;
+    auto* sample_error = record.mutable_sample_error();
+    sample_error->set_input_value(0);
+    sample_error->set_error_message("error");
+    ASSERT_TRUE(fio.Write(record));
+  }
+  for (int i = 0; i < kMaxErrors; i++) {
+    mako::SampleRecord record;
+    auto* sample_error = record.mutable_sample_error();
+    sample_error->set_input_value(1);
+    sample_error->set_error_message("error");
+    ASSERT_TRUE(fio.Write(record));
+  }
+  ASSERT_TRUE(fio.Close());
+  mako::DownsamplerInput in = CreateDownsamplerInput(file_names);
+
+  in.set_sample_error_count_max(kMaxErrors);
+  mako::DownsamplerOutput out;
+  ASSERT_TRUE(d_.Downsample(in, &out).empty());
+
+  // If the downsampling is uniform, there should be some errors in the output
+  // with both input values.
+  absl::flat_hash_set<double> input_values;
+  for (const auto& batch : out.sample_batch_list()) {
+    for (const auto& sample_error : batch.sample_error_list()) {
+      input_values.insert(sample_error.input_value());
+    }
+  }
+
+  EXPECT_THAT(input_values, testing::UnorderedElementsAre(0));
+}
+
+TEST_F(StandardMetricDownsamplerTest, ErrorsSampledRandomly) {
+  constexpr int kMaxErrors = 10000;
+
+  std::vector<std::string> file_names;
+  std::string file_name = "file";
+  file_names.push_back(file_name);
+  mako::memory_fileio::FileIO fio;
+  ASSERT_TRUE(fio.Open(file_name, fio.kWrite));
+
+  // Create kMaxErrors errors with input value 0, then kMaxErrors errors with
+  // input value 1.
+  for (int i = 0; i < kMaxErrors; i++) {
+    mako::SampleRecord record;
+    auto* sample_error = record.mutable_sample_error();
+    sample_error->set_input_value(0);
+    sample_error->set_error_message("error");
+    ASSERT_TRUE(fio.Write(record));
+  }
+  for (int i = 0; i < kMaxErrors; i++) {
+    mako::SampleRecord record;
+    auto* sample_error = record.mutable_sample_error();
+    sample_error->set_input_value(1);
+    sample_error->set_error_message("error");
+    ASSERT_TRUE(fio.Write(record));
+  }
+  ASSERT_TRUE(fio.Close());
+  mako::DownsamplerInput in = CreateDownsamplerInput(file_names);
+
+  in.set_sample_error_count_max(kMaxErrors);
+  mako::DownsamplerOutput out;
+  ASSERT_TRUE(d_.Downsample(in, &out).empty());
+
+  // If the downsampling is uniform, there should be some errors in the output
+  // with both input values.
+  absl::flat_hash_set<double> input_values;
+  for (const auto& batch : out.sample_batch_list()) {
+    for (const auto& sample_error : batch.sample_error_list()) {
+      input_values.insert(sample_error.input_value());
+    }
+  }
+
+  // TODO(b/153887144): support sampling errors randomly in Mako.
+  EXPECT_THAT(input_values, testing::UnorderedElementsAre(0));
 }
 
 }  // namespace downsampler

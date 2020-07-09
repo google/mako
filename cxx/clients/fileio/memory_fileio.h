@@ -23,6 +23,7 @@
 #include "src/google/protobuf/message.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/strings/string_view.h"
 #include "cxx/spec/fileio.h"
 
 namespace mako {
@@ -43,12 +44,13 @@ class FileIO : public mako::FileIO {
 
   // Open opens the given file path.
   // See interface docs for more information.
-  bool Open(const std::string& path, mako::FileIO::AccessMode mode) override;
+  bool Open(absl::string_view path,
+            mako::FileIO::AccessMode mode) override;
 
   // Write appends the given record to the opened file.
   // See interface docs for more information.
   bool Write(const google::protobuf::Message& record) override;
-  bool Write(const std::string& serialized_record) override;
+  bool Write(absl::string_view serialized_record) override;
 
   // Read reads the next record in the opened file
   // See interface docs for more information.
@@ -69,7 +71,7 @@ class FileIO : public mako::FileIO {
 
   // Delete deletes the given file.
   // See interface docs for more information.
-  bool Delete(const std::string& path) override;
+  bool Delete(absl::string_view path) override;
 
   // Returns a default instance.
   // See interface docs for more information.
@@ -88,27 +90,27 @@ class FileIO : public mako::FileIO {
 
   // Injects errors. If these error strings are nonempty, then any calls to the
   // corresponding FileIO method will fail with this error.
-  void set_open_error(const std::string& open_error) {
-    open_error_ = open_error;
+  void set_open_error(absl::string_view open_error) {
+    open_error_ = std::string(open_error);
   }
-  void set_read_error(const std::string& read_error) {
-    read_error_ = read_error;
+  void set_read_error(absl::string_view read_error) {
+    read_error_ = std::string(read_error);
   }
-  void set_write_error(const std::string& write_error) {
-    write_error_ = write_error;
+  void set_write_error(absl::string_view write_error) {
+    write_error_ = std::string(write_error);
   }
-  void set_delete_error(const std::string& delete_error) {
-    delete_error_ = delete_error;
+  void set_delete_error(absl::string_view delete_error) {
+    delete_error_ = std::string(delete_error);
   }
-  void set_close_error(const std::string& close_error) {
-    close_error_ = close_error;
+  void set_close_error(absl::string_view close_error) {
+    close_error_ = std::string(close_error);
   }
 
  private:
   // set value to be returned by Error() to msg
-  void SetError(const std::string& err_msg);
+  void SetError(absl::string_view err_msg);
   // return vector for path_ or nullptr.
-  File* GetFileForPath(const std::string& path);
+  File* GetFileForPath(absl::string_view path);
   // error prefix useful for debugging
   std::string error_prefix_;
   // if true, at EOF
@@ -132,7 +134,7 @@ class FileIO : public mako::FileIO {
   static absl::Mutex files_mu_;
   // Mapping from file path to list of records written to that path.
   static absl::flat_hash_map<std::string, std::unique_ptr<FileIO::File> >*
-      files_ GUARDED_BY(files_mu_);
+      files_ ABSL_GUARDED_BY(files_mu_);
 
 #ifndef SWIG
   // Not copyable.

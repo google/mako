@@ -46,8 +46,8 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/golang/protobuf/proto"
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
+	"github.com/golang/protobuf/proto"
 	wrap "github.com/google/mako/cxx/clients/storage/go/fakestorage_wrap"
 	"github.com/google/mako/go/internal/wrappedstorage"
 )
@@ -101,6 +101,23 @@ func (s *FakeStorage) FakeStageBenchmarks(benchmarks []*pgpb.BenchmarkInfo) erro
 	}
 
 	s.wrapper.FakeStageBenchmarks(benchmarksBytes)
+	// go/mako-go-swig-finalizer-problem
+	runtime.KeepAlive(s)
+	return nil
+}
+
+// FakeStageProjects inserts the projects in storage.
+func (s *FakeStorage) FakeStageProjects(projects []*pgpb.ProjectInfo) error {
+	projectsBytes := make([][]byte, len(projects))
+	for i, project := range projects {
+		t, err := proto.Marshal(project)
+		if err != nil {
+			return fmt.Errorf("could not marshal ProjectInfo (%v): %v", project, err)
+		}
+		projectsBytes[i] = t
+	}
+
+	s.wrapper.FakeStageProjects(projectsBytes)
 	// go/mako-go-swig-finalizer-problem
 	runtime.KeepAlive(s)
 	return nil

@@ -49,6 +49,7 @@ type Storage interface {
 	// ModificationResponse.Status.
 	UpdateProjectInfo(context.Context, *pgpb.ProjectInfo) (*pgpb.ModificationResponse, error)
 
+	// TODO(b/145807390): Clean up GetProjectInfo.
 	// GetProjectInfo gets ProjectInfo record that match the ProjectInfo.project_name.
 	//
 	// The ProjectInfoGetResponse will be populated with results.
@@ -56,7 +57,23 @@ type Storage interface {
 	// The boolean returned represents success (true) or failure (false) of the
 	// operation. More details about the success/failure will be in
 	// ProjectInfoGetResponse.Status.
+	//
+	// DEPRECATED - Use QueryProjectInfo instead.
 	GetProjectInfo(context.Context, *pgpb.ProjectInfo) (*pgpb.ProjectInfoGetResponse, error)
+
+	// QueryProjectInfo queries the storage system and returns ProjectInfo
+	// results.
+	//
+	// You'll always get the best performance when supplying the project_name, if
+	// that is set, all other query params will be ignored.
+	//
+	// The ProjectInfoQueryResponse will be populated with results.
+	//
+	// The returned error will be nil if the request was successful, otherwise it
+	// will contain the reason that the request failed (error.Error() contains
+	// the same information as ProjectInfoQueryResponse.Status.fail_message
+	// during error).
+	QueryProjectInfo(context.Context, *pgpb.ProjectInfoQuery) (*pgpb.ProjectInfoQueryResponse, error)
 
 	// CreateBenchmarkInfo creates a new BenchmarkInfo record.
 	//

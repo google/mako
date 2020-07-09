@@ -166,13 +166,13 @@ class IsOkAndHoldsMatcherImpl : public testing::MatcherInterface<StatusOrType> {
     }
 
     testing::StringMatchResultListener inner_listener;
-    const bool matches = inner_matcher_.MatchAndExplain(
-        actual_value.value(), &inner_listener);
+    const bool matches =
+        inner_matcher_.MatchAndExplain(actual_value.value(), &inner_listener);
     const std::string inner_explanation = inner_listener.str();
     if (!inner_explanation.empty()) {
       *result_listener << "which contains value "
-                       << testing::PrintToString(actual_value.value())
-                       << ", " << inner_explanation;
+                       << testing::PrintToString(actual_value.value()) << ", "
+                       << inner_explanation;
     }
     return matches;
   }
@@ -262,8 +262,9 @@ inline bool operator>=(const StatusCode& lhs, const StatusCode& rhs) {
 // used as a Matcher<T>.
 class StatusIsMatcherCommonImpl {
  public:
-  StatusIsMatcherCommonImpl(testing::Matcher<StatusCode> code_matcher,
-                            testing::Matcher<const std::string&> message_matcher)
+  StatusIsMatcherCommonImpl(
+      testing::Matcher<StatusCode> code_matcher,
+      testing::Matcher<const std::string&> message_matcher)
       : code_matcher_(std::move(code_matcher)),
         message_matcher_(std::move(message_matcher)) {}
 

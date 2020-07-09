@@ -39,24 +39,11 @@
 
 %include "std_string.i"
 
-namespace std {
-  class string;
+%typemap(typecheck) std::string = char *;
+%typemap(typecheck) const std::string & = char *;
 
-  %typemap(typecheck) string = char *;
-  %typemap(typecheck) const string & = char *;
-
-}
-
-class string;
-
-%typemap(typecheck) string = char *;
-%typemap(typecheck) const string & = char *;
-
-%apply std::string { string }
-%apply const std::string & { const string & }
-
-%apply const string & {string &};
-%apply const string & {string *};
+%apply const std::string & {std::string &};
+%apply const std::string & {std::string *};
 
 %apply bool * OUTPUT            { bool * OUTPUT2 };
 %apply int * OUTPUT             { int * OUTPUT2 };

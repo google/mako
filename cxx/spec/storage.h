@@ -51,7 +51,7 @@ class Storage {
   //
   // Update a ProjectInfo record.
   //
-  // The ProjectInfo.project_name will be used to select the benchmark that
+  // The ProjectInfo.project_name will be used to select the project that
   // you wish to update. All information in the provided ProjectInfo
   // will overwrite the existing record.
   //
@@ -76,6 +76,22 @@ class Storage {
   // ProjectInfoGetResponse.Status.
   virtual bool GetProjectInfo(const mako::ProjectInfo& project_info,
                               mako::ProjectInfoGetResponse* get_response) {
+    return false;
+  }
+
+  // Queries for ProjectInfo records that match the ProjectInfoQuery.
+  //
+  // You'll always get the best performance when supplying the project_name. If
+  // that is set, all other query params will be ignored.
+  //
+  // The ProjectInfoQueryResponse will be populated with results.
+  //
+  // The boolean returned represents success (true) or failure (false) of the
+  // operation. More details about the success/failure will be in
+  // ProjectInfoQueryResponse.Status.
+  virtual bool QueryProjectInfo(
+      const mako::ProjectInfoQuery& project_info_query,
+      mako::ProjectInfoQueryResponse* query_response) {
     return false;
   }
 

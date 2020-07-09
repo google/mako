@@ -23,9 +23,10 @@
 
 namespace mako {
 namespace internal {
-
+namespace {
 constexpr char kNoError[] = "";
 constexpr int kDefaultQueryLimit = 100;
+}  // namespace
 
 std::string AnalyzerOptimizer::AddAnalyzer(
     const mako::AnalyzerHistoricQueryOutput& query_output,
@@ -38,7 +39,7 @@ std::string AnalyzerOptimizer::AddAnalyzer(
 
 std::string AnalyzerOptimizer::OrderAnalyzers(
     std::vector<mako::Analyzer*>* analyzers) {
-  for (auto pair : analyzer_to_query_) {
+  for (const auto& pair : analyzer_to_query_) {
     analyzers->push_back(pair.first);
   }
   return kNoError;
@@ -129,9 +130,14 @@ std::string AnalyzerOptimizer::AddDataForQuery(
   }
   // Log first/last keys
   if (!response.run_info_list_size()) {
-    LOG_STRING(WARNING, warnings)
-        << "No results were returned from RunInfoQuery passed to analyzer: "
-        << query.ShortDebugString();
+    std::ostringstream stream;
+    stream << "No results were returned from RunInfoQuery passed to analyzer: "
+           << query.ShortDebugString();
+    if (warnings) {
+      warnings->push_back(stream.str());
+    } else {
+      LOG(WARNING) << stream.str();
+    }
     return kNoError;
   }
   LOG(INFO) << "Analyzer's run query: " << query.ShortDebugString();
@@ -163,10 +169,15 @@ std::string AnalyzerOptimizer::AddHistoricalRuns(
     }
 
     if (run_info.run_key() == current_run_bundle_.run_info().run_key()) {
-      LOG_STRING(WARNING, warnings)
-          << "Query: " << query.ShortDebugString()
-          << " returned current run_key: " << run_info.run_key()
-          << ". This is probably not what you want.";
+      std::ostringstream stream;
+      stream << "Query: " << query.ShortDebugString()
+             << " returned current run_key: " << run_info.run_key()
+             << ". This is probably not what you want.";
+      if (warnings) {
+        warnings->push_back(stream.str());
+      } else {
+        LOG(WARNING) << stream.str();
+      }
     }
 
     mako::RunBundle* run_bundle;
@@ -182,12 +193,17 @@ std::string AnalyzerOptimizer::AddHistoricalRuns(
       *run_bundle->mutable_benchmark_info() =
           current_run_bundle_.benchmark_info();
     } else {
-      LOG_STRING(ERROR, warnings)
-          << "Query: " << query.ShortDebugString()
-          << " returned a RunInfo result from a different benchmark key ("
-          << run_info.benchmark_key() << ") than you are currently testing ("
-          << current_run_bundle_.benchmark_info().benchmark_key()
-          << "). This is probably not what you want.";
+      std::ostringstream stream;
+      stream << "Query: " << query.ShortDebugString()
+             << " returned a RunInfo result from a different benchmark key ("
+             << run_info.benchmark_key() << ") than you are currently testing ("
+             << current_run_bundle_.benchmark_info().benchmark_key()
+             << "). This is probably not what you want.";
+      if (warnings) {
+        warnings->push_back(stream.str());
+      } else {
+        LOG(WARNING) << stream.str();
+      }
       run_bundle->mutable_benchmark_info()->set_benchmark_key(
           run_info.benchmark_key());
     }

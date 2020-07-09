@@ -60,6 +60,7 @@ class Storage : public mako::Storage {
     int metric_value_count_max = 50000;
     int error_count_max = 5000;
     int batch_size_max = 1000000;
+    int project_limit_max = 3000;
     int bench_limit_max = 3000;
     int run_limit_max = 3000;
     int batch_limit_max = 100;
@@ -70,19 +71,17 @@ class Storage : public mako::Storage {
 
   Storage(int metric_value_count_max, int error_count_max, int batch_size_max,
           int bench_limit_max, int run_limit_max, int batch_limit_max,
-          absl::string_view hostname = "")
-      : metric_value_count_max_(metric_value_count_max),
-        error_count_max_(error_count_max),
-        batch_size_max_(batch_size_max),
-        bench_limit_max_(bench_limit_max),
-        run_limit_max_(run_limit_max),
-        batch_limit_max_(batch_limit_max),
-        hostname_(hostname) {}
+          absl::string_view hostname = "");
+
+  Storage(int metric_value_count_max, int error_count_max, int batch_size_max,
+          int project_limit_max, int bench_limit_max, int run_limit_max,
+          int batch_limit_max, absl::string_view hostname = "");
 
   explicit Storage(const Options& options)
       : metric_value_count_max_(options.metric_value_count_max),
         error_count_max_(options.error_count_max),
         batch_size_max_(options.batch_size_max),
+        project_limit_max_(options.project_limit_max),
         bench_limit_max_(options.bench_limit_max),
         run_limit_max_(options.run_limit_max),
         batch_limit_max_(options.batch_limit_max),
@@ -124,8 +123,41 @@ class Storage : public mako::Storage {
   // response's Status protobuf.
   //
   // More details can be found in interface documentation.
+  //
+  // TODO(b/152349398): Unlike other Mako entities, GetProjectInfo returns
+  // an empty project in the response rather than an error if project_name does
+  // not exist. Fix to conform to behavior of other entities once
+  // QueryProjectInfo is supported.
   bool GetProjectInfo(const mako::ProjectInfo& project_info,
                       mako::ProjectInfoGetResponse* response) override;
+
+  // Gets an existing ProjectInfo record in Mako storage via the
+  // StorageTransport.
+  //
+  // Returns false if message fails or backend fails. More details found in
+  // response's Status protobuf.
+  //
+  // More details can be found in interface documentation.
+  //
+  // TODO(b/152349398): Unlike other Mako entities, GetProjectInfoName
+  // returns an empty project in the response rather than an error if
+  // project_name does not exist. Fix to conform to behavior of other entities
+  // once QueryProjectInfo is supported.
+  bool GetProjectInfoByName(const std::string& project_name,
+                            mako::ProjectInfoGetResponse* response);
+
+  // Queries for existing ProjectInfo records in Mako storage via the
+  // StorageTransport.
+  //
+  // ProjectInfoQuery arg must contain all required fields described in
+  // mako.proto.
+  //
+  // Returns false if message fails or backend fails. More details found in
+  // response's Status protobuf.
+  //
+  // More details can be found in interface documentation.
+  bool QueryProjectInfo(const mako::ProjectInfoQuery& project_info_query,
+                        mako::ProjectInfoQueryResponse* query_response);
 
   // Creates a new BenchmarkInfo record in Mako storage via RPC sent to
   // server specified in constructor.
@@ -345,6 +377,10 @@ class Storage : public mako::Storage {
   void FakeStageBatches(
       const std::vector<mako::SampleBatch>& sample_batch_list);
 
+  // Adds all provided projects to stored data.
+  void FakeStageProjects(
+      const std::vector<mako::ProjectInfo>& project_info_list);
+
   ~Storage() override {}
 
  private:
@@ -354,6 +390,8 @@ class Storage : public mako::Storage {
   int error_count_max_;
   // Will be returned by GetBatchSizeMax()
   int batch_size_max_;
+  // Default/max limit for ProjectInfo queries
+  int project_limit_max_;
   // Default/max limit for BenchmarkInfo queries
   int bench_limit_max_;
   // Default/max limit for RunInfo queries

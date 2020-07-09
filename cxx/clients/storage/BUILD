@@ -16,6 +16,7 @@ cc_library(
         "//cxx/internal/storage_client:transport",
         "//cxx/spec:storage",
         "//proto/internal:mako_internal_cc_proto",
+        "//proto/internal/storage_client:storage_cc_proto",
         "//spec/proto:mako_cc_proto",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/flags:flag",

@@ -26,6 +26,7 @@ class SimpleClock : public Clock {
   ~SimpleClock() override {}
   absl::Time TimeNow() override;
   void Sleep(absl::Duration d) override;
+  void SleepUntil(absl::Time wakeup_time) override;
 };
 
 }  // namespace
@@ -43,6 +44,9 @@ void SimpleClock::Sleep(absl::Duration d) {
   absl::SleepFor(d);
 }
 
+void SimpleClock::SleepUntil(absl::Time wakeup_time) {
+  absl::SleepFor(wakeup_time - absl::Now());
+}
 
 }  // namespace external_helpers
 }  // namespace mako

@@ -121,13 +121,18 @@ http_archive(
 # Must be after boringssl so grpc doesn't pull in its own version of boringssl
 http_archive(
     name = "com_github_grpc_grpc",
-    urls = ["https://github.com/grpc/grpc/archive/v1.22.0.tar.gz"],
-    strip_prefix = "grpc-1.22.0",
-    sha256 = "11ac793c562143d52fd440f6549588712badc79211cdc8c509b183cb69bddad8",
+    sha256 = "d6af0859d3ae4693b1955e972aa2e590d6f4d44baaa82651467c6beea453e30e",
+    strip_prefix = "grpc-1.26.0-pre1",
+    urls = [
+        "https://github.com/grpc/grpc/archive/v1.26.0-pre1.tar.gz",
+    ],
 )
 
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 grpc_deps()
+
+load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+grpc_extra_deps()
 
 # ===== re2 =====
 http_archive(
@@ -154,8 +159,8 @@ go_register_toolchains()
 
 http_archive(
     name = "bazel_gazelle",
-    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.17.0/bazel-gazelle-0.17.0.tar.gz"],
-    sha256 = "3c681998538231a2d24d0c07ed5a7658cb72bfb5fd4bf9911157c0e9ac6a2687",
+    sha256 = "7fc87f4170011201b1690326e8c16c5d802836e3a0d617d8f75c3af2b23180c4",
+    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.18.2/bazel-gazelle-0.18.2.tar.gz"],
 )
 
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
@@ -187,9 +192,9 @@ go_repository(
 
 http_archive(
     name = "io_bazel_rules_docker",
-    sha256 = "e513c0ac6534810eb7a14bf025a0f159726753f97f74ab7863c650d26e01d677",
-    strip_prefix = "rules_docker-0.9.0",
-    urls = ["https://github.com/bazelbuild/rules_docker/archive/v0.9.0.tar.gz"],
+    sha256 = "14ac30773fdb393ddec90e158c9ec7ebb3f8a4fd533ec2abbfd8789ad81a284b",
+    strip_prefix = "rules_docker-0.12.1",
+    urls = ["https://github.com/bazelbuild/rules_docker/archive/v0.12.1.tar.gz"],
 )
 load(
     "@io_bazel_rules_docker//repositories:repositories.bzl",

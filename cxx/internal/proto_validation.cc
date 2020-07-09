@@ -37,15 +37,13 @@ std::string ValidateRunInfoSharedFields(const mako::RunInfo& input) {
   return kNoError;
 }
 
-std::string ValidateBenchmarkInfoSharedFields(const mako::BenchmarkInfo& input) {
+std::string ValidateBenchmarkInfoSharedFields(
+    const mako::BenchmarkInfo& input) {
   if (!input.has_benchmark_name() || input.benchmark_name().empty()) {
     return "BenchmarkInfo.benchmark_name missing/empty";
   }
   if (!input.has_project_name() || input.project_name().empty()) {
     return "BenchmarkInfo.project_name missing/empty";
-  }
-  if (input.owner_list_size() == 0) {
-    return "BenchmarkInfo.owner_list missing";
   }
   if (!input.has_input_value_info()) {
     return "BenchmarkInfo.input_value_info missing/empty";
@@ -62,7 +60,8 @@ std::string ValidateBenchmarkInfoSharedFields(const mako::BenchmarkInfo& input) 
   return kNoError;
 }
 
-std::string ValidateSampleBatchSharedFields(const mako::SampleBatch& input) {
+std::string ValidateSampleBatchSharedFields(
+    const mako::SampleBatch& input) {
   if (!input.has_benchmark_key() || input.benchmark_key().empty()) {
     return "SampleBatch.benchmark_key missing";
   }
@@ -182,7 +181,8 @@ std::string ValidateRunInfoCreationRequest(const mako::RunInfo& input) {
   return ValidateRunInfoSharedFields(input);
 }
 
-std::string ValidateSampleBatchCreationRequest(const mako::SampleBatch& input) {
+std::string ValidateSampleBatchCreationRequest(
+    const mako::SampleBatch& input) {
   if (input.has_batch_key() && !input.batch_key().empty()) {
     return "SampleBatch.batch_key should be missing.";
   }

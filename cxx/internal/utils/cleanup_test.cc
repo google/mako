@@ -72,7 +72,8 @@ TEST(FinallyTest, TypeErasedWithoutFactory) {
 }
 
 struct Appender {
-  Appender(std::string* s_in, const std::string& msg_in) : s(s_in), msg(msg_in) {}
+  Appender(std::string* s_in, const std::string& msg_in)
+      : s(s_in), msg(msg_in) {}
   void operator()() const { s->append(msg); }
   std::string* s;
   std::string msg;

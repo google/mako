@@ -40,6 +40,8 @@ namespace {
 constexpr char kNoError[] = "";
 }
 
+constexpr char Analyzer::kWindowDeviationType[];
+
 bool Analyzer::ConstructHistoricQuery(const AnalyzerHistoricQueryInput& input,
                                       AnalyzerHistoricQueryOutput* output) {
   output->Clear();
@@ -118,9 +120,8 @@ void SetAnalyzerOutputWithRegression(const std::string& msg,
   SetWDAOutput(msg, wda_output, output);
 }
 
-std::string ComputeStats(
-    const std::vector<internal::RunData>& data,
-    int recent_window_size, ToleranceCheckStats* output) {
+std::string ComputeStats(const std::vector<internal::RunData>& data,
+                         int recent_window_size, ToleranceCheckStats* output) {
   absl::Span<const internal::RunData>
       historic_data =
           absl::MakeConstSpan(&data[0], data.size() - recent_window_size);
@@ -217,8 +218,8 @@ bool Analyzer::DoAnalyze(const AnalyzerInput& input, AnalyzerOutput* output) {
   const RunOrder run_order = config_.run_info_query_list(0).run_order();
 
   // Sort runs ascending by the specified field order.
-  const std::vector<const RunInfo*> sorted_runs =
-      internal::SortRuns(input, run_order);
+  const std::vector<const RunBundle*> sorted_run_bundles =
+      internal::SortRunBundles(input, run_order);
 
   // Iterate over each ToleranceCheck
   std::stringstream regression_output;
@@ -237,7 +238,7 @@ bool Analyzer::DoAnalyze(const AnalyzerInput& input, AnalyzerOutput* output) {
 
     // Extract data
     auto status_or_data = internal::ExtractDataAndRemoveEmptyResults(
-        check.data_filter(), sorted_runs);
+        check.data_filter(), sorted_run_bundles);
     if (!status_or_data.ok()) {
       err = absl::StrCat(
           "Failure extracting data: ",
@@ -248,8 +249,7 @@ bool Analyzer::DoAnalyze(const AnalyzerInput& input, AnalyzerOutput* output) {
       return false;
     }
 
-    std::vector<internal::RunData> data =
-        std::move(status_or_data).value();
+    std::vector<internal::RunData> data = std::move(status_or_data).value();
 
     // check length
     if (data.size() <
@@ -384,7 +384,7 @@ bool Analyzer::DoAnalyze(const AnalyzerInput& input, AnalyzerOutput* output) {
       check_output->set_result(
           WindowDeviationOutput::ToleranceCheckOutput::REGRESSED);
       std::string msg = absl::StrCat("Check found REGRESSION:\n",
-                                check_output->DebugString());
+                                     check_output->DebugString());
       LOG(INFO) << msg;
       total_checks_regressed_count++;
       if (overall_regression) {

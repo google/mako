@@ -41,10 +41,12 @@ class Analyzer : public mako::Analyzer {
       const mako::AnalyzerHistoricQueryInput& query_input,
       mako::AnalyzerHistoricQueryOutput* query_output) override;
 
-  std::string analyzer_type() override { return "Threshold"; }
+  std::string analyzer_type() override { return kThresholdType; }
 
   // If config_ does not have name field empty std::string will be returned.
   std::string analyzer_name() override { return config_.name(); }
+
+  static constexpr char kThresholdType[] = "Threshold";
 
   ~Analyzer() override {}
 

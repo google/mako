@@ -36,13 +36,13 @@ message ThresholdConfig {
   // CONDITIONALLY_REQUIRED
   // At least one of either min or max must be set.
   //
-  // Min expected value of data.
+  // Min expected value of data. Data with this value is within bounds.
   optional double min = 1;
 
   // CONDITIONALLY_REQUIRED
   // At least one of either min or max must be set.
   //
-  // Max expected value of data.
+  // Max expected value of data. Data with this value is within bounds.
   optional double max = 2;
 
   // CONDITIONALLY_REQUIRED

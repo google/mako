@@ -37,7 +37,8 @@ using mako::MetricAggregate;
 using ::testing::ContainsRegex;
 
 SampleRecord HelperCreateSampleRecord(
-    double input_value, const std::vector<std::pair<std::string, double>>& metrics) {
+    double input_value,
+    const std::vector<std::pair<std::string, double>>& metrics) {
   SampleRecord sr;
   SamplePoint* sp = sr.mutable_sample_point();
   sp->set_input_value(input_value);
@@ -49,7 +50,16 @@ SampleRecord HelperCreateSampleRecord(
   return sr;
 }
 
-AggregatorInput HelperCreateAggregatorInput(const std::vector<std::string>& files) {
+SampleRecord HelperCreateSampleError(double input_value,
+                                     const std::string& error) {
+  SampleRecord sr;
+  sr.mutable_sample_error()->set_input_value(input_value);
+  sr.mutable_sample_error()->set_error_message(error);
+  return sr;
+}
+
+AggregatorInput HelperCreateAggregatorInput(
+    const std::vector<std::string>& files) {
   AggregatorInput agg_input;
 
   for (const auto& file : files) {
@@ -303,6 +313,57 @@ TEST_F(StandardAggregatorTest, IgnoreRanges) {
   ASSERT_EQ(ma.count(), 3);
   ASSERT_EQ(ma.median_absolute_deviation(), 100);
   ASSERT_NEAR(ma.standard_deviation(), 81.6496581, 0.000001);
+}
+
+TEST_F(StandardAggregatorTest, CountErrorsInIgnoreRangesByDefault) {
+  AggregatorOutput out;
+
+  // Points between 10,20 and 30,40 are in kignore_range
+  WriteFile("file1", {
+                         // honored
+                         HelperCreateSampleError(1, "Error"),
+                         // ignored
+                         HelperCreateSampleError(10, "Error"),
+                         // ignored
+                         HelperCreateSampleError(15, "Error"),
+                         // ignored
+                         HelperCreateSampleError(20, "Error"),
+                         // honored
+                         HelperCreateSampleError(45, "Error"),
+                         // honored
+                         HelperCreateSampleError(55, "Error"),
+                     });
+
+  ASSERT_EQ(a_.Aggregate(HelperCreateAggregatorInput({"file1"}), &out), "");
+
+  ASSERT_EQ(out.aggregate().run_aggregate().error_sample_count(), 6);
+}
+
+TEST_F(StandardAggregatorTest, CountErrorsInIgnoreRangesDisabled) {
+  AggregatorInput in = HelperCreateAggregatorInput({"file1"});
+  in.mutable_standard_aggregator_options()->set_errors_in_ignore_range_behavior(
+      StandardAggregatorOptions::IGNORE_ERRORS);
+  AggregatorOutput out;
+
+  // Points between 10,20 and 30,40 are in kignore_range
+  WriteFile("file1", {
+                         // honored
+                         HelperCreateSampleError(1, "Error"),
+                         // ignored
+                         HelperCreateSampleError(10, "Error"),
+                         // ignored
+                         HelperCreateSampleError(15, "Error"),
+                         // ignored
+                         HelperCreateSampleError(20, "Error"),
+                         // honored
+                         HelperCreateSampleError(45, "Error"),
+                         // honored
+                         HelperCreateSampleError(55, "Error"),
+                     });
+
+  ASSERT_EQ(a_.Aggregate(in, &out), "");
+
+  ASSERT_EQ(out.aggregate().run_aggregate().error_sample_count(), 3);
 }
 
 TEST_F(StandardAggregatorTest, MultiValueMath) {

@@ -18,8 +18,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/mako/go/spec/mako"
 )
 

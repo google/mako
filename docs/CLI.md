@@ -21,6 +21,40 @@ As you might expect, each subcommand has its own help:
 mako help display_benchmark
 ```
 
+## Common operation: Creating a Project
+
+A Mako project is defined by the `ProjectInfo` object in
+[mako.proto](../spec/proto/mako.proto).
+
+First, write a config file for the project. The project name serves as the
+unique identifier and is evaluated as lowercase (i.e. case-insensitive). To
+create the project, execute the following:
+
+```bash
+PROJECT_PATH=~/myproject/my_project.config
+mako create_project ${PROJECT_PATH}
+```
+
+If the `create_project` subcommand completes successfully, you can start
+creating benchmarks under it.
+
+To update the project, make changes to the config file and execute the
+following:
+
+```bash
+mako update_project ${PROJECT_PATH}
+```
+
+## Common operation: Fetching a Project
+
+The `get_project` subcommand fetches the project configuration given the project
+name.
+
+```bash
+PROJECT_NAME=my_project
+mako get_project --project_name=${PROJECT_NAME}
+```
+
 ## Common operation: Creating a Benchmark
 
 We’re going to use the `create_benchmark` subcommand. To see the help for this

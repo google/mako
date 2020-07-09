@@ -51,8 +51,6 @@ namespace mako {
 namespace internal {
 namespace {
 
-constexpr int kPayloadLogCharLimit = 1000;
-
 enum class Methods { kGet, kPost };
 
 // Read the status code from an HTTP header status line (aka "first line").
@@ -128,9 +126,7 @@ size_t BodyCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
   // This should be the only copy of the data we make.
   absl::StrAppend(&helper->body, body);
 
-  VLOG(2) << "Received response body (truncated to " << kPayloadLogCharLimit
-          << " chars):\n"
-          << body.substr(0, kPayloadLogCharLimit);
+  VLOG(2) << "Received response body :\n" << body;
 
   return data_length;
 }
@@ -167,8 +163,8 @@ Cleanup<std::function<void()>> SetHeaders(
   // Give curl the pointer to the headers.
   curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, *http_headers);
   // TODO(b/140914760) After curl update to 7.66, remove the conditional.
-#if LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 66 \
-  || LIBCURL_VERSION_MAJOR > 7 
+#if LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 66 || \
+    LIBCURL_VERSION_MAJOR > 7
   curl_easy_setopt(curl_handle, CURLOPT_HTTP09_ALLOWED, 1L);
 #endif
 
@@ -179,9 +175,13 @@ helpers::StatusOr<std::string> Request(
     Methods method, absl::string_view url,
     const std::vector<std::pair<std::string, std::string>>& headers,
     absl::string_view post_data, absl::string_view ca_cert_path) {
-  CHECK(post_data.empty() || method == Methods::kPost)
-      << "Cannot send post data if method is not kPost. This is an internal "
-         "Mako error, please file a bug at go/mako-bug";
+  // POST & GET requests can have an empty body.
+  // Raise internal error if body is nonempty and method is not POST.
+  if (!post_data.empty() && method != Methods::kPost) {
+    return helpers::InternalError(
+        "Cannot send POST data if method is not POST. This is an internal "
+        "Mako error, please file a bug at go/mako-bug.");
+  }
 
   // The use of a new handle per Request ensures thread safety.
   CURL* curl_handle = curl_easy_init();
@@ -198,6 +198,10 @@ helpers::StatusOr<std::string> Request(
     curl_easy_setopt(curl_handle, CURLOPT_CAINFO, ca_cert_path.data());
   }
 
+  // Fix for b/157920927: Set the request header to request HTTP 1.1, since this
+  // client does not handle HTTP 2.
+  curl_easy_setopt(curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+
   // curl_easy_setopt does not take ownership of the std::string returned by Assemble
   curl_easy_setopt(curl_handle, CURLOPT_URL, url.data());
 
@@ -213,10 +217,20 @@ helpers::StatusOr<std::string> Request(
   curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, BodyCallback);
   curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &body_helper);
 
-  // Set request body.
-  if (!post_data.empty()) {
-    curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post_data.data());
+  if (method == Methods::kPost) {
+    // Set request body.
+    if (!post_data.empty()) {
+      curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post_data.data());
+    } else {
+      // We encounter issues (b/151157456) when setting CURLOPT_POST when
+      // sending large amounts of data. The cause is not clear.
+      // CURLOPT_POSTFIELDS implicitly sets CURLOPT_POST so we only need to set
+      // it when there is no data.
+      curl_easy_setopt(curl_handle, CURLOPT_POST, true);
+    }
     curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, post_data.size());
+  } else if (method == Methods::kGet) {
+    curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, true);
   }
 
   // Set headers.
@@ -279,9 +293,7 @@ helpers::StatusOr<std::string> Request(
     // description of the problem. It's useful to stuff it into the error we
     // return, rather than just LOG(ERROR) it (like we do above when we expect a
     // binary payload) and force the user to consult the logs.
-    absl::StrAppend(&error, ", payload (first ", kPayloadLogCharLimit,
-                    " chars):\n",
-                    body_helper.body.substr(0, kPayloadLogCharLimit));
+    absl::StrAppend(&error, ", payload:\n", body_helper.body);
     // 4XX errors are not retryable. Something is wrong with the request.
     // TODO(b/74948849): We may want a more careful mapping to canonical error
     // space.

@@ -23,12 +23,17 @@
 
 #include "glog/logging.h"
 #include "src/google/protobuf/message.h"
+#include "absl/flags/flag.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "cxx/helpers/status/status.h"
 #include "cxx/internal/storage_client/http_client.h"
 #include "cxx/internal/storage_client/oauth_token_provider.h"
 #include "cxx/internal/storage_client/transport.h"
+#include "proto/internal/mako_internal.pb.h"
+
+extern absl::Flag<bool> FLAGS_mako_internal_disable_expect_100_continue;
 
 namespace mako {
 namespace internal {
@@ -49,12 +54,22 @@ class HttpTransport : public StorageTransport {
 
   // Constructs an HttpTransport that will use the provided OAuthTokenProvider.
   // The OAuthTokenProvider must be thread-safe (go/thread-safe).
-  HttpTransport(absl::string_view host,
-                std::unique_ptr<OAuthTokenProvider> token_provider)
-      : HttpTransport(host, std::move(token_provider), "") {}
+  explicit HttpTransport(absl::string_view host,
+                         std::unique_ptr<OAuthTokenProvider> token_provider);
+
+  // Constructs an HttpTransport that will use the provided OAuthTokenProvider
+  // and the provided HttpClientInterface.
+  // The OAuthTokenProvider must be thread-safe (go/thread-safe).
+  explicit HttpTransport(absl::string_view host,
+                         std::unique_ptr<OAuthTokenProvider> token_provider,
+                         std::unique_ptr<HttpClientInterface> http_client)
+      : host_(host),
+        token_provider_(std::move(token_provider)),
+        client_(std::move(http_client)) {}
 
   // Constructs an HttpTransport that will use the provided OAuthTokenProvider,
-  // and overrides the HTTP Client's CA cert path.
+  // the provided HttpClientInterface, and overrides the HTTP Client's CA cert
+  // path.
   //
   // The OAuthTokenProvider must be thread-safe (go/thread-safe).
   HttpTransport(absl::string_view host,
@@ -62,7 +77,7 @@ class HttpTransport : public StorageTransport {
                 absl::string_view ca_certificate_path)
       : host_(host),
         token_provider_(std::move(token_provider)),
-        client_(ca_certificate_path) {}
+        client_(absl::make_unique<HttpClient>(ca_certificate_path)) {}
 
   helpers::Status Connect() override;
 
@@ -70,12 +85,73 @@ class HttpTransport : public StorageTransport {
 
   void use_local_gae_server(bool use_local_gae_server);
 
-  // Sends a POST request to `path` on the server, serializing the `request`
-  // into the HTTP body. The server's response body will be deserialized into
-  // `response`.
-  helpers::Status Call(absl::string_view path, const google::protobuf::Message& request,
-                       absl::Duration timeout,
-                       google::protobuf::Message* response) override;
+  helpers::Status CreateProjectInfo(
+      absl::Duration deadline, const CreateProjectInfoRequest& request,
+      mako::CreationResponse* response) override;
+
+  helpers::Status UpdateProjectInfo(
+      absl::Duration deadline, const UpdateProjectInfoRequest& request,
+      mako::ModificationResponse* response) override;
+
+  helpers::Status GetProjectInfo(
+      absl::Duration deadline, const GetProjectInfoRequest& request,
+      mako::ProjectInfoGetResponse* response) override;
+
+  helpers::Status QueryProjectInfo(
+      absl::Duration deadline, const QueryProjectInfoRequest& request,
+      mako::ProjectInfoQueryResponse* response) override;
+
+  helpers::Status CreateBenchmarkInfo(
+      absl::Duration deadline, const CreateBenchmarkInfoRequest& request,
+      mako::CreationResponse* response) override;
+
+  helpers::Status UpdateBenchmarkInfo(
+      absl::Duration deadline, const UpdateBenchmarkInfoRequest& request,
+      mako::ModificationResponse* response) override;
+
+  helpers::Status QueryBenchmarkInfo(
+      absl::Duration deadline, const QueryBenchmarkInfoRequest& request,
+      mako::BenchmarkInfoQueryResponse* response) override;
+
+  helpers::Status DeleteBenchmarkInfo(
+      absl::Duration deadline, const DeleteBenchmarkInfoRequest& request,
+      mako::ModificationResponse* response) override;
+
+  helpers::Status CountBenchmarkInfo(
+      absl::Duration deadline, const CountBenchmarkInfoRequest& request,
+      mako::CountResponse* response) override;
+
+  helpers::Status CreateRunInfo(absl::Duration deadline,
+                                const CreateRunInfoRequest& request,
+                                mako::CreationResponse* response) override;
+
+  helpers::Status UpdateRunInfo(
+      absl::Duration deadline, const UpdateRunInfoRequest& request,
+      mako::ModificationResponse* response) override;
+
+  helpers::Status QueryRunInfo(
+      absl::Duration deadline, const QueryRunInfoRequest& request,
+      mako::RunInfoQueryResponse* response) override;
+
+  helpers::Status DeleteRunInfo(
+      absl::Duration deadline, const DeleteRunInfoRequest& request,
+      mako::ModificationResponse* response) override;
+
+  helpers::Status CountRunInfo(absl::Duration deadline,
+                               const CountRunInfoRequest& request,
+                               mako::CountResponse* response) override;
+
+  helpers::Status CreateSampleBatch(
+      absl::Duration deadline, const CreateSampleBatchRequest& request,
+      mako::CreationResponse* response) override;
+
+  helpers::Status QuerySampleBatch(
+      absl::Duration deadline, const QuerySampleBatchRequest& request,
+      mako::SampleBatchQueryResponse* response) override;
+
+  helpers::Status DeleteSampleBatch(
+      absl::Duration deadline, const DeleteSampleBatchRequest& request,
+      mako::ModificationResponse* response) override;
 
   // TODO(b/73734783): Remove this.
   absl::Duration last_call_server_elapsed_time() const override {
@@ -91,10 +167,16 @@ class HttpTransport : public StorageTransport {
   std::string GetHostname() override { return host_; }
 
  private:
+  // Sends a POST request to `path` on the server, serializing the `request`
+  // into the HTTP body. The server's response body will be deserialized into
+  // `response`.
+  helpers::Status Call(absl::string_view path, const google::protobuf::Message& request,
+                       absl::Duration timeout, google::protobuf::Message* response);
+
   const std::string host_;
   std::string client_tool_tag_ = "unknown";
   const std::unique_ptr<OAuthTokenProvider> token_provider_;
-  HttpClient client_;
+  std::unique_ptr<HttpClientInterface> client_;
   bool use_local_gae_server_ = false;
   std::string ca_authority_path_;
 };

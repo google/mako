@@ -155,13 +155,13 @@ AnalyzerInput HelperCreateAnalyzerInput() {
 }
 
 UTestSample HelperCreateUTestSample(const std::vector<std::string> run_key_list,
-                                    bool include_curr_run) {
+                                    bool include_current_run) {
   UTestSample sample;
   for (const std::string& run_key : run_key_list) {
     RunInfoQuery* query = sample.add_run_query_list();
     query->set_run_key(run_key);
   }
-  sample.set_include_current_run(include_curr_run);
+  sample.set_include_current_run(include_current_run);
   return sample;
 }
 
@@ -177,8 +177,9 @@ UTestConfig HelperCreateUTestAnalyzerConfig(
 }
 
 UTestConfig HelperCreateUTestAnalyzerConfigWithShiftValue(
-    const std::string& a_metric_key, const std::string& b_metric_key, double shift_value,
-    const UTestConfig::DirectionBias& dir_bias, double sig_level) {
+    const std::string& a_metric_key, const std::string& b_metric_key,
+    double shift_value, const UTestConfig::DirectionBias& dir_bias,
+    double sig_level) {
   UTestConfig config = HelperCreateUTestAnalyzerConfig(
       a_metric_key, b_metric_key, dir_bias, sig_level);
   config.set_shift_value(shift_value);
@@ -196,8 +197,8 @@ UTestConfig HelperCreateUTestAnalyzerConfigWithRelativeShiftValue(
 }
 
 UTestAnalyzerInput HelperCreateUTestAnalyzerInput(
-    const UTestSample& samp_a, const UTestSample& samp_b, std::string a_metric_key,
-    std::string b_metric_key, double shift_value,
+    const UTestSample& samp_a, const UTestSample& samp_b,
+    std::string a_metric_key, std::string b_metric_key, double shift_value,
     const UTestConfig::DirectionBias& dir_bias, double sig_level) {
   UTestAnalyzerInput input;
   *input.mutable_a_sample() = samp_a;
@@ -210,8 +211,8 @@ UTestAnalyzerInput HelperCreateUTestAnalyzerInput(
 
 Analyzer HelperCreateUTestAnalyzer(const UTestSample& samp_a,
                                    const UTestSample& samp_b,
-                                   std::string a_metric_key, std::string b_metric_key,
-                                   double shift_value,
+                                   std::string a_metric_key,
+                                   std::string b_metric_key, double shift_value,
                                    const UTestConfig::DirectionBias& dir_bias,
                                    double sig_level) {
   return Analyzer(HelperCreateUTestAnalyzerInput(samp_a, samp_b, a_metric_key,
@@ -219,7 +220,8 @@ Analyzer HelperCreateUTestAnalyzer(const UTestSample& samp_a,
                                                  dir_bias, sig_level));
 }
 
-void HelperAddSamplePoints(std::string value_key, const std::vector<double>& data,
+void HelperAddSamplePoints(std::string value_key,
+                           const std::vector<double>& data,
                            RunBundle* run_bundle) {
   auto sample_batch = run_bundle->add_batch_list();
   for (auto& d : data) {
@@ -229,6 +231,18 @@ void HelperAddSamplePoints(std::string value_key, const std::vector<double>& dat
     keyed_value->set_value_key(value_key);
     keyed_value->set_value(d);
   }
+}
+
+void HelperAddHistoricalRuns(AnalyzerInput* input) {
+  auto& historical_run_map = *input->mutable_historical_run_map();
+  RunBundle* historical_run1 =
+      historical_run_map[kSampleAKey].add_historical_run_list();
+  HelperAddSamplePoints(kMetricKey1, {1, 1, 1}, historical_run1);
+  *historical_run1->mutable_run_info() = HelperCreateRunInfo(kRunKey1);
+  RunBundle* historical_run2 =
+      historical_run_map[kSampleBKey].add_historical_run_list();
+  HelperAddSamplePoints(kMetricKey2, {1, 1, 1}, historical_run2);
+  *historical_run2->mutable_run_info() = HelperCreateRunInfo(kRunKey2);
 }
 
 bool HelperCompareTwoSamples(const std::vector<double>& samp_1,
@@ -346,26 +360,69 @@ TEST_F(AnalyzerTest, AnalyzerInputInvalidBothMetricStringAndDataFilter) {
   EXPECT_TRUE(InvalidProto(&analyzer_b_metric_not_present));
 }
 
-TEST_F(AnalyzerTest, AnalyzerInputMissingRunToBeAnalyzedOrRunInfo) {
-  UTestSample temp1 = HelperCreateUTestSample({kRunKey1}, true);
-  UTestSample temp2 = HelperCreateUTestSample({kRunKey2}, false);
-  auto analyzer =
-      HelperCreateUTestAnalyzer(temp1, temp2, kMetricKey1, kMetricKey2, 0,
-                                UTestConfig_DirectionBias_NO_BIAS, 0.01);
+TEST_F(AnalyzerTest, AnalyzerInputMissingRunToBeAnalyzedWithNoCurrentRun) {
+  auto analyzer = HelperCreateUTestAnalyzer(
+      HelperCreateUTestSample({kRunKey1}, /*include_current_run=*/false),
+      HelperCreateUTestSample({kRunKey2}, /*include_current_run=*/false),
+      kMetricKey1, kMetricKey2, 0, UTestConfig_DirectionBias_NO_BIAS, 0.01);
 
   LOG(INFO) << "Passing in input without run_to_be_analyzed";
-  // Clear run to be analyzed
   auto input = HelperCreateAnalyzerInput();
+  // Clear run to be analyzed
   input.clear_run_to_be_analyzed();
+  HelperAddHistoricalRuns(&input);
+
+  AnalyzerOutput output_no_run_to_be_analyzed;
+  EXPECT_TRUE(analyzer.Analyze(input, &output_no_run_to_be_analyzed));
+  EXPECT_TRUE(SuccessfulStatus(output_no_run_to_be_analyzed));
+}
+
+TEST_F(AnalyzerTest, AnalyzerInputMissingRunToBeAnalyzedWithCurrentRun) {
+  auto analyzer = HelperCreateUTestAnalyzer(
+      HelperCreateUTestSample({kRunKey1}, /*include_current_run=*/true),
+      HelperCreateUTestSample({kRunKey2}, /*include_current_run=*/false),
+      kMetricKey1, kMetricKey2, 0, UTestConfig_DirectionBias_NO_BIAS, 0.01);
+
+  LOG(INFO) << "Passing in input without run_to_be_analyzed";
+  auto input = HelperCreateAnalyzerInput();
+  // Clear run to be analyzed
+  input.clear_run_to_be_analyzed();
+  HelperAddHistoricalRuns(&input);
 
   AnalyzerOutput output_no_run_to_be_analyzed;
   EXPECT_FALSE(analyzer.Analyze(input, &output_no_run_to_be_analyzed));
   EXPECT_FALSE(SuccessfulStatus(output_no_run_to_be_analyzed));
+}
+
+TEST_F(AnalyzerTest,
+       AnalyzerInputMissingRunToBeAnalyzedRunInfoWithNoCurrentRun) {
+  auto analyzer = HelperCreateUTestAnalyzer(
+      HelperCreateUTestSample({kRunKey1}, /*include_current_run=*/false),
+      HelperCreateUTestSample({kRunKey2}, /*include_current_run=*/false),
+      kMetricKey1, kMetricKey2, 0, UTestConfig_DirectionBias_NO_BIAS, 0.01);
 
   LOG(INFO) << "Passing in input without run_to_be_analyzed's run_info";
-  // Clear run info from run bundle
-  input = HelperCreateAnalyzerInput();
+  auto input = HelperCreateAnalyzerInput();
+  // Clear run to be analyzed's run info
   input.mutable_run_to_be_analyzed()->clear_run_info();
+  HelperAddHistoricalRuns(&input);
+
+  AnalyzerOutput output_no_run_info_in_bundle;
+  EXPECT_TRUE(analyzer.Analyze(input, &output_no_run_info_in_bundle));
+  EXPECT_TRUE(SuccessfulStatus(output_no_run_info_in_bundle));
+}
+
+TEST_F(AnalyzerTest, AnalyzerInputMissingRunToBeAnalyzedRunInfoWithCurrentRun) {
+  auto analyzer = HelperCreateUTestAnalyzer(
+      HelperCreateUTestSample({kRunKey1}, /*include_current_run=*/true),
+      HelperCreateUTestSample({kRunKey2}, /*include_current_run=*/false),
+      kMetricKey1, kMetricKey2, 0, UTestConfig_DirectionBias_NO_BIAS, 0.01);
+
+  LOG(INFO) << "Passing in input without run_to_be_analyzed's run_info";
+  auto input = HelperCreateAnalyzerInput();
+  // Clear run to be analyzed's run info
+  input.mutable_run_to_be_analyzed()->clear_run_info();
+  HelperAddHistoricalRuns(&input);
 
   AnalyzerOutput output_no_run_info_in_bundle;
   EXPECT_FALSE(analyzer.Analyze(input, &output_no_run_info_in_bundle));
@@ -625,89 +682,6 @@ TEST_F(AnalyzerTest, AnalyzerExtractsCorrectData) {
   EXPECT_TRUE(analyzer_key2.Analyze(input, &output_key2));
   EXPECT_FALSE(output_key2.regression());
   EXPECT_TRUE(SuccessfulStatus(output_key2));
-}
-
-// Test is similar to AnalyzerExtractsCorrectData but populates the
-// historical_run_list instead of historical_run_map with the run bundles.
-TEST_F(AnalyzerTest, AnalyzerExtractsCorrectDataWithList) {
-  UTestSample temp1 = HelperCreateUTestSample({"r1", "r3"}, false);
-  UTestSample temp2 = HelperCreateUTestSample({"r2"}, true);
-
-  auto analyzer1 = HelperCreateUTestAnalyzer(
-      temp1, temp2, "k1", "k1", 0, UTestConfig_DirectionBias_NO_BIAS, 0.999);
-  auto analyzer2 = HelperCreateUTestAnalyzer(
-      temp1, temp2, "k2", "k2", 0, UTestConfig_DirectionBias_NO_BIAS, 0.999);
-
-  auto input = HelperCreateAnalyzerInput();
-
-  HelperAddSamplePoints("k1", kCenterDist, input.mutable_run_to_be_analyzed());
-  HelperAddSamplePoints("k2", kCenterDist, input.mutable_run_to_be_analyzed());
-
-  RunBundle* historical_run = input.add_historical_run_list();
-  *historical_run->mutable_run_info() = HelperCreateRunInfo("r1");
-  HelperAddSamplePoints("k1", kLeftSkewedDist, historical_run);
-  HelperAddSamplePoints("k2", kLeftSkewedDist, historical_run);
-
-  historical_run = input.add_historical_run_list();
-  *historical_run->mutable_run_info() = HelperCreateRunInfo("r2");
-  HelperAddSamplePoints("k1", kLeftSkewedDist, historical_run);
-  HelperAddSamplePoints("k2", kLeftSkewedDist, historical_run);
-
-  historical_run = input.add_historical_run_list();
-  *historical_run->mutable_run_info() = HelperCreateRunInfo("r3");
-  HelperAddSamplePoints("k1", kCenterDist, historical_run);
-  HelperAddSamplePoints("k2", kCenterDist, historical_run);
-
-  AnalyzerOutput output1;
-  EXPECT_TRUE(analyzer1.Analyze(input, &output1));
-  EXPECT_FALSE(output1.regression());
-  EXPECT_TRUE(SuccessfulStatus(output1));
-
-  AnalyzerOutput output2;
-  EXPECT_TRUE(analyzer2.Analyze(input, &output2));
-  EXPECT_FALSE(output2.regression());
-  EXPECT_TRUE(SuccessfulStatus(output2));
-}
-
-TEST_F(AnalyzerTest, AnalyzerExtractsCorrectDataWithListButOneNoRunKey) {
-
-  UTestSample temp1 = HelperCreateUTestSample({"r1", "r3"}, false);
-  UTestSample temp2 = HelperCreateUTestSample({"r2"}, true);
-
-  auto analyzer = HelperCreateUTestAnalyzer(
-      temp1, temp2, "k1", "k2", 0, UTestConfig_DirectionBias_NO_BIAS, 0.999);
-
-  auto input = HelperCreateAnalyzerInput();
-
-  HelperAddSamplePoints("k1", kCenterDist, input.mutable_run_to_be_analyzed());
-  HelperAddSamplePoints("k2", kCenterDist, input.mutable_run_to_be_analyzed());
-
-  RunBundle* historical_run = input.add_historical_run_list();
-  *historical_run->mutable_run_info() = HelperCreateRunInfo("r1");
-  HelperAddSamplePoints("k1", kLeftSkewedDist, historical_run);
-  HelperAddSamplePoints("k2", kLeftSkewedDist, historical_run);
-
-  historical_run = input.add_historical_run_list();
-  *historical_run->mutable_run_info() = HelperCreateRunInfo("r2");
-  HelperAddSamplePoints("k1", kLeftSkewedDist, historical_run);
-  HelperAddSamplePoints("k2", kLeftSkewedDist, historical_run);
-
-  historical_run = input.add_historical_run_list();
-  *historical_run->mutable_run_info() = HelperCreateRunInfo("r3");
-  HelperAddSamplePoints("k1", kCenterDist, historical_run);
-  HelperAddSamplePoints("k2", kCenterDist, historical_run);
-
-  // This run will generate a warning because run_key = r4 does not exist in the
-  // UTestSamples.
-  historical_run = input.add_historical_run_list();
-  *historical_run->mutable_run_info() = HelperCreateRunInfo("r4");
-  HelperAddSamplePoints("k1", kCenterDist, historical_run);
-  HelperAddSamplePoints("k2", kCenterDist, historical_run);
-
-  AnalyzerOutput output;
-  EXPECT_TRUE(analyzer.Analyze(input, &output));
-  EXPECT_FALSE(output.regression());
-  EXPECT_TRUE(SuccessfulStatus(output));
 }
 
 TEST_F(AnalyzerTest, AnalyzerDataFilters) {

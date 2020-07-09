@@ -150,16 +150,16 @@ class RecordSaver {
     prng_.seed(prng_seed);
   }
   // Total number of slots we have saved for this metric key
-  int slots() LOCKS_EXCLUDED(mutex_) {
+  int slots() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     return metric_set_.slot_count * saved_.size();
   }
 
-  std::string RemoveRandomSavedRecord() LOCKS_EXCLUDED(mutex_) {
+  std::string RemoveRandomSavedRecord() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     if (saved_.empty()) {
       std::string err = absl::StrCat("No records saved for metric set: ",
-                                metric_set_.ToString());
+                                     metric_set_.ToString());
       LOG(ERROR) << err;
       return err;
     }
@@ -174,11 +174,12 @@ class RecordSaver {
     return kNoError;
   }
 
-  std::string AddSavedRecord(std::unique_ptr<T> item, const MetricSet& metric_set)
-      LOCKS_EXCLUDED(mutex_) {
+  std::string AddSavedRecord(std::unique_ptr<T> item,
+                             const MetricSet& metric_set)
+      ABSL_LOCKS_EXCLUDED(mutex_) {
     if (metric_set != metric_set_) {
       std::string err = absl::StrCat("Got: ", metric_set.ToString(),
-                                "; expected: ", metric_set_.ToString());
+                                     "; expected: ", metric_set_.ToString());
       LOG(ERROR) << err;
       return err;
     }
@@ -187,25 +188,25 @@ class RecordSaver {
     return kNoError;
   }
 
-  int parsed_slots() LOCKS_EXCLUDED(mutex_) {
+  int parsed_slots() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     return parsed_slots_;
   }
 
-  int add_parsed_slots() LOCKS_EXCLUDED(mutex_) {
+  int add_parsed_slots() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     parsed_slots_ += metric_set_.slot_count;
     return parsed_slots_;
   }
 
-  int NumberOfRecords() LOCKS_EXCLUDED(mutex_) {
+  int NumberOfRecords() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     return saved_.size();
   }
   // Moves all saved records to the given vector, and resets the state of this
   // Saver
   void MoveSavedRecords(std::vector<std::unique_ptr<T>>* all_records)
-      LOCKS_EXCLUDED(mutex_) {
+      ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     std::move(saved_.begin(), saved_.end(), std::back_inserter(*all_records));
     saved_.clear();
@@ -218,11 +219,11 @@ class RecordSaver {
   // threads wanting to add or remove records from it at the same time.
   absl::Mutex mutex_;
   // Total number of slots that we have seen so far for this key.
-  int parsed_slots_ GUARDED_BY(mutex_);
+  int parsed_slots_ ABSL_GUARDED_BY(mutex_);
   // Pseudo-RNG for determining which record to evict
-  std::default_random_engine prng_ GUARDED_BY(mutex_);
+  std::default_random_engine prng_ ABSL_GUARDED_BY(mutex_);
   // All the saved points (either SamplePoints or SampleErrors).
-  std::vector<std::unique_ptr<T>> saved_ GUARDED_BY(mutex_);
+  std::vector<std::unique_ptr<T>> saved_ ABSL_GUARDED_BY(mutex_);
   // The metric set for this groups of records.
   const MetricSet metric_set_;
 };
@@ -239,19 +240,19 @@ class RecordManager {
   }
 
   // Sum of all slots used by RecordSavers
-  int slot_count() LOCKS_EXCLUDED(mutex_) {
+  int slot_count() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     return slot_count_;
   }
 
   // How many slots we have parsed for type <T>
-  int parsed_slots() LOCKS_EXCLUDED(mutex_) {
+  int parsed_slots() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     return parsed_slots_;
   }
 
   // Verify that we have met the slot count restrictions.
-  std::string VerifyLimits() LOCKS_EXCLUDED(mutex_) {
+  std::string VerifyLimits() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     if (slot_count_ > max_slot_count_) {
       std::string err = absl::StrCat(
@@ -277,7 +278,7 @@ class RecordManager {
   // Return a vector of all Records saved.
   // Note the unique_ptr's returned. This function should be called only once
   // as it transfers ownership of all Records to the caller.
-  std::vector<std::unique_ptr<T>> AllRecords() LOCKS_EXCLUDED(mutex_) {
+  std::vector<std::unique_ptr<T>> AllRecords() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     std::vector<std::unique_ptr<T>> all_records;
     all_records.reserve(record_count_);
@@ -287,7 +288,8 @@ class RecordManager {
     return all_records;
   }
 
-  std::string HandleRecord(std::unique_ptr<T> new_record) LOCKS_EXCLUDED(mutex_) {
+  std::string HandleRecord(std::unique_ptr<T> new_record)
+      ABSL_LOCKS_EXCLUDED(mutex_) {
     // If we don't want to save any samples
     if (max_slot_count_ == 0) {
       return kNoError;
@@ -354,11 +356,12 @@ class RecordManager {
  private:
   // pick a RecordSaver to remove slots from.
   std::string RemoveRandomSavedRecord(const MetricSet& set_being_added)
-      EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
     if (key_to_record_saver_.empty()) {
-      std::string err = absl::StrCat("RecordManager(", name_,
-                                ") asked to choose largest RecordSaver but do "
-                                "not have any to remove");
+      std::string err =
+          absl::StrCat("RecordManager(", name_,
+                       ") asked to choose largest RecordSaver but do "
+                       "not have any to remove");
       LOG(ERROR) << err;
       return err;
     }
@@ -398,19 +401,20 @@ class RecordManager {
   }
 
   // How many unique RecordSavers we have seen so far
-  int CountOfSlotConsumers() LOCKS_EXCLUDED(mutex_) {
+  int CountOfSlotConsumers() ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     return key_to_record_saver_.size();
   }
 
-  bool GetRandomChoice(double probability) EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
+  bool GetRandomChoice(double probability)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
     CHECK(probability >= 0.0 || probability <= 1.0)
         << "Probability needs to be between 0 and 1: " << probability;
     return std::uniform_real_distribution<double>{0, 1}(prng_) < probability;
   }
 
   RecordSaver<T>* GetOrCreate(const MetricSet& metric_set)
-      LOCKS_EXCLUDED(mutex_) {
+      ABSL_LOCKS_EXCLUDED(mutex_) {
     absl::MutexLock l(&mutex_);
     if (key_to_record_saver_.count(metric_set) == 0) {
       key_to_record_saver_[metric_set] =
@@ -421,11 +425,11 @@ class RecordManager {
 
   absl::Mutex mutex_;
   std::unordered_map<MetricSet, std::unique_ptr<RecordSaver<T>>, HashMetricSet>
-      key_to_record_saver_ GUARDED_BY(mutex_);
-  std::default_random_engine prng_ GUARDED_BY(mutex_);
-  int slot_count_ GUARDED_BY(mutex_) = 0;
-  int parsed_slots_ GUARDED_BY(mutex_) = 0;
-  int record_count_ GUARDED_BY(mutex_) = 0;
+      key_to_record_saver_ ABSL_GUARDED_BY(mutex_);
+  std::default_random_engine prng_ ABSL_GUARDED_BY(mutex_);
+  int slot_count_ ABSL_GUARDED_BY(mutex_) = 0;
+  int parsed_slots_ ABSL_GUARDED_BY(mutex_) = 0;
+  int record_count_ ABSL_GUARDED_BY(mutex_) = 0;
 
   const std::string name_;
   const int64_t max_slot_count_;
@@ -433,9 +437,9 @@ class RecordManager {
 };
 
 std::string ProcessFile(std::unique_ptr<mako::FileIO> fio,
-                   const std::string& file_path,
-                   RecordManager<mako::SamplePoint>* sample_manager,
-                   RecordManager<mako::SampleError>* error_manager) {
+                        const std::string& file_path,
+                        RecordManager<mako::SamplePoint>* sample_manager,
+                        RecordManager<mako::SampleError>* error_manager) {
   VLOG(1) << "Reading: " << file_path;
   if (!fio->Open(file_path, mako::FileIO::AccessMode::kRead)) {
     LOG(ERROR) << fio->Error();
@@ -478,9 +482,9 @@ std::string ProcessFile(std::unique_ptr<mako::FileIO> fio,
 }
 
 std::string ProcessFiles(const mako::DownsamplerInput& downsampler_input,
-                    mako::FileIO* fileio, int max_threads,
-                    RecordManager<mako::SamplePoint>* sample_manager,
-                    RecordManager<mako::SampleError>* error_manager) {
+                         mako::FileIO* fileio, int max_threads,
+                         RecordManager<mako::SamplePoint>* sample_manager,
+                         RecordManager<mako::SampleError>* error_manager) {
   int num_threads = downsampler_input.sample_file_list_size();
   if (max_threads > 0 && max_threads < num_threads) {
     num_threads = max_threads;
@@ -514,11 +518,11 @@ std::string ProcessFiles(const mako::DownsamplerInput& downsampler_input,
 void Downsampler::Reseed(int prng_seed) { prng_.seed(prng_seed); }
 
 template <typename T>
-std::string AddBatches(const std::string& benchmark_key, const std::string& run_key,
-                  const int batch_size_max, const int field_number,
-                  RecordManager<T>* manager, mako::SampleBatch** batch,
-                  int64_t* batch_size_bytes,
-                  mako::DownsamplerOutput* downsampler_output) {
+std::string AddBatches(const std::string& benchmark_key,
+                       const std::string& run_key, const int batch_size_max,
+                       const int field_number, RecordManager<T>* manager,
+                       mako::SampleBatch** batch, int64_t* batch_size_bytes,
+                       mako::DownsamplerOutput* downsampler_output) {
   std::vector<std::unique_ptr<T>> all_records = manager->AllRecords();
   // Apply processing to all records
   ProcessAllRecords(&all_records);
@@ -540,9 +544,9 @@ std::string AddBatches(const std::string& benchmark_key, const std::string& run_
 }
 
 std::string Complete(const mako::DownsamplerInput& downsampler_input,
-                mako::DownsamplerOutput* downsampler_output,
-                RecordManager<mako::SamplePoint>* sample_manager,
-                RecordManager<mako::SampleError>* error_manager) {
+                     mako::DownsamplerOutput* downsampler_output,
+                     RecordManager<mako::SamplePoint>* sample_manager,
+                     RecordManager<mako::SampleError>* error_manager) {
   std::string err = sample_manager->VerifyLimits();
   if (!err.empty()) {
     LOG(ERROR) << err;
@@ -608,6 +612,7 @@ std::string Complete(const mako::DownsamplerInput& downsampler_input,
 std::string Downsampler::Downsample(
     const mako::DownsamplerInput& downsampler_input,
     mako::DownsamplerOutput* downsampler_output) {
+  bool sample_errors_randomly = false;
 
   LOG(INFO) << "Downsampler.Downsample("
             << DebugStringWithoutLongFields(downsampler_input) << ")";
@@ -632,8 +637,8 @@ std::string Downsampler::Downsample(
       "SamplePointManager", downsampler_input.metric_value_count_max(), true,
       prng_());
   RecordManager<mako::SampleError> error_manager(
-      "SampleErrorManager", downsampler_input.sample_error_count_max(), false,
-      prng_());
+      "SampleErrorManager", downsampler_input.sample_error_count_max(),
+      sample_errors_randomly, prng_());
 
   err = ProcessFiles(downsampler_input, fileio_.get(), max_threads_,
                      &sample_manager, &error_manager);
@@ -664,8 +669,7 @@ void GetNewRecord(mako::SampleBatch* batch,
 
 mako::SampleBatch* GetNewBatch(
     const std::string& benchmark_key, const std::string& run_key,
-    mako::DownsamplerOutput* downsampler_output,
-    int64_t* batch_size_bytes) {
+    mako::DownsamplerOutput* downsampler_output, int64_t* batch_size_bytes) {
   mako::SampleBatch* batch = downsampler_output->add_sample_batch_list();
   batch->set_benchmark_key(benchmark_key);
   batch->set_run_key(run_key);

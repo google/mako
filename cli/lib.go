@@ -13,6 +13,8 @@
 // limitations under the license.
 
 /*
+Package lib is the library providing core APIs that drive the CLI binaries.
+
 The mako-g3 command gives google3 users of the mako framework
 (go/mako for more information) the ability to accomplish tasks via the
 command line.
@@ -48,7 +50,7 @@ import (
 	log "github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/subcommands"
-
+	"github.com/google/mako/go/clients/dashboard/standarddashboard"
 	"github.com/google/mako/go/spec/mako"
 	pgpb "github.com/google/mako/spec/proto/mako_go_proto"
 )
@@ -57,6 +59,7 @@ var (
 	flagNoInteractive = flag.Bool("nointeractive", false, "Skip all user prompts, assuming user entered \"yes\"")
 
 	// All the possible subcommand args
+	subargAlertKey        string
 	subargBenchmarkKey    string
 	subargBenchmarkName   string
 	subargOwner           string
@@ -224,6 +227,19 @@ const (
 
 `
 
+	listRegressionUsage = `
+  list_regressions [-alert_key=<alertKey>]
+
+  Lists all regressions associated with the given alert key.
+
+	<alertKey> must be a full and exact string match for alert_key in the RunInfo's
+	AnalysisTriageInfo message for each RunInfo with regressions associated with
+	the alert.
+
+  NOTE: -alert_key is required.
+
+`
+
 	listRunsUsage = `
   list_runs -benchmark_key=<key> [-run_timestamp_min_ms=<minTimestampMs>] [-run_timestamp_max_ms=<maxTimestampMs>] [-run_build_id_min=<minBuildID>] [-run_build_id_max=<maxBuildID>] [-test_pass_id=<testPassID>] [-tag_list=<tags>]
 
@@ -352,9 +368,10 @@ const (
 benchmark_name: ""
 
 # REQUIRED: specify a project name.
+# This project name must already exist.
 project_name: ""
 
-# REQUIRED: specify one or more owners.
+# OPTIONAL: specify benchmark owners.
 owner_list: "user@google.com"
 owner_list: "group@prod.google.com"
 
@@ -573,12 +590,12 @@ func unmarshal(msg proto.Message, str string) error {
 	return nil
 }
 
-func queryRunInfo(ctx context.Context, s mako.Storage, q pgpb.RunInfoQuery) ([]*pgpb.RunInfo, error) {
+func queryRunInfo(ctx context.Context, s mako.Storage, q *pgpb.RunInfoQuery) ([]*pgpb.RunInfo, error) {
 	var runs []*pgpb.RunInfo
 	first := true
 	for first || q.GetCursor() != "" {
 		first = false
-		riqr, err := s.QueryRunInfo(ctx, &q)
+		riqr, err := s.QueryRunInfo(ctx, q)
 		if err != nil {
 			return nil, err
 		}
@@ -631,9 +648,9 @@ func updateRun(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, err
 	}
 
 	if subargRunKey != "" {
-		fmt.Fprint(outWriter, "Updated run "+subargRunKey+" successfully")
+		fmt.Fprintln(outWriter, "Updated run "+subargRunKey+" successfully.")
 	} else {
-		fmt.Fprint(outWriter, "Run update successful")
+		fmt.Fprintln(outWriter, "Run update successful.")
 	}
 
 	return subcommands.ExitSuccess, nil
@@ -742,10 +759,10 @@ func buildRunQuery(benchmark, run string, timestampMin, timestampMax float64, bu
 
 // represents a function that modifies a single run, returning
 // true if the run was actually modified
-type perRunOp func(runInfo pgpb.RunInfo) (bool, error)
+type perRunOp func(runInfo *pgpb.RunInfo) (bool, error)
 
 // given a query and perRunOp, issue the query and edit each run with perRunOp
-func updateEachRun(ctx context.Context, runQuery pgpb.RunInfoQuery, s mako.Storage, op perRunOp) error {
+func updateEachRun(ctx context.Context, runQuery *pgpb.RunInfoQuery, s mako.Storage, op perRunOp) error {
 	runInfos, err := queryRunInfo(ctx, s, runQuery)
 	if err != nil {
 		return err
@@ -778,7 +795,7 @@ func updateEachRun(ctx context.Context, runQuery pgpb.RunInfoQuery, s mako.Stora
 	maxErrors := maxDisplayedErrors
 	//TODO(b/138267664): Test with many runs, to evaluate whether we should parallelize this operation
 	for _, runInfo := range runInfos {
-		updated, err := op(*runInfo)
+		updated, err := op(runInfo)
 		if err != nil && len(errs) < maxErrors {
 			errs = append(errs, err)
 		} else if updated {
@@ -946,9 +963,9 @@ func updateBenchmark(ctx context.Context, s mako.Storage) (subcommands.ExitStatu
 	}
 
 	if subargBenchmarkKey != "" {
-		fmt.Fprint(outWriter, "Updated benchmark "+subargBenchmarkKey+" successfully.")
+		fmt.Fprintln(outWriter, "Updated benchmark "+subargBenchmarkKey+" successfully.")
 	} else {
-		fmt.Fprint(outWriter, "Benchmark update successful.\n")
+		fmt.Fprintln(outWriter, "Benchmark update successful.")
 	}
 
 	return subcommands.ExitSuccess, nil
@@ -1001,7 +1018,8 @@ func createProject(ctx context.Context, s mako.Storage) (subcommands.ExitStatus,
 		return subcommands.ExitFailure, err
 	}
 
-	fmt.Fprint(outWriter, "Successfully created project.")
+	message := "Successfully created Mako project %q.\n"
+	fmt.Fprintln(outWriter, fmt.Sprintf(message, pi.GetProjectName()))
 	return subcommands.ExitSuccess, nil
 }
 
@@ -1017,7 +1035,7 @@ func updateProject(ctx context.Context, s mako.Storage) (subcommands.ExitStatus,
 		return subcommands.ExitFailure, err
 	}
 
-	fmt.Fprint(outWriter, "Successfully updated project.")
+	fmt.Fprintln(outWriter, "Successfully updated project.")
 	return subcommands.ExitSuccess, nil
 }
 
@@ -1156,6 +1174,57 @@ func deleteAnnotation(ctx context.Context, s mako.Storage) (subcommands.ExitStat
 	return subcommands.ExitSuccess, nil
 }
 
+// -- alert commands --
+
+func listRegressions(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, error) {
+	if subargAlertKey == "" {
+		return subcommands.ExitUsageError, fmt.Errorf("-alert_key missing")
+	}
+
+	// Run query
+	runInfos, err := queryRunInfo(ctx, s, &pgpb.RunInfoQuery{
+		AlertKey:     proto.String(subargAlertKey),
+		BenchmarkKey: proto.String("*"),
+	})
+	if err != nil {
+		return subcommands.ExitFailure, err
+	}
+
+	if len(runInfos) == 0 {
+		fmt.Fprintln(errWriter, "No results! Check your arguments.")
+	}
+
+	dashboard := standarddashboard.New()
+	counter := 1
+	for _, runInfo := range runInfos {
+		fmt.Fprintln(outWriter, "run_key:", runInfo.GetRunKey())
+		// Print the visualization link for each AnalyzerOutput with the associated alert key.
+		for _, analyzerOutput := range runInfo.GetTestOutput().GetAnalyzerOutputList() {
+			matchAlertKey := false
+			for _, alertKey := range analyzerOutput.GetAnalysisTriageInfo().GetAlertKeys() {
+				if alertKey == subargAlertKey {
+					matchAlertKey = true
+					break
+				}
+			}
+			if matchAlertKey {
+				visualizationURL, err := dashboard.VisualizeAnalysis(
+					&pgpb.DashboardVisualizeAnalysisInput{
+						RunKey:      proto.String(runInfo.GetRunKey()),
+						AnalysisKey: proto.String(analyzerOutput.GetAnalysisKey()),
+					})
+				if err != nil {
+					return subcommands.ExitFailure, err
+				}
+				fmt.Fprintf(outWriter, "  #%d: %s\n", counter, visualizationURL.String())
+				counter++
+			}
+		}
+	}
+
+	return subcommands.ExitSuccess, nil
+}
+
 // -- run commands --
 
 func listRuns(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, error) {
@@ -1168,7 +1237,7 @@ func listRuns(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, erro
 
 	runQuery := buildRunQuery(subargBenchmarkKey, subargRunKey, subargTimestampMinMs,
 		subargTimestampMaxMs, subargMinBuildID, subargMaxBuildID, subargTestPassID, parsedTags)
-	runInfos, err := queryRunInfo(ctx, s, *runQuery)
+	runInfos, err := queryRunInfo(ctx, s, runQuery)
 	if err != nil {
 		return subcommands.ExitFailure, err
 	}
@@ -1314,7 +1383,7 @@ func deleteTag(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, err
 	runQuery := buildRunQuery(subargBenchmarkKey, subargRunKey, subargTimestampMinMs, subargTimestampMaxMs,
 		subargMinBuildID, subargMaxBuildID, subargTestPassID, tagList)
 
-	err := updateEachRun(ctx, *runQuery, s, func(ri pgpb.RunInfo) (bool, error) {
+	err := updateEachRun(ctx, runQuery, s, func(ri *pgpb.RunInfo) (bool, error) {
 		removeTagIndex := -1
 		for i, tag := range ri.Tags {
 			if tag == subargTag {
@@ -1328,7 +1397,7 @@ func deleteTag(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, err
 		}
 		ri.Tags = append(ri.Tags[:removeTagIndex], ri.Tags[removeTagIndex+1:]...)
 		log.Infof("Deleting tag %s (index %d) from run %s", subargTag, removeTagIndex, ri.RunKey)
-		if err := updateRunInfo(ctx, s, &ri); err != nil {
+		if err := updateRunInfo(ctx, s, ri); err != nil {
 			return false, err
 		}
 
@@ -1354,7 +1423,7 @@ func listTags(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, erro
 	}
 
 	if len(ri.GetTags()) == 0 {
-		fmt.Fprint(outWriter, "Run has no tags. Add some with the 'add_tag' command")
+		fmt.Fprintln(outWriter, "Run has no tags. Add some with the 'add_tag' command.")
 		return subcommands.ExitSuccess, nil
 	}
 
@@ -1379,7 +1448,7 @@ func addTag(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, error)
 
 	runQuery := buildRunQuery(subargBenchmarkKey, subargRunKey, subargTimestampMinMs, subargTimestampMaxMs,
 		subargMinBuildID, subargMaxBuildID, subargTestPassID, parsedTags)
-	err := updateEachRun(ctx, *runQuery, s, func(ri pgpb.RunInfo) (bool, error) {
+	err := updateEachRun(ctx, runQuery, s, func(ri *pgpb.RunInfo) (bool, error) {
 		// don't add tag if it already exists
 		for _, t := range ri.Tags {
 			if t == subargTag {
@@ -1393,7 +1462,7 @@ func addTag(ctx context.Context, s mako.Storage) (subcommands.ExitStatus, error)
 		log.Infof("Adding tag %s to run %s", subargTag, ri.GetRunKey())
 
 		// Update the run with new tag.
-		if err := updateRunInfo(ctx, s, &ri); err != nil {
+		if err := updateRunInfo(ctx, s, ri); err != nil {
 			return false, err
 		}
 
@@ -1553,6 +1622,18 @@ func registerMakoCommands(commander *subcommands.Commander) {
 				f.IntVar(&subargAnnotationIndex, "annotation_index", -1, "Index of the annotation to delete according to list_annotations output.")
 			},
 			execute: deleteAnnotation}, "annotations")
+
+	// -- alert commands --
+
+	commander.Register(
+		&cmd{
+			name:     "list_regressions",
+			synopsis: "Lists regressions that match given alert_key.",
+			usage:    listRegressionUsage,
+			setFlags: func(f *flag.FlagSet) {
+				f.StringVar(&subargAlertKey, "alert_key", "", "AlertInfo that regressions are associated with.")
+			},
+			execute: listRegressions}, "alerts")
 
 	// -- run commands --
 

@@ -302,23 +302,22 @@ bool ProtoCompare(const ProtoComparison& comp,
 // actual message, a CHECK failure will cause the test to fail and no subsequent
 // tests will be run.
 template <typename Proto>
-inline bool ProtoCompare(const ProtoComparison& comp,
-                         const Proto& actual,
+inline bool ProtoCompare(const ProtoComparison& comp, const Proto& actual,
                          const std::string& expected) {
   return ProtoCompare(comp, actual, MakePartialProtoFromAscii<Proto>(expected));
 }
 
 // Describes the types of the expected and the actual protocol buffer.
 std::string DescribeTypes(const google::protobuf::Message& expected,
-                     const google::protobuf::Message& actual);
+                          const google::protobuf::Message& actual);
 
 // Prints the protocol buffer pointed to by proto.
 std::string PrintProtoPointee(const google::protobuf::Message* proto);
 
 // Describes the differences between the two protocol buffers.
 std::string DescribeDiff(const ProtoComparison& comp,
-                    const google::protobuf::Message& actual,
-                    const google::protobuf::Message& expected);
+                         const google::protobuf::Message& actual,
+                         const google::protobuf::Message& expected);
 
 // Common code for implementing EqualsProto, EquivToProto,
 // EqualsInitializedProto, and EquivToInitializedProto.
@@ -528,11 +527,11 @@ class ProtoMatcher : public ProtoMatcherBase {
 class ProtoStringMatcher : public ProtoMatcherBase {
  public:
   ProtoStringMatcher(
-      const std::string& expected,  // The text representing the expected protobuf.
-      bool must_be_initialized,    // Must the argument be fully initialized?
+      const std::string&
+          expected,              // The text representing the expected protobuf.
+      bool must_be_initialized,  // Must the argument be fully initialized?
       const ProtoComparison comp)  // How to compare the two protobufs.
-      : ProtoMatcherBase(must_be_initialized, comp),
-        expected_(expected) {}
+      : ProtoMatcherBase(must_be_initialized, comp), expected_(expected) {}
 
   // Parses the expected std::string as a protobuf of the same type as arg,
   // and returns the parsed protobuf (or NULL when the parse fails).

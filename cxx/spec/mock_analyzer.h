@@ -20,13 +20,16 @@
 namespace mako {
 class MockAnalyzer : public Analyzer {
  public:
-  MOCK_METHOD2(ConstructHistoricQuery,
-               bool(const mako::AnalyzerHistoricQueryInput& query_input,
-                    mako::AnalyzerHistoricQueryOutput* query_output));
-  MOCK_METHOD2(Analyze, bool(const mako::AnalyzerInput& analyzer_input,
-                             mako::AnalyzerOutput* analyzer_output));
-  MOCK_METHOD0(analyzer_type, std::string());
-  MOCK_METHOD0(analyzer_name, std::string());
+  MOCK_METHOD(bool, ConstructHistoricQuery,
+              (const mako::AnalyzerHistoricQueryInput& query_input,
+               mako::AnalyzerHistoricQueryOutput*),
+              (override));
+  MOCK_METHOD(bool, Analyze,
+              (const mako::AnalyzerInput& analyzer_input,
+               mako::AnalyzerOutput*),
+              (override));
+  MOCK_METHOD(std::string, analyzer_type, (), (override));
+  MOCK_METHOD(std::string, analyzer_name, (), (override));
 
  private:
   bool DoAnalyze(const mako::AnalyzerInput& analyzer_input,

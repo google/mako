@@ -21,6 +21,7 @@
 #include "gtest/gtest.h"
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "cxx/helpers/status/canonical_errors.h"
@@ -28,6 +29,8 @@
 #include "cxx/internal/storage_client/mock_transport.h"
 #include "cxx/testing/protocol-buffer-matchers.h"
 #include "proto/internal/mako_internal.pb.h"
+#include "proto/internal/storage_client/storage.pb.h"
+#include "spec/proto/mako.pb.h"
 
 namespace mako {
 namespace google3_storage {
@@ -80,18 +83,117 @@ class StorageTest : public ::testing::Test {
   Storage storage_;
 };
 
+TEST_F(StorageTest, ProjectCreation) {
+  CreationResponse mock_response;
+  mock_response.set_key("foo_project");
+  mock_response.mutable_status()->set_code(Status::SUCCESS);
+
+  internal::CreateProjectInfoRequest request;
+  ProjectInfo& project_info = *request.mutable_payload();
+  project_info.set_project_name("foo_project");
+  project_info.set_project_alias("My Foo Project");
+  project_info.add_owner_list("foo@foogle.com");
+  project_info.mutable_default_issue_tracker()
+      ->mutable_buganizer_config()
+      ->set_component_id("123456789");
+
+  EXPECT_CALL(Transport(), CreateProjectInfo(_, EqualsProto(request), _))
+      .WillOnce(
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
+
+  CreationResponse actual_response;
+  EXPECT_TRUE(storage_.CreateProjectInfo(project_info, &actual_response));
+  EXPECT_THAT(actual_response, EqualsProto(mock_response));
+}
+
+TEST_F(StorageTest, ProjectUpdate) {
+  ModificationResponse mock_response;
+  mock_response.mutable_status()->set_code(Status::SUCCESS);
+  mock_response.set_count(1);
+
+  internal::UpdateProjectInfoRequest request;
+  ProjectInfo& project_info = *request.mutable_payload();
+  project_info.set_project_name("foo_project");
+  project_info.set_project_alias("My Foo Project");
+  project_info.add_owner_list("foo@foogle.com");
+  project_info.mutable_default_issue_tracker()
+      ->mutable_buganizer_config()
+      ->set_component_id("123456789");
+
+  EXPECT_CALL(Transport(), UpdateProjectInfo(_, EqualsProto(request), _))
+      .WillOnce(
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
+
+  ModificationResponse actual_response;
+  EXPECT_TRUE(storage_.UpdateProjectInfo(project_info, &actual_response));
+  EXPECT_THAT(actual_response, EqualsProto(mock_response));
+}
+
+TEST_F(StorageTest, ProjectGet) {
+  ProjectInfoGetResponse mock_response;
+  mock_response.mutable_status()->set_code(Status::SUCCESS);
+  auto expected = mock_response.mutable_project_info();
+  expected->set_project_name("foo_project");
+  expected->set_project_alias("My Foo Project");
+  expected->add_owner_list("foo@foogle.com");
+  expected->mutable_default_issue_tracker()
+      ->mutable_buganizer_config()
+      ->set_component_id("123456789");
+
+  internal::GetProjectInfoRequest request;
+  ProjectInfo& project_info = *request.mutable_payload();
+  std::string project_name = "foo_project";
+  project_info.set_project_name(project_name);
+
+  EXPECT_CALL(Transport(), GetProjectInfo(_, EqualsProto(request), _))
+      .WillOnce(
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
+
+  ProjectInfoGetResponse actual_response;
+  EXPECT_TRUE(storage_.GetProjectInfoByName(project_name, &actual_response));
+  EXPECT_THAT(actual_response, EqualsProto(mock_response));
+}
+
+TEST_F(StorageTest, ProjectQuery) {
+  ProjectInfoQueryResponse mock_response;
+  mock_response.mutable_status()->set_code(Status::SUCCESS);
+  auto expected = mock_response.add_project_info_list();
+  expected->set_project_name("foo");
+  expected->set_project_alias("FOO");
+  expected->add_owner_list("foo@foo.com");
+  expected = mock_response.add_project_info_list();
+  expected->set_project_name("bar");
+  expected->set_project_alias("BAR");
+  expected->add_owner_list("bar@bar.com");
+  expected->mutable_default_issue_tracker()
+      ->mutable_buganizer_config()
+      ->set_component_id("123456789");
+  mock_response.set_cursor("");
+
+  internal::QueryProjectInfoRequest request;
+  ProjectInfoQuery& project_info_query = *request.mutable_payload();
+
+  EXPECT_CALL(Transport(), QueryProjectInfo(_, EqualsProto(request), _))
+      .WillOnce(
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
+
+  ProjectInfoQueryResponse response;
+  EXPECT_TRUE(storage_.QueryProjectInfo(project_info_query, &response));
+  EXPECT_THAT(response, EqualsProto(mock_response));
+}
+
 TEST_F(StorageTest, BenchmarkCreation) {
   CreationResponse mock_response;
   mock_response.set_key("123456");
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  BenchmarkInfo benchmark_info;
+  internal::CreateBenchmarkInfoRequest request;
+  BenchmarkInfo& benchmark_info = *request.mutable_payload();
   benchmark_info.set_benchmark_name("My C++ Project");
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/create",
-                                EqualsProto(benchmark_info), _, _))
+  EXPECT_CALL(Transport(), CreateBenchmarkInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateBenchmarkInfo(benchmark_info, &response));
@@ -103,14 +205,15 @@ TEST_F(StorageTest, BenchmarkQuery) {
   BenchmarkInfo* query_result = mock_response.add_benchmark_info_list();
   query_result->set_benchmark_key("123");
   mock_response.mutable_status()->set_code(Status::SUCCESS);
+  mock_response.set_cursor("");
 
-  BenchmarkInfoQuery benchmark_info_query;
+  internal::QueryBenchmarkInfoRequest request;
+  BenchmarkInfoQuery& benchmark_info_query = *request.mutable_payload();
   benchmark_info_query.set_project_name("mako");
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/query",
-                                EqualsProto(benchmark_info_query), _, _))
+  EXPECT_CALL(Transport(), QueryBenchmarkInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   BenchmarkInfoQueryResponse response;
   EXPECT_TRUE(storage_.QueryBenchmarkInfo(benchmark_info_query, &response));
@@ -122,13 +225,13 @@ TEST_F(StorageTest, BenchmarkUpdate) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  BenchmarkInfo benchmark_info;
+  internal::UpdateBenchmarkInfoRequest request;
+  BenchmarkInfo& benchmark_info = *request.mutable_payload();
   benchmark_info.set_benchmark_key("123");
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/update",
-                                EqualsProto(benchmark_info), _, _))
+  EXPECT_CALL(Transport(), UpdateBenchmarkInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateBenchmarkInfo(benchmark_info, &response));
@@ -140,13 +243,13 @@ TEST_F(StorageTest, BenchmarkDelete) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  BenchmarkInfoQuery benchmark_info_query;
+  internal::DeleteBenchmarkInfoRequest request;
+  BenchmarkInfoQuery& benchmark_info_query = *request.mutable_payload();
   benchmark_info_query.set_project_name("mako");
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/delete",
-                                EqualsProto(benchmark_info_query), _, _))
+  EXPECT_CALL(Transport(), DeleteBenchmarkInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.DeleteBenchmarkInfo(benchmark_info_query, &response));
@@ -158,13 +261,13 @@ TEST_F(StorageTest, BenchmarkCountQuery) {
   mock_response.set_count(11);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  BenchmarkInfoQuery benchmark_info_query;
+  internal::CountBenchmarkInfoRequest request;
+  BenchmarkInfoQuery& benchmark_info_query = *request.mutable_payload();
   benchmark_info_query.set_project_name("mako");
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/count",
-                                EqualsProto(benchmark_info_query), _, _))
+  EXPECT_CALL(Transport(), CountBenchmarkInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CountResponse response;
   EXPECT_TRUE(storage_.CountBenchmarkInfo(benchmark_info_query, &response));
@@ -176,13 +279,13 @@ TEST_F(StorageTest, RunCreation) {
   mock_response.set_key("122344");  // this is an arbitrary number
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  RunInfo run_info;
+  internal::CreateRunInfoRequest request;
+  RunInfo& run_info = *request.mutable_payload();
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/create", EqualsProto(run_info), _, _))
+  EXPECT_CALL(Transport(), CreateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
@@ -196,18 +299,19 @@ TEST_F(StorageTest, RunCreationAddlTags) {
 
   absl::SetFlag(&FLAGS_mako_internal_additional_tags,
                 {"test1=val1", "test2=val2"});
+
   RunInfo run_info;
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
 
-  RunInfo exp_run_info;
+  internal::CreateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_benchmark_key(run_info.benchmark_key());
   exp_run_info.add_tags("test1=val1");
   exp_run_info.add_tags("test2=val2");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/create", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), CreateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
@@ -223,15 +327,15 @@ TEST_F(StorageTest, RunCreationAddlTagsEnv) {
   RunInfo run_info;
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
 
-  RunInfo exp_run_info;
+  internal::CreateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_benchmark_key(run_info.benchmark_key());
   exp_run_info.add_tags("test1=val1");
   exp_run_info.add_tags("test2=val2");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/create", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), CreateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
@@ -249,14 +353,14 @@ TEST_F(StorageTest, RunCreationTestPassOverride) {
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
   run_info.set_test_pass_id("4567");
 
-  RunInfo exp_run_info;
+  internal::CreateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_benchmark_key(run_info.benchmark_key());
   exp_run_info.set_test_pass_id("1234");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/create", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), CreateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
@@ -273,14 +377,14 @@ TEST_F(StorageTest, RunCreationTestPassOverrideEnv) {
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
   run_info.set_test_pass_id("4567");
 
-  RunInfo exp_run_info;
+  internal::CreateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_benchmark_key(run_info.benchmark_key());
   exp_run_info.set_test_pass_id("1234");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/create", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), CreateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
@@ -299,14 +403,14 @@ TEST_F(StorageTest, RunCreationTestPassOverrideEnvAndFlag) {
   run_info.set_benchmark_key("34566");  // this is an arbitrary number
   run_info.set_test_pass_id("4567");
 
-  RunInfo exp_run_info;
+  internal::CreateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_benchmark_key(run_info.benchmark_key());
   exp_run_info.set_test_pass_id("12345");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/create", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), CreateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
@@ -319,14 +423,15 @@ TEST_F(StorageTest, RunQuery) {
   RunInfo* query_result = mock_response.add_run_info_list();
   query_result->set_run_key("1234");
   mock_response.mutable_status()->set_code(Status::SUCCESS);
+  mock_response.set_cursor("");
 
-  RunInfoQuery run_info_query;
+  internal::QueryRunInfoRequest request;
+  RunInfoQuery& run_info_query = *request.mutable_payload();
   run_info_query.set_min_timestamp_ms(4.4);
 
-  EXPECT_CALL(Transport(), Call("/storage/run-info/query",
-                                EqualsProto(run_info_query), _, _))
+  EXPECT_CALL(Transport(), QueryRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   RunInfoQueryResponse response;
   EXPECT_TRUE(storage_.QueryRunInfo(run_info_query, &response));
@@ -338,13 +443,13 @@ TEST_F(StorageTest, RunUpdate) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  RunInfo run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& run_info = *request.mutable_payload();
   run_info.set_run_key("123");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -361,14 +466,14 @@ TEST_F(StorageTest, RunUpdateTestPassOverrideFlag) {
   run_info.set_run_key("123");
   run_info.set_test_pass_id("original");
 
-  RunInfo exp_run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_run_key(run_info.run_key());
   exp_run_info.set_test_pass_id("new");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -385,14 +490,14 @@ TEST_F(StorageTest, RunUpdateTestPassOverrideEnv) {
   run_info.set_run_key("123");
   run_info.set_test_pass_id("original");
 
-  RunInfo exp_run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_run_key(run_info.run_key());
   exp_run_info.set_test_pass_id("new");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -411,14 +516,14 @@ TEST_F(StorageTest, RunUpdateTestPassOverrideEnvAndFlag) {
   run_info.set_run_key("123");
   run_info.set_test_pass_id("original");
 
-  RunInfo exp_run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_run_key(run_info.run_key());
   exp_run_info.set_test_pass_id("new");
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -431,8 +536,8 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlag) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  std::vector<std::string> flag_tags =
-      {"tag1=val1", "tag2=val2", "tag3=val3", "tag4=val4"};
+  std::vector<std::string> flag_tags = {"tag1=val1", "tag2=val2", "tag3=val3",
+                                        "tag4=val4"};
   absl::SetFlag(&FLAGS_mako_internal_additional_tags, flag_tags);
   RunInfo run_info;
   run_info.set_run_key("123");
@@ -441,7 +546,8 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlag) {
   *run_info.add_tags() = "tag3=val3";
   *run_info.add_tags() = "tag5=val5";
 
-  RunInfo exp_run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_run_key(run_info.run_key());
   *exp_run_info.add_tags() = "tag2=val3";
   *exp_run_info.add_tags() = "tag1=val1";
@@ -450,10 +556,9 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlag) {
   *exp_run_info.add_tags() = "tag2=val2";
   *exp_run_info.add_tags() = "tag4=val4";
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -474,7 +579,8 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsEnv) {
   *run_info.add_tags() = "tag3=val3";
   *run_info.add_tags() = "tag5=val5";
 
-  RunInfo exp_run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_run_key(run_info.run_key());
   *exp_run_info.add_tags() = "tag2=val3";
   *exp_run_info.add_tags() = "tag1=val1";
@@ -483,10 +589,9 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsEnv) {
   *exp_run_info.add_tags() = "tag2=val2";
   *exp_run_info.add_tags() = "tag4=val4";
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -499,8 +604,8 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagWhitespace) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  std::vector<std::string> flag_tags =
-      {"tag1=val1 ", "   tag2=val2  \t  \n", " tag3=val3", "tag4=val4\n"};
+  std::vector<std::string> flag_tags = {"tag1=val1 ", "   tag2=val2  \t  \n",
+                                        " tag3=val3", "tag4=val4\n"};
   absl::SetFlag(&FLAGS_mako_internal_additional_tags, flag_tags);
   RunInfo run_info;
   run_info.set_run_key("123");
@@ -509,7 +614,8 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagWhitespace) {
   *run_info.add_tags() = "tag3=val3";
   *run_info.add_tags() = "tag5=val5";
 
-  RunInfo exp_run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_run_key(run_info.run_key());
   *exp_run_info.add_tags() = "tag2=val3";
   *exp_run_info.add_tags() = "tag1=val1";
@@ -518,10 +624,9 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagWhitespace) {
   *exp_run_info.add_tags() = "tag2=val2";
   *exp_run_info.add_tags() = "tag4=val4";
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -542,7 +647,8 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsEnvWhitespace) {
   *run_info.add_tags() = "tag3=val3";
   *run_info.add_tags() = "tag5=val5";
 
-  RunInfo exp_run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_run_key(run_info.run_key());
   *exp_run_info.add_tags() = "tag2=val3";
   *exp_run_info.add_tags() = "tag1=val1";
@@ -551,10 +657,9 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsEnvWhitespace) {
   *exp_run_info.add_tags() = "tag2=val2";
   *exp_run_info.add_tags() = "tag4=val4";
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -567,8 +672,8 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagAndEnv) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  std::vector<std::string> flag_tags =
-      {"tag1=val1", "tag2=val2", "tag3=val3", "tag4=val4"};
+  std::vector<std::string> flag_tags = {"tag1=val1", "tag2=val2", "tag3=val3",
+                                        "tag4=val4"};
   absl::SetFlag(&FLAGS_mako_internal_additional_tags, flag_tags);
   setenv("MAKO_INTERNAL_ADDITIONAL_TAGS",
          "tag1=val1,tag2=val2,tag3=val3,tag6=val6", 1);
@@ -579,7 +684,8 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagAndEnv) {
   *run_info.add_tags() = "tag3=val3";
   *run_info.add_tags() = "tag5=val5";
 
-  RunInfo exp_run_info;
+  internal::UpdateRunInfoRequest request;
+  RunInfo& exp_run_info = *request.mutable_payload();
   exp_run_info.set_run_key(run_info.run_key());
   *exp_run_info.add_tags() = "tag2=val3";
   *exp_run_info.add_tags() = "tag1=val1";
@@ -588,10 +694,9 @@ TEST_F(StorageTest, RunUpdateUniqueAdditionalTagsFlagAndEnv) {
   *exp_run_info.add_tags() = "tag2=val2";
   *exp_run_info.add_tags() = "tag4=val4";
 
-  EXPECT_CALL(Transport(),
-              Call("/storage/run-info/update", EqualsProto(exp_run_info), _, _))
+  EXPECT_CALL(Transport(), UpdateRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
@@ -604,13 +709,13 @@ TEST_F(StorageTest, RunDelete) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  RunInfoQuery run_info_query;
+  internal::DeleteRunInfoRequest request;
+  RunInfoQuery& run_info_query = *request.mutable_payload();
   run_info_query.set_max_timestamp_ms(23.0);
 
-  EXPECT_CALL(Transport(), Call("/storage/run-info/delete",
-                                EqualsProto(run_info_query), _, _))
+  EXPECT_CALL(Transport(), DeleteRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.DeleteRunInfo(run_info_query, &response));
@@ -622,13 +727,13 @@ TEST_F(StorageTest, RunCountQuery) {
   mock_response.set_count(13);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  RunInfoQuery run_info_query;
+  internal::CountRunInfoRequest request;
+  RunInfoQuery& run_info_query = *request.mutable_payload();
   run_info_query.set_benchmark_key("xxxx");
 
-  EXPECT_CALL(Transport(), Call("/storage/run-info/count",
-                                EqualsProto(run_info_query), _, _))
+  EXPECT_CALL(Transport(), CountRunInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CountResponse response;
   EXPECT_TRUE(storage_.CountRunInfo(run_info_query, &response));
@@ -640,13 +745,13 @@ TEST_F(StorageTest, SampleBatchCreation) {
   mock_response.set_key("123456");
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  SampleBatch sample_batch;
+  internal::CreateSampleBatchRequest request;
+  SampleBatch& sample_batch = *request.mutable_payload();
   sample_batch.set_run_key("98787");
 
-  EXPECT_CALL(Transport(), Call("/storage/sample-batch/create",
-                                EqualsProto(sample_batch), _, _))
+  EXPECT_CALL(Transport(), CreateSampleBatch(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateSampleBatch(sample_batch, &response));
@@ -658,22 +763,22 @@ TEST_F(StorageTest, SampleBatchCreationWithAuxData) {
   mock_response.set_key("123456");
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  EXPECT_CALL(
-      Transport(),
-      Call("/storage/sample-batch/create",
-           EqualsProto(
-               "run_key: \"98787\" sample_point_list: <input_value: 123>"),
-           _, _))
+  internal::CreateSampleBatchRequest request;
+  SampleBatch& sample_batch = *request.mutable_payload();
+  sample_batch.set_run_key("98787");
+  SamplePoint* point = sample_batch.add_sample_point_list();
+  point->set_input_value(123);
+
+  EXPECT_CALL(Transport(), CreateSampleBatch(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
+
+  SampleBatch batch_with_aux = sample_batch;
+  batch_with_aux.mutable_sample_point_list(0)->mutable_aux_data()->insert(
+      {"aux", "data"});
 
   CreationResponse response;
-  SampleBatch sample_batch;
-  sample_batch.set_run_key("98787");
-  auto* point = sample_batch.add_sample_point_list();
-  point->set_input_value(123);
-  point->mutable_aux_data()->insert({"aux", "data"});
-  EXPECT_TRUE(storage_.CreateSampleBatch(sample_batch, &response));
+  EXPECT_TRUE(storage_.CreateSampleBatch(batch_with_aux, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
 }
 
@@ -682,14 +787,15 @@ TEST_F(StorageTest, SampleBatchQuery) {
   SampleBatch* query_result = mock_response.add_sample_batch_list();
   query_result->set_benchmark_key("123");
   mock_response.mutable_status()->set_code(Status::SUCCESS);
+  mock_response.set_cursor("");
 
-  SampleBatchQuery sample_batch_query;
+  internal::QuerySampleBatchRequest request;
+  SampleBatchQuery& sample_batch_query = *request.mutable_payload();
   sample_batch_query.set_benchmark_key("098978");
 
-  EXPECT_CALL(Transport(), Call("/storage/sample-batch/query",
-                                EqualsProto(sample_batch_query), _, _))
+  EXPECT_CALL(Transport(), QuerySampleBatch(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   SampleBatchQueryResponse response;
   EXPECT_TRUE(storage_.QuerySampleBatch(sample_batch_query, &response));
@@ -701,13 +807,13 @@ TEST_F(StorageTest, SampleBatchDelete) {
   mock_response.set_count(1);
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  SampleBatchQuery sample_batch_query;
+  internal::DeleteSampleBatchRequest request;
+  SampleBatchQuery& sample_batch_query = *request.mutable_payload();
   sample_batch_query.set_batch_key("109872");
 
-  EXPECT_CALL(Transport(), Call("/storage/sample-batch/delete",
-                                EqualsProto(sample_batch_query), _, _))
+  EXPECT_CALL(Transport(), DeleteSampleBatch(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   ModificationResponse response;
   EXPECT_TRUE(storage_.DeleteSampleBatch(sample_batch_query, &response));
@@ -738,9 +844,9 @@ TEST_F(StorageTest, FailureAndRecovery) {
   status->set_code(Status::FAIL);
   status->set_fail_message("Creation failed b/c a solar flare");
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/create", _, _, _))
+  EXPECT_CALL(Transport(), CreateBenchmarkInfo(_, _, _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   BenchmarkInfo benchmark_info;
   CreationResponse response;
@@ -763,12 +869,12 @@ TEST_F(StorageTest, RetryableAndNonRetryableFailures) {
   status->set_fail_message(error_string);
   status->set_retry(false);
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/create", _, _, _))
-      .WillOnce(DoAll(SetArgPointee<3>(mock_retryable_creation_response),
+  EXPECT_CALL(Transport(), CreateBenchmarkInfo(_, _, _))
+      .WillOnce(DoAll(SetArgPointee<2>(mock_retryable_creation_response),
                       Return(helpers::OkStatus())))
-      .WillOnce(DoAll(SetArgPointee<3>(mock_retryable_creation_response),
+      .WillOnce(DoAll(SetArgPointee<2>(mock_retryable_creation_response),
                       Return(helpers::OkStatus())))
-      .WillOnce(DoAll(SetArgPointee<3>(mock_nonretryable_creation_response),
+      .WillOnce(DoAll(SetArgPointee<2>(mock_nonretryable_creation_response),
                       Return(helpers::OkStatus())));
 
   BenchmarkInfo benchmark_info;
@@ -780,7 +886,7 @@ TEST_F(StorageTest, RetryableAndNonRetryableFailures) {
 TEST_F(StorageTest, RetryableAndNonRetryableTransportLevelFailures) {
   std::string error_string = "Creation failed b/c a solar flare";
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/create", _, _, _))
+  EXPECT_CALL(Transport(), CreateBenchmarkInfo(_, _, _))
       .WillOnce(Return(helpers::UnavailableError(error_string)))
       .WillOnce(Return(helpers::UnavailableError(error_string)))
       .WillOnce(Return(helpers::FailedPreconditionError(error_string)));
@@ -805,9 +911,9 @@ TEST_F(StorageTest, TimeoutFails) {
   failed_mock_response.mutable_status()->set_retry(true);
   failed_mock_response.mutable_status()->set_fail_message("some failure");
 
-  EXPECT_CALL(Transport(), Call("/storage/benchmark-info/create", _, _, _))
+  EXPECT_CALL(Transport(), CreateBenchmarkInfo(_, _, _))
       .Times(10)
-      .WillRepeatedly(DoAll(SetArgPointee<3>(failed_mock_response),
+      .WillRepeatedly(DoAll(SetArgPointee<2>(failed_mock_response),
                             Return(helpers::OkStatus())));
 
   CreationResponse response;
@@ -834,311 +940,72 @@ TEST_F(StorageTest, ConnectFails) {
   EXPECT_THAT(response.status().fail_message(), HasSubstr(error_string));
 }
 
-class SudoTest : public ::testing::Test {
- public:
-  void SetUp() override {
+TEST_F(StorageTest, Sudo) {
+  absl::SetFlag(&FLAGS_mako_internal_sudo_run_as, "sudo@foogle.com");
 
-    absl::SetFlag(&FLAGS_mako_internal_sudo_run_as, "sudo@google.com");
-    storage_ = Storage(absl::make_unique<NiceMock<MockTransport>>(),
-                       absl::make_unique<FakeRetryStrategy>());
-    EXPECT_CALL(Transport(), Connect()).Times(AnyNumber());
-  }
-
-  void TearDown() override {
-  }
-
-  MockTransport& Transport() {
-    return *dynamic_cast<MockTransport*>(storage_.transport());
-  }
-
-  Storage storage_;
-};
-
-TEST_F(SudoTest, CreateBenchmarkInfo) {
   CreationResponse mock_response;
-  mock_response.set_key("123456");
   mock_response.mutable_status()->set_code(Status::SUCCESS);
 
-  BenchmarkInfo benchmark_info;
+  internal::CreateBenchmarkInfoRequest request;
+  BenchmarkInfo& benchmark_info = *request.mutable_payload();
   benchmark_info.set_benchmark_name("My C++ Project");
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::CREATE_BENCHMARK_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_benchmark() = benchmark_info;
+  request.mutable_request_options()->set_sudo_run_as("sudo@foogle.com");
 
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
+  EXPECT_CALL(Transport(), CreateBenchmarkInfo(_, EqualsProto(request), _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
+          DoAll(SetArgPointee<2>(mock_response), Return(helpers::OkStatus())));
 
   CreationResponse response;
   EXPECT_TRUE(storage_.CreateBenchmarkInfo(benchmark_info, &response));
   EXPECT_THAT(response, EqualsProto(mock_response));
 }
 
-TEST_F(SudoTest, UpdateBenchmarkInfo) {
-  ModificationResponse mock_response;
-  mock_response.set_count(1);
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  BenchmarkInfo benchmark_info;
-  benchmark_info.set_benchmark_key("123");
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::UPDATE_BENCHMARK_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_benchmark() = benchmark_info;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  ModificationResponse response;
-  EXPECT_TRUE(storage_.UpdateBenchmarkInfo(benchmark_info, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
-}
-
-TEST_F(SudoTest, QueryBenchmarkInfo) {
-  BenchmarkInfoQueryResponse mock_response;
-  BenchmarkInfo* query_result = mock_response.add_benchmark_info_list();
-  query_result->set_benchmark_key("123");
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  BenchmarkInfoQuery benchmark_info_query;
-  benchmark_info_query.set_project_name("ppp");
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::QUERY_BENCHMARK_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_benchmark_query() = benchmark_info_query;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  BenchmarkInfoQueryResponse response;
-  EXPECT_TRUE(storage_.QueryBenchmarkInfo(benchmark_info_query, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
-}
-
-TEST_F(SudoTest, DeleteBenchmarkInfo) {
-  ModificationResponse response;
-  ModificationResponse mock_response;
-  mock_response.set_count(11);
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  BenchmarkInfoQuery benchmark_info_query;
-  benchmark_info_query.set_benchmark_key("key");
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::DELETE_BENCHMARK_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_benchmark_query() = benchmark_info_query;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  EXPECT_TRUE(storage_.DeleteBenchmarkInfo(benchmark_info_query, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
-}
-
-TEST_F(SudoTest, CountBenchmarkInfo) {
-  CountResponse mock_response;
-  mock_response.set_count(11);
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  BenchmarkInfoQuery benchmark_info_query;
-  benchmark_info_query.set_project_name("mako");
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::COUNT_BENCHMARK_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_benchmark_query() = benchmark_info_query;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  CountResponse response;
-  EXPECT_TRUE(storage_.CountBenchmarkInfo(benchmark_info_query, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
-}
-
-TEST_F(SudoTest, CreateRunInfo) {
-  CreationResponse mock_response;
-  mock_response.set_key("123456");
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  RunInfo run_info;
-  run_info.set_description("desc");
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::CREATE_RUN_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_run() = run_info;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  CreationResponse response;
-  EXPECT_TRUE(storage_.CreateRunInfo(run_info, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
-}
-
-TEST_F(SudoTest, UpdateRunInfo) {
-  ModificationResponse mock_response;
-  mock_response.set_count(1);
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  RunInfo run_info;
-  run_info.set_run_key("123");
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::UPDATE_RUN_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_run() = run_info;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  ModificationResponse response;
-  EXPECT_TRUE(storage_.UpdateRunInfo(run_info, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
-}
-
-TEST_F(SudoTest, QueryRunInfo) {
-  RunInfoQueryResponse mock_response;
-  RunInfo* query_result = mock_response.add_run_info_list();
-  query_result->set_run_key("123");
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  RunInfoQuery run_info_query;
-  run_info_query.set_min_timestamp_ms(1.1);
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::QUERY_RUN_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_run_query() = run_info_query;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
+TEST_F(StorageTest, RunInfoQueryResponseHasCursor) {
+  RunInfoQuery query;
   RunInfoQueryResponse response;
-  EXPECT_TRUE(storage_.QueryRunInfo(run_info_query, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
+  response.mutable_status()->set_code(Status::SUCCESS);
+
+  EXPECT_CALL(Transport(), QueryRunInfo)
+      .WillOnce(DoAll(SetArgPointee<2>(response), Return(absl::OkStatus())));
+
+  ASSERT_TRUE(storage_.QueryRunInfo(query, &response));
+  EXPECT_TRUE(response.has_cursor());
 }
 
-TEST_F(SudoTest, DeleteRunInfo) {
-  ModificationResponse mock_response;
-  mock_response.set_count(11);
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
+TEST_F(StorageTest, BenchmarkInfoQueryResponseHasCursor) {
+  BenchmarkInfoQuery query;
+  BenchmarkInfoQueryResponse response;
+  response.mutable_status()->set_code(Status::SUCCESS);
 
-  RunInfoQuery run_info_query;
-  run_info_query.set_benchmark_key("key");
+  EXPECT_CALL(Transport(), QueryBenchmarkInfo)
+      .WillOnce(DoAll(SetArgPointee<2>(response), Return(absl::OkStatus())));
 
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::DELETE_RUN_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_run_query() = run_info_query;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  ModificationResponse response;
-  EXPECT_TRUE(storage_.DeleteRunInfo(run_info_query, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
+  ASSERT_TRUE(storage_.QueryBenchmarkInfo(query, &response));
+  EXPECT_TRUE(response.has_cursor());
 }
 
-TEST_F(SudoTest, CountRunInfo) {
-  CountResponse mock_response;
-  mock_response.set_count(11);
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  RunInfoQuery run_info_query;
-  run_info_query.set_benchmark_key("key");
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::COUNT_RUN_INFO);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_run_query() = run_info_query;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  CountResponse response;
-  EXPECT_TRUE(storage_.CountRunInfo(run_info_query, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
-}
-
-TEST_F(SudoTest, CreateSampleBatch) {
-  CreationResponse mock_response;
-  mock_response.set_key("123456");
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  SampleBatch sample_batch;
-  sample_batch.set_run_key("k");
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::CREATE_SAMPLE_BATCH);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_batch() = sample_batch;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  CreationResponse response;
-  EXPECT_TRUE(storage_.CreateSampleBatch(sample_batch, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
-}
-
-TEST_F(SudoTest, QuerySampleBatch) {
-  SampleBatchQueryResponse mock_response;
-  SampleBatch* query_result = mock_response.add_sample_batch_list();
-  query_result->set_run_key("123");
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
-
-  SampleBatchQuery sample_batch_query;
-  sample_batch_query.set_run_key("123");
-
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::QUERY_SAMPLE_BATCH);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_batch_query() = sample_batch_query;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
+TEST_F(StorageTest, SampleBatchQueryResponseHasCursor) {
+  SampleBatchQuery query;
   SampleBatchQueryResponse response;
-  EXPECT_TRUE(storage_.QuerySampleBatch(sample_batch_query, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
+  response.mutable_status()->set_code(Status::SUCCESS);
+
+  EXPECT_CALL(Transport(), QuerySampleBatch)
+      .WillOnce(DoAll(SetArgPointee<2>(response), Return(absl::OkStatus())));
+
+  ASSERT_TRUE(storage_.QuerySampleBatch(query, &response));
+  EXPECT_TRUE(response.has_cursor());
 }
 
-TEST_F(SudoTest, DeleteSampleBatch) {
-  ModificationResponse mock_response;
-  mock_response.set_count(11);
-  mock_response.mutable_status()->set_code(Status::SUCCESS);
+TEST_F(StorageTest, ProjectInfoQueryResponseHasCursor) {
+  ProjectInfoQuery query;
+  ProjectInfoQueryResponse response;
+  response.mutable_status()->set_code(Status::SUCCESS);
 
-  SampleBatchQuery sample_batch_query;
-  sample_batch_query.set_benchmark_key("key");
+  EXPECT_CALL(Transport(), QueryProjectInfo)
+      .WillOnce(DoAll(SetArgPointee<2>(response), Return(absl::OkStatus())));
 
-  SudoStorageRequest sudo_req;
-  sudo_req.set_type(SudoStorageRequest::DELETE_SAMPLE_BATCH);
-  sudo_req.set_run_as("sudo@google.com");
-  *sudo_req.mutable_batch_query() = sample_batch_query;
-
-  EXPECT_CALL(Transport(), Call("/storage/sudo", EqualsProto(sudo_req), _, _))
-      .WillOnce(
-          DoAll(SetArgPointee<3>(mock_response), Return(helpers::OkStatus())));
-
-  ModificationResponse response;
-  EXPECT_TRUE(storage_.DeleteSampleBatch(sample_batch_query, &response));
-  EXPECT_THAT(response, EqualsProto(mock_response));
+  ASSERT_TRUE(storage_.QueryProjectInfo(query, &response));
+  EXPECT_TRUE(response.has_cursor());
 }
 
 }  // namespace

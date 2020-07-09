@@ -135,7 +135,7 @@ TEST(ProtoValidationTest, ValidateBenchmarkInfo) {
 
   f = b;
   f.clear_owner_list();
-  ASSERT_NE("", ValidateBenchmarkInfo(f));
+  ASSERT_EQ("", ValidateBenchmarkInfo(f));  // benchmark owners can be empty
 
   f = b;
   f.clear_input_value_info();

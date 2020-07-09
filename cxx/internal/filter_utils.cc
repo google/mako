@@ -17,6 +17,7 @@
 
 #include "glog/logging.h"
 #include "src/google/protobuf/repeated_field.h"
+#include "spec/proto/mako.pb.h"
 #include "absl/strings/str_cat.h"
 
 namespace mako {
@@ -68,6 +69,53 @@ class FilterError {
   std::string err_;
   bool missing_data_;
 };
+
+// Given a DataFilter and BenchmarkInfo, extract the appropriate value_key
+// for the metric referred to by data_filter.
+// If data_filter is of type ERROR_COUNT or BENCHMARK_SCORE, the function will
+// return NoError, and value_key will not be populated.
+// If data_filter does not contain a label, data_filter.value_key will be
+// populated into the output parameter value_key.
+// If data_filter contains a label, then the function will extract the
+// appropriate metric value_key from benchmark_info, compare to
+// data_filter.value_key if it exists, and populate the output value_key.
+FilterError FindValueKeyFromDataFilter(const BenchmarkInfo& benchmark_info,
+                                       const DataFilter& data_filter,
+                                       std::string* value_key) {
+  const google::protobuf::RepeatedPtrField<ValueInfo>* value_info_list;
+  std::string value_info_list_name;
+  if (data_filter.data_type() == mako::DataFilter::ERROR_COUNT ||
+      data_filter.data_type() == mako::DataFilter::BENCHMARK_SCORE) {
+    return FilterError::NoError();
+  }
+  if (!data_filter.has_label()) {
+    *value_key = data_filter.value_key();
+    return FilterError::NoError();
+  }
+  if (data_filter.data_type() == mako::DataFilter::CUSTOM_AGGREGATE) {
+    value_info_list = &benchmark_info.custom_aggregation_info_list();
+    value_info_list_name = "custom_aggregation_info_list";
+  } else {
+    value_info_list = &benchmark_info.metric_info_list();
+    value_info_list_name = "metric_info_list";
+  }
+  for (const ValueInfo& value_info : *value_info_list) {
+    if (value_info.label() == data_filter.label()) {
+      if (data_filter.has_value_key() &&
+          value_info.value_key() != data_filter.value_key()) {
+        return FilterError::Error(absl::StrCat(
+            "Mismatch between value_key: ", data_filter.value_key(),
+            " and derived value_key: ", value_info.value_key(), " from label: ",
+            data_filter.label(), " and list: ", value_info_list_name));
+      }
+      *value_key = value_info.value_key();
+      return FilterError::NoError();
+    }
+  }
+  return FilterError::MissingData(
+      absl::StrCat("BenchmarkInfo missing ", value_info_list_name,
+                   " with label: ", data_filter.label()));
+}
 
 FilterError ProcessSamplePoint(
     const SamplePoint& sample_point, const std::string& value_key,
@@ -166,9 +214,17 @@ FilterError FilterErrorCount(const RunInfo& run_info,
                      results);
 }
 
-FilterError FilterCustomAggregate(const RunInfo& run_info,
-                                  const std::string& custom_aggregate_key,
+FilterError FilterCustomAggregate(const BenchmarkInfo& benchmark_info,
+                                  const RunInfo& run_info,
+                                  const DataFilter& data_filter,
                                   std::vector<DataPoint>* results) {
+  std::string custom_aggregate_key;
+  if (FilterError err = FindValueKeyFromDataFilter(benchmark_info, data_filter,
+                                                   &custom_aggregate_key);
+      err.error()) {
+    return err;
+  }
+
   if (!run_info.aggregate().has_run_aggregate()) {
     return FilterError::MissingData("RunInfo missing RunAggregate");
   }
@@ -182,8 +238,15 @@ FilterError FilterCustomAggregate(const RunInfo& run_info,
       return PackAndPush(run_info, keyed_value.value(), results);
     }
   }
+  std::string error_suffix =
+      data_filter.has_value_key()
+          ? ""
+          : absl::StrCat(" derived from label: ", data_filter.label(),
+                         " and list: custom_aggregation_info_list");
+
   return FilterError::MissingData(absl::StrCat(
-      "could not find custom aggregate with key:", custom_aggregate_key));
+      "could not find custom aggregate with key: ", custom_aggregate_key,
+      error_suffix));
 }
 
 int FindMetricAggregateIndex(
@@ -198,16 +261,29 @@ int FindMetricAggregateIndex(
   return -1;
 }
 
-FilterError FilterMetricAggregate(const RunInfo& run_info,
+FilterError FilterMetricAggregate(const BenchmarkInfo& benchmark_info,
+                                  const RunInfo& run_info,
                                   const DataFilter& data_filter,
                                   std::vector<DataPoint>* results) {
+  std::string metric_value_key;
+  if (FilterError err = FindValueKeyFromDataFilter(benchmark_info, data_filter,
+                                                   &metric_value_key);
+      err.error()) {
+    return err;
+  }
+
   int index = FindMetricAggregateIndex(
-      run_info.aggregate().metric_aggregate_list(), data_filter.value_key());
+      run_info.aggregate().metric_aggregate_list(), metric_value_key);
 
   if (index < 0) {
+    std::string error_suffix =
+        data_filter.has_value_key()
+            ? ""
+            : absl::StrCat(" derived from label: ", data_filter.label(),
+                           " and list: metric_info_list");
     return FilterError::MissingData(
         absl::StrCat("could not find metric aggregate with value key:",
-                     data_filter.value_key()));
+                     data_filter.value_key(), error_suffix));
   }
 
   MetricAggregate metric_aggregate =
@@ -235,15 +311,28 @@ FilterError FilterMetricAggregate(const RunInfo& run_info,
   }
 }
 
-FilterError FilterPercentileAggregate(const RunInfo& run_info,
+FilterError FilterPercentileAggregate(const BenchmarkInfo& benchmark_info,
+                                      const RunInfo& run_info,
                                       const DataFilter& data_filter,
                                       std::vector<DataPoint>* results) {
+  std::string metric_value_key;
+  if (FilterError err = FindValueKeyFromDataFilter(benchmark_info, data_filter,
+                                                   &metric_value_key);
+      err.error()) {
+    return err;
+  }
+
   int metric_index = FindMetricAggregateIndex(
-      run_info.aggregate().metric_aggregate_list(), data_filter.value_key());
+      run_info.aggregate().metric_aggregate_list(), metric_value_key);
 
   if (metric_index < 0) {
+    std::string error_suffix =
+        data_filter.has_value_key()
+            ? ""
+            : absl::StrCat(" derived from label: ", data_filter.label());
     return FilterError::MissingData(absl::StrCat(
-        "could not find metric aggregate with key:", data_filter.value_key()));
+        "could not find metric aggregate with key:", metric_value_key,
+        error_suffix));
   }
   if (!data_filter.has_percentile_milli_rank()) {
     return FilterError::Error(
@@ -282,7 +371,8 @@ FilterError FilterPercentileAggregate(const RunInfo& run_info,
                      results);
 }
 
-FilterError FilterAggregates(const RunInfo& run_info,
+FilterError FilterAggregates(const BenchmarkInfo& benchmark_info,
+                             const RunInfo& run_info,
                              const DataFilter& data_filter,
                              std::vector<DataPoint>* results) {
   if (!run_info.has_aggregate()) {
@@ -294,39 +384,54 @@ FilterError FilterAggregates(const RunInfo& run_info,
     case mako::DataFilter::BENCHMARK_SCORE:
       return FilterBenchmarkScore(run_info, results);
     case mako::DataFilter::CUSTOM_AGGREGATE:
-      return FilterCustomAggregate(run_info, data_filter.value_key(), results);
+      return FilterCustomAggregate(benchmark_info, run_info, data_filter,
+                                   results);
     case mako::DataFilter::METRIC_AGGREGATE_PERCENTILE:
-      return FilterPercentileAggregate(run_info, data_filter, results);
+      return FilterPercentileAggregate(benchmark_info, run_info, data_filter,
+                                       results);
     default:
-      return FilterMetricAggregate(run_info, data_filter, results);
+      return FilterMetricAggregate(benchmark_info, run_info, data_filter,
+                                   results);
   }
 }
 
 }  // namespace
 
-std::string ApplyFilter(const RunInfo& run_info,
-                   const std::vector<const SampleBatch*>& sample_batches,
-                   const DataFilter& data_filter, bool sort_data,
-                   std::vector<DataPoint>* results) {
+std::string ApplyFilter(const BenchmarkInfo& benchmark_info,
+                        const RunInfo& run_info,
+                        const std::vector<const SampleBatch*>& sample_batches,
+                        const DataFilter& data_filter, bool sort_data,
+                        std::vector<DataPoint>* results) {
   if (!data_filter.has_data_type()) {
     return FilterError::Error("DataFilter is missing data_type").error_msg();
   }
+
   if (!data_filter.has_value_key()) {
     if (data_filter.data_type() != mako::DataFilter::ERROR_COUNT &&
-        data_filter.data_type() != mako::DataFilter::BENCHMARK_SCORE) {
-      return FilterError::Error("DataFilter is missing value_key").error_msg();
+        data_filter.data_type() != mako::DataFilter::BENCHMARK_SCORE &&
+        !data_filter.has_label()) {
+      return FilterError::Error("DataFilter is missing value_key and label")
+          .error_msg();
     }
   }
 
-  FilterError err =
-      (data_filter.data_type() == mako::DataFilter::METRIC_SAMPLEPOINTS)
-          ? FilterSamplePoints(sample_batches, data_filter.value_key(),
-                               run_info.ignore_range_list(), sort_data, results)
-          : FilterAggregates(run_info, data_filter, results);
+  FilterError err = FilterError::NoError();
+  if (data_filter.data_type() == mako::DataFilter::METRIC_SAMPLEPOINTS) {
+    std::string metric_value_key;
+    err = FindValueKeyFromDataFilter(benchmark_info, data_filter,
+                                     &metric_value_key);
+    err = err.error() ? err
+                      : FilterSamplePoints(sample_batches, metric_value_key,
+                                           run_info.ignore_range_list(),
+                                           sort_data, results);
+  } else {
+    err = FilterAggregates(benchmark_info, run_info, data_filter, results);
+  }
+
   if (err.error() && err.missing_data() && data_filter.ignore_missing_data()) {
-    VLOG(1)
-        << "ignoring error because DataFilter.ignore_missing_data = true; err: "
-        << err.error_msg();
+    VLOG(1) << "ignoring error because DataFilter.ignore_missing_data = "
+               "true; err: "
+            << err.error_msg();
     return kNoError;
   }
   return err.error_msg();

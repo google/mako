@@ -263,6 +263,9 @@ func TestHelp(t *testing.T) {
 						flags            describe all known top-level flags
 						help             describe subcommands and their syntax
 
+					Subcommands for alerts:
+					  list_regressions  Lists regressions that match given alert_key.
+
 					Subcommands for annotations:
 						add_annotation   Add an annotation to a run.
 						delete_annotation  Delete an annotation.
@@ -452,6 +455,24 @@ func TestRunManipulation(t *testing.T) {
 			BuildId:      proto.Int64(int64(i)),
 			// integer divide by two so that each test pass id has 2 runs associated
 			TestPassId: proto.String(strconv.Itoa(i / 2)),
+			TestOutput: &pgpb.TestOutput{
+				AnalyzerOutputList: []*pgpb.AnalyzerOutput{
+					{
+						AnalysisKey: proto.String(strconv.Itoa(i)),
+						AnalysisTriageInfo: &pgpb.AnalysisTriageInfo{
+							// integer divide by three so that each alert key has 3 runs associated
+							AlertKeys: []string{strconv.Itoa(i / 3)},
+						},
+					},
+					{
+						AnalysisKey: proto.String(strconv.Itoa(i * 10)),
+						AnalysisTriageInfo: &pgpb.AnalysisTriageInfo{
+							// integer divide by three so that each alert key has 3 runs associated
+							AlertKeys: []string{strconv.Itoa(i / 3)},
+						},
+					},
+				},
+			},
 		}
 		if _, err := fs.CreateRunInfo(ctx, run); err != nil {
 			t.Fatalf("fs.CreateRunInfo(ctx, %v) got err %v; want nil", run, err)
@@ -470,6 +491,17 @@ func TestRunManipulation(t *testing.T) {
 		"-test_pass_id=0"}, "2\n1\n")
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "list_runs", "-benchmark_key=testmark",
 		"-test_pass_id=2"}, "6\n5\n")
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "list_regressions", "-alert_key=2"},
+		`run_key: 9
+  #1: https://mako.dev/analysis-results?run_key=9#analysis8
+  #2: https://mako.dev/analysis-results?run_key=9#analysis80
+run_key: 8
+  #3: https://mako.dev/analysis-results?run_key=8#analysis7
+  #4: https://mako.dev/analysis-results?run_key=8#analysis70
+run_key: 7
+  #5: https://mako.dev/analysis-results?run_key=7#analysis6
+  #6: https://mako.dev/analysis-results?run_key=7#analysis60
+`)
 
 	// annotate runs
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "add_annotation", "-run_key=1",
@@ -529,7 +561,7 @@ func TestUpdateManyRuns(t *testing.T) {
 	if status != subcommands.ExitSuccess {
 		t.Fatalf("addTag(ctx, fs) got status %v; want subcommands.ExitSuccess", status)
 	}
-	query := pgpb.RunInfoQuery{BenchmarkKey: &subargBenchmarkKey}
+	query := &pgpb.RunInfoQuery{BenchmarkKey: &subargBenchmarkKey}
 	runs, err := queryRunInfo(ctx, fs, query)
 	if err != nil {
 		t.Fatalf("queryRunInfo(ctx, fs, %v) got err %v; want nil", query, err)
@@ -713,7 +745,11 @@ default_issue_tracker: {
 }
 `
 	projFilePath := writeTextProto(textProto, "test_project")
-	checkCmdLineSucceeded(ctx, t, []string{"mako", "create_project", projFilePath}, `Successfully created project.`)
+
+	expectedCreateProjectOutput := "Successfully created Mako project \"bigtable\".\n\n"
+
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "create_project", projFilePath}, expectedCreateProjectOutput)
+
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "get_project", "-project_name=bigtable"},
 		`project_name: "bigtable"
     project_alias: "Bigtable"
@@ -726,6 +762,7 @@ default_issue_tracker: {
     >
     `)
 
+	// Update project.
 	textProto = `
 # project_name is always evaluated as lowercase and must be unique
 project_name: "BIGTABLE"
@@ -748,7 +785,7 @@ default_issue_tracker: {
 }
 `
 	projFilePath = writeTextProto(textProto, "test_project")
-	checkCmdLineSucceeded(ctx, t, []string{"mako", "update_project", projFilePath}, `Successfully updated project.`)
+	checkCmdLineSucceeded(ctx, t, []string{"mako", "update_project", projFilePath}, "Successfully updated project.\n")
 	checkCmdLineSucceeded(ctx, t, []string{"mako", "get_project", "-project_name=BIGTABLE"},
 		`project_name: "bigtable"
      project_alias: "Spanner Bigtable"

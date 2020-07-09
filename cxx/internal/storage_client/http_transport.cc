@@ -25,7 +25,9 @@
 #include "cxx/helpers/status/canonical_errors.h"
 #include "cxx/helpers/status/status.h"
 #include "cxx/helpers/status/statusor.h"
+#include "cxx/internal/storage_client/http_paths.h"
 #include "cxx/internal/storage_client/url.h"
+#include "proto/internal/mako_internal.pb.h"
 
 // TODO(b/124472003): Remove this when we fix our HTTP Client's handling of
 // Expect: 100-continue.
@@ -53,7 +55,8 @@ helpers::StatusOr<Url> BuildUrl(absl::string_view host,
   return parsed.value().WithPath(path);
 }
 
-std::string TruncatedShortDebugString(const google::protobuf::Message& message, int max_len) {
+std::string TruncatedShortDebugString(const google::protobuf::Message& message,
+                                      int max_len) {
   std::string s;
   google::protobuf::TextFormat::Printer printer;
   printer.SetSingleLineMode(true);
@@ -64,6 +67,11 @@ std::string TruncatedShortDebugString(const google::protobuf::Message& message, 
 }
 
 }  // namespace
+
+HttpTransport::HttpTransport(absl::string_view host,
+                             std::unique_ptr<OAuthTokenProvider> token_provider)
+    : HttpTransport(host, std::move(token_provider),
+                    absl::make_unique<HttpClient>()) {}
 
 helpers::Status HttpTransport::Connect() {
   helpers::StatusOr<Url> maybe_url = BuildUrl(host_, /*path=*/"");
@@ -115,9 +123,10 @@ helpers::Status HttpTransport::Call(absl::string_view orig_path,
     // 100-continue.
     //
     // Disable 100-continue feature because the client doesn't handle it
-    // correctly. Suppress this when talking to HTTP servers that don't support
-    // it (e.g. Go's httptest.Server).
-    headers.push_back({"Expect:", ""});
+    // correctly. This could (e.g. in the case of an http client implementation
+    // that uses libcurl) result in the HTTP client NOT sending an "Expect:
+    // 100-continue" header.
+    headers.push_back({"Expect", ""});
   }
 
   // Set bearer token for OAuth2 authentication.
@@ -139,8 +148,8 @@ helpers::Status HttpTransport::Call(absl::string_view orig_path,
   }
 
   // Use the HTTP client to make the storage API request.
-  helpers::StatusOr<std::string> status_or_response =
-      client_.Post(url.ToString(), headers, request.SerializeAsString());
+  helpers::StatusOr<std::string> status_or_response = client_->Post(
+      url.ToString(), headers, request.SerializeAsString());
 
   if (!status_or_response.ok()) {
     VLOG(1) << "HttpTransport received error status from http client: "
@@ -159,6 +168,277 @@ helpers::Status HttpTransport::Call(absl::string_view orig_path,
         absl::StrCat(error, "\nCheck logs for dump of response payload."));
   }
   return helpers::OkStatus();
+}
+
+helpers::Status HttpTransport::CreateProjectInfo(
+    absl::Duration deadline, const CreateProjectInfoRequest& request,
+    mako::CreationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::CREATE_PROJECT_INFO);
+    *sudo_request.mutable_project() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kCreateProjectInfoPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::UpdateProjectInfo(
+    absl::Duration deadline, const UpdateProjectInfoRequest& request,
+    mako::ModificationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::UPDATE_PROJECT_INFO);
+    *sudo_request.mutable_project() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kUpdateProjectInfoPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::GetProjectInfo(
+    absl::Duration deadline, const GetProjectInfoRequest& request,
+    mako::ProjectInfoGetResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::GET_PROJECT_INFO);
+    *sudo_request.mutable_project() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kGetProjectInfoPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::QueryProjectInfo(
+    absl::Duration deadline, const QueryProjectInfoRequest& request,
+    mako::ProjectInfoQueryResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::QUERY_PROJECT_INFO);
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kQueryProjectInfoPath;
+  return Call(path, request, deadline, response);
+}
+
+helpers::Status HttpTransport::CreateBenchmarkInfo(
+    absl::Duration deadline, const CreateBenchmarkInfoRequest& request,
+    mako::CreationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::CREATE_BENCHMARK_INFO);
+    *sudo_request.mutable_benchmark() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kCreateBenchmarkPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::UpdateBenchmarkInfo(
+    absl::Duration deadline, const UpdateBenchmarkInfoRequest& request,
+    mako::ModificationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::UPDATE_BENCHMARK_INFO);
+    *sudo_request.mutable_benchmark() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kModificationBenchmarkPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::QueryBenchmarkInfo(
+    absl::Duration deadline, const QueryBenchmarkInfoRequest& request,
+    mako::BenchmarkInfoQueryResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::QUERY_BENCHMARK_INFO);
+    *sudo_request.mutable_benchmark_query() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kQueryBenchmarkPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::DeleteBenchmarkInfo(
+    absl::Duration deadline, const DeleteBenchmarkInfoRequest& request,
+    mako::ModificationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::DELETE_BENCHMARK_INFO);
+    *sudo_request.mutable_benchmark_query() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kDeleteBenchmarkPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::CountBenchmarkInfo(
+    absl::Duration deadline, const CountBenchmarkInfoRequest& request,
+    mako::CountResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::COUNT_BENCHMARK_INFO);
+    *sudo_request.mutable_benchmark_query() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kCountBenchmarkPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::CreateRunInfo(
+    absl::Duration deadline, const CreateRunInfoRequest& request,
+    mako::CreationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::CREATE_RUN_INFO);
+    *sudo_request.mutable_run() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kCreateRunInfoPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::UpdateRunInfo(
+    absl::Duration deadline, const UpdateRunInfoRequest& request,
+    mako::ModificationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::UPDATE_RUN_INFO);
+    *sudo_request.mutable_run() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kModificationRunInfoPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::QueryRunInfo(
+    absl::Duration deadline, const QueryRunInfoRequest& request,
+    mako::RunInfoQueryResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::QUERY_RUN_INFO);
+    *sudo_request.mutable_run_query() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kQueryRunInfoPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::DeleteRunInfo(
+    absl::Duration deadline, const DeleteRunInfoRequest& request,
+    mako::ModificationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::DELETE_RUN_INFO);
+    *sudo_request.mutable_run_query() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kDeleteRunInfoPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::CountRunInfo(absl::Duration deadline,
+                                            const CountRunInfoRequest& request,
+                                            mako::CountResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::COUNT_RUN_INFO);
+    *sudo_request.mutable_run_query() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kCountRunInfoPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::CreateSampleBatch(
+    absl::Duration deadline, const CreateSampleBatchRequest& request,
+    mako::CreationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::CREATE_SAMPLE_BATCH);
+    *sudo_request.mutable_batch() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kCreateSampleBatchPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::QuerySampleBatch(
+    absl::Duration deadline, const QuerySampleBatchRequest& request,
+    mako::SampleBatchQueryResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::QUERY_SAMPLE_BATCH);
+    *sudo_request.mutable_batch_query() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kQuerySampleBatchPath;
+  return Call(path, request.payload(), deadline, response);
+}
+
+helpers::Status HttpTransport::DeleteSampleBatch(
+    absl::Duration deadline, const DeleteSampleBatchRequest& request,
+    mako::ModificationResponse* response) {
+  if (request.has_request_options() &&
+      !request.request_options().sudo_run_as().empty()) {
+    mako_internal::SudoStorageRequest sudo_request;
+    sudo_request.set_run_as(request.request_options().sudo_run_as());
+    sudo_request.set_type(
+        mako_internal::SudoStorageRequest::DELETE_SAMPLE_BATCH);
+    *sudo_request.mutable_batch_query() = request.payload();
+    return Call(kSudoPath, sudo_request, deadline, response);
+  }
+  const absl::string_view& path = kDeleteSampleBatchPath;
+  return Call(path, request.payload(), deadline, response);
 }
 
 void HttpTransport::set_client_tool_tag(absl::string_view client_tool_tag) {

@@ -36,9 +36,8 @@ class Dashboard : public mako::Dashboard {
       const mako::DashboardAggregateChartInput& input,
       std::string* link) const override;
 
-  std::string RunChart(
-      const mako::DashboardRunChartInput& input,
-      std::string* link) const override;
+  std::string RunChart(const mako::DashboardRunChartInput& input,
+                       std::string* link) const override;
 
   std::string CompareAggregateChart(
       const mako::DashboardCompareAggregateChartInput& input,

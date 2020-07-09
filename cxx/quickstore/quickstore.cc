@@ -28,7 +28,9 @@
 namespace mako {
 namespace quickstore {
 
+namespace {
 constexpr char kNoError[] = "";
+}  // namespace
 
 Quickstore::Quickstore(const std::string& benchmark_key) {
   storage_ = nullptr;
@@ -40,8 +42,8 @@ Quickstore::Quickstore(const std::string& benchmark_key, Storage* storage) {
   input_.set_benchmark_key(benchmark_key);
 }
 
-std::string Quickstore::AddSamplePoint(double input_value,
-                                  const std::map<std::string, double>& data) {
+std::string Quickstore::AddSamplePoint(
+    double input_value, const std::map<std::string, double>& data) {
   mako::SamplePoint s;
   s.set_input_value(input_value);
   for (const auto& pair : data) {
@@ -58,7 +60,8 @@ std::string Quickstore::AddSamplePoint(const mako::SamplePoint& point) {
   return kNoError;
 }
 
-std::string Quickstore::AddError(double input_value, const std::string& error_msg) {
+std::string Quickstore::AddError(double input_value,
+                                 const std::string& error_msg) {
   mako::SampleError e;
   e.set_input_value(input_value);
   e.set_error_message(error_msg);
@@ -71,7 +74,8 @@ std::string Quickstore::AddError(const mako::SampleError& error) {
   return kNoError;
 }
 
-std::string Quickstore::AddRunAggregate(const std::string& value_key, double value) {
+std::string Quickstore::AddRunAggregate(const std::string& value_key,
+                                        double value) {
   mako::KeyedValue k;
   k.set_value_key(value_key);
   k.set_value(value);
@@ -80,8 +84,8 @@ std::string Quickstore::AddRunAggregate(const std::string& value_key, double val
 }
 
 std::string Quickstore::AddMetricAggregate(const std::string& value_key,
-                                      const std::string& aggregate_type,
-                                      double value) {
+                                           const std::string& aggregate_type,
+                                           double value) {
   metric_aggregate_value_keys_.push_back(value_key);
   metric_aggregate_types_.push_back(aggregate_type);
   metric_aggregate_values_.push_back(value);

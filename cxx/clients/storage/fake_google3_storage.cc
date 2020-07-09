@@ -39,33 +39,35 @@ class SortByDescendingTimeStampsMs {
 };
 
 ABSL_CONST_INIT absl::Mutex mutex(absl::kConstInit);
-int max_key GUARDED_BY(mutex) = 0;
+int max_key ABSL_GUARDED_BY(mutex) = 0;
 
-std::vector<BenchmarkInfo>& Benchmarks() EXCLUSIVE_LOCKS_REQUIRED(mutex) {
+std::vector<BenchmarkInfo>& Benchmarks() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex) {
   static auto* benchmarks = new std::vector<BenchmarkInfo>();
   return *benchmarks;
 }
 
-std::vector<mako::ProjectInfo>& Projects() EXCLUSIVE_LOCKS_REQUIRED(mutex) {
+std::vector<mako::ProjectInfo>& Projects()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex) {
   static auto* projects = new std::vector<mako::ProjectInfo>();
   return *projects;
 }
 
 std::multiset<mako::RunInfo, SortByDescendingTimeStampsMs>& Runs()
-    EXCLUSIVE_LOCKS_REQUIRED(mutex) {
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex) {
   static auto* runs =
       new std::multiset<mako::RunInfo, SortByDescendingTimeStampsMs>();
   return *runs;
 }
 
-std::vector<mako::SampleBatch>& Batches() EXCLUSIVE_LOCKS_REQUIRED(mutex) {
+std::vector<mako::SampleBatch>& Batches()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex) {
   static auto* batches = new std::vector<mako::SampleBatch>();
   return *batches;
 }
 
 constexpr char kNoError[] = "";
 
-std::string NextKey() EXCLUSIVE_LOCKS_REQUIRED(mutex) {
+std::string NextKey() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex) {
   return std::to_string(++max_key);
 }
 
@@ -105,6 +107,21 @@ bool RunInfoQueryMatch(const mako::RunInfoQuery& query,
   if (!query.test_pass_id().empty()) {
     return run_info.test_pass_id() == query.test_pass_id();
   }
+  if (!query.alert_key().empty()) {
+    // Match if any AnalyzerOutput has an alert_key matching the
+    // query.alert_key. In real Mako these are extracted into an entity
+    // level property in Datastore and indexed.
+    for (const auto& analyzer_output :
+         run_info.test_output().analyzer_output_list()) {
+      for (const auto& alert_key :
+           analyzer_output.analysis_triage_info().alert_keys()) {
+        if (alert_key == query.alert_key()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
   if (query.benchmark_key() != "*" && !query.benchmark_key().empty() &&
       run_info.benchmark_key() != query.benchmark_key()) {
     return false;
@@ -128,13 +145,21 @@ bool RunInfoQueryMatch(const mako::RunInfoQuery& query,
   // std::includes requires sorted elements
   std::set<std::string> query_tags(query.tags().begin(), query.tags().end());
   std::set<std::string> run_info_tags(run_info.tags().begin(),
-                                 run_info.tags().end());
+                                      run_info.tags().end());
   if (query.tags_size() > 0 &&
       !std::includes(run_info_tags.begin(), run_info_tags.end(),
                      query_tags.begin(), query_tags.end())) {
     return false;
   }
 
+  return true;
+}
+
+bool ProjectInfoQueryMatch(const mako::ProjectInfoQuery& query,
+                           const mako::ProjectInfo& project_info) {
+  if (query.has_project_name()) {
+    return query.project_name() == project_info.project_name();
+  }
   return true;
 }
 
@@ -160,6 +185,19 @@ bool BenchmarkInfoQueryMatch(const mako::BenchmarkInfoQuery& query,
   }
 
   return true;
+}
+
+int GetSize(const ProjectInfoQueryResponse& response) {
+  return response.project_info_list_size();
+}
+
+bool QueryMatch(const ProjectInfoQuery& query, const ProjectInfo& project) {
+  return ProjectInfoQueryMatch(query, project);
+}
+
+void AddNewElement(const ProjectInfo& project,
+                   ProjectInfoQueryResponse* response) {
+  *response->add_project_info_list() = project;
 }
 
 int GetSize(const RunInfoQueryResponse& response) {
@@ -216,6 +254,9 @@ void FindMatchingElements(const Container& container, const Query& query,
     limit = std::min(static_cast<int>(query.limit()), limit);
   }
 
+  // Ensure the cursor is always set, matching the behavior of
+  // google3_storage::Storage.
+  response->set_cursor("");
   for (; iter != container.end(); iter++) {
     const auto& element = *iter;
     if (limit == GetSize(*response)) {
@@ -232,9 +273,37 @@ void FindMatchingElements(const Container& container, const Query& query,
   *response->mutable_status() = SuccessStatus();
 }
 
+// Returns a copy of project_info with a lowercase project_name.
+mako::ProjectInfo GetProjectInfoWithLowercaseName(
+    const mako::ProjectInfo& project_info) {
+  mako::ProjectInfo copy = project_info;
+  copy.set_project_name(absl::AsciiStrToLower(project_info.project_name()));
+  return copy;
+}
+
 }  // namespace
 
 Storage::Storage() : Storage(Options()) {}
+
+Storage::Storage(int metric_value_count_max, int error_count_max,
+                 int batch_size_max, int bench_limit_max, int run_limit_max,
+                 int batch_limit_max, absl::string_view hostname)
+    : Storage(metric_value_count_max, error_count_max, batch_size_max,
+              Options().project_limit_max, bench_limit_max, run_limit_max,
+              batch_limit_max, hostname) {}
+
+Storage::Storage(int metric_value_count_max, int error_count_max,
+                 int batch_size_max, int project_limit_max, int bench_limit_max,
+                 int run_limit_max, int batch_limit_max,
+                 absl::string_view hostname)
+    : metric_value_count_max_(metric_value_count_max),
+      error_count_max_(error_count_max),
+      batch_size_max_(batch_size_max),
+      project_limit_max_(project_limit_max),
+      bench_limit_max_(bench_limit_max),
+      run_limit_max_(run_limit_max),
+      batch_limit_max_(batch_limit_max),
+      hostname_(hostname) {}
 
 bool Storage::CreateProjectInfo(const mako::ProjectInfo& project_info,
                                 mako::CreationResponse* creation_response) {
@@ -248,8 +317,7 @@ bool Storage::CreateProjectInfo(const mako::ProjectInfo& project_info,
     *creation_response->mutable_status() = ErrorStatus(err);
     return false;
   }
-  mako::ProjectInfo pi = project_info;
-  pi.set_project_name(absl::AsciiStrToLower(project_info.project_name()));
+  mako::ProjectInfo pi = GetProjectInfoWithLowercaseName(project_info);
   for (const auto& p : Projects()) {
     if (p.project_name() == pi.project_name()) {
       err = absl::StrCat("Project with name=", pi.project_name(),
@@ -278,8 +346,7 @@ bool Storage::UpdateProjectInfo(const mako::ProjectInfo& project_info,
     return false;
   }
 
-  mako::ProjectInfo pi = project_info;
-  pi.set_project_name(absl::AsciiStrToLower(project_info.project_name()));
+  mako::ProjectInfo pi = GetProjectInfoWithLowercaseName(project_info);
   for (auto itr = Projects().begin(); itr != Projects().end(); ++itr) {
     if (itr->project_name() == pi.project_name()) {
       *itr = pi;
@@ -313,14 +380,33 @@ bool Storage::GetProjectInfo(const mako::ProjectInfo& project_info,
   for (auto& project : Projects()) {
     if (project.project_name() == key) {
       *get_response->mutable_project_info() = project;
-      *get_response->mutable_status() = SuccessStatus();
-      return true;
+      break;
     }
   }
-  std::string err = absl::StrCat("Could not find project with name: ", key);
-  *get_response->mutable_status() = ErrorStatus(err);
-  LOG(ERROR) << err;
-  return false;
+
+  *get_response->mutable_status() = SuccessStatus();
+  return true;
+}
+
+bool Storage::GetProjectInfoByName(
+    const std::string& project_name,
+    mako::ProjectInfoGetResponse* get_response) {
+  ProjectInfo project_info;
+  project_info.set_project_name(project_name);
+  return GetProjectInfo(project_info, get_response);
+}
+
+bool Storage::QueryProjectInfo(
+    const mako::ProjectInfoQuery& project_info_query,
+    mako::ProjectInfoQueryResponse* query_response) {
+  VLOG(2) << "FakeStorage.QueryProjectInfo("
+          << project_info_query.ShortDebugString() << ")";
+  CHECK(query_response);
+  absl::MutexLock lock(&mutex);
+  FindMatchingElements(Projects(), project_info_query, project_limit_max_,
+                       query_response);
+  VLOG(2) << query_response->project_info_list_size() << " projects found";
+  return true;
 }
 
 bool Storage::CreateBenchmarkInfo(
@@ -435,7 +521,8 @@ bool Storage::CreateRunInfo(const mako::RunInfo& run_info,
   VLOG(2) << "FakeStorage.CreateRunInfo(" << run_info.ShortDebugString() << ")";
   CHECK(creation_response);
   absl::MutexLock lock(&mutex);
-  std::string err = mako::internal::ValidateRunInfoCreationRequest(run_info);
+  std::string err =
+      mako::internal::ValidateRunInfoCreationRequest(run_info);
   if (!err.empty()) {
     LOG(ERROR) << err;
     *creation_response->mutable_status() = ErrorStatus(err);
@@ -659,6 +746,15 @@ void Storage::FakeStageBatches(
   absl::MutexLock lock(&mutex);
   for (auto& batch : sample_batch_list) {
     Batches().push_back(batch);
+  }
+}
+
+void Storage::FakeStageProjects(
+    const std::vector<mako::ProjectInfo>& project_info_list) {
+  VLOG(2) << "FakeStorage.FakeStageProjects()";
+  absl::MutexLock lock(&mutex);
+  for (auto& project : project_info_list) {
+    Projects().push_back(GetProjectInfoWithLowercaseName(project));
   }
 }
 

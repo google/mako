@@ -35,13 +35,14 @@ namespace internal {
 // use the provided dashboard to provide analysis visualization links with the
 // Dashboard::VisualizeAnalysis() method for each analyzer that has a
 // regression.
-std::string RunAnalyzers(const mako::BenchmarkInfo& benchmark_info,
-                    const mako::RunInfo& run_info,
-                    const std::vector<mako::SampleBatch>& sample_batches,
-                    bool attach_e_divisive_regressions_to_changepoints,
-                    mako::Storage* storage, mako::Dashboard* dashboard,
-                    const std::vector<mako::Analyzer*>& analyzers,
-                    mako::TestOutput* test_output);
+std::string RunAnalyzers(
+    const mako::BenchmarkInfo& benchmark_info,
+    const mako::RunInfo& run_info,
+    const std::vector<mako::SampleBatch>& sample_batches,
+    bool attach_e_divisive_regressions_to_changepoints,
+    mako::Storage* storage, mako::Dashboard* dashboard,
+    const std::vector<mako::Analyzer*>& analyzers,
+    mako::TestOutput* test_output);
 }  // namespace internal
 }  // namespace mako
 

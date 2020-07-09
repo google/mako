@@ -69,6 +69,7 @@ message Status {
 //   input (one ValueInfo)
 //   metric (one ValueInfo for each)
 //   custom aggregate (one ValueInfo for each)
+// NEXT_ID: 5
 message ValueInfo {
   enum Type {
     // Value is numeric
@@ -126,6 +127,14 @@ message ValueInfo {
   //       * Comma is used for user entry as a delimiter.
   //       * Backslash is used as an escape char in some contexts.
   optional string label = 2;
+
+  // UNCOMMON
+  // Provides an optional longer human readable description for this metric.
+  // This won't be shown directly on the charts, but can be used by vairious
+  // tools to explain the metric in more depth.
+  // TODO(b/156953203): show this description outside of the rendered charts on
+  // the Mako default web dashboard.
+  optional string description = 4;
 
   // Determines the value type. If not set, NUMERIC is assumed.
   optional Type type = 3;
@@ -198,6 +207,18 @@ message DataFilter {
   // extract (eg. metric, custom aggregate)
   optional string value_key = 2;
 
+  // CONDITIONALLY_REQUIRED when DataType != BENCHMARK_SCORE or ERROR_COUNT and
+  // value_key is not specified.
+  // Specify the ValueInfo.label of the measurements that you'd like to extract
+  // (e.g. metric, custom_aggregate). This field can only be used if the
+  // BenchmarkInfo definition at the time that this DataFilter is used has a
+  // ValueInfo of the appropriate kind (e.g. metric, custom_aggregate)
+  // corresponding to this label. An error will be returned when this DataFilter
+  // is used otherwise.
+  // If both value_key and label are specified, label must resolve to value_key,
+  // or an error will be returned.
+  optional string label = 5;
+
   // CONDITIONALLY_REQUIRED when DataType == METRIC_AGGREGATE_PERCENTILE
   //
   // Specify a percentile rank that is also in
@@ -249,9 +270,6 @@ message IssueTrackerInfo {
 // -----------------------------------------------------------------------------
 // Project Metadata
 // -----------------------------------------------------------------------------
-
-// DO NOT USE. THIS IS NOT SUPPORTED YET.
-// b/141321581
 //
 // Contains all information about a Mako project. A Mako project can
 // have multiple benchmarks while a benchmark can belong to only one project. A
@@ -262,7 +280,18 @@ message IssueTrackerInfo {
 message ProjectInfo {
   // REQUIRED
   // Uniquely identifies this project, and is used as a primary key. This is set
-  // by the project creator and is always evaluated as lower-case.
+  // by the project creator and is always evaluated as case-insensitive.
+  //
+  // Limitations:
+  //   * No more than 100 characters
+  //   * These are the only legal characters:
+  //     * Letters (A-Z, a-z)
+  //     * Numbers (0-9)
+  //     * Hyphen (-)
+  //     * Underscore (_)
+  //     * Slash (/)
+  //     * Dot (.)
+  //     * Space ( )
   optional string project_name = 1;
 
   // OPTIONAL
@@ -270,16 +299,20 @@ message ProjectInfo {
   // If left blank, project_name will be used.
   optional string project_alias = 2;
 
-  // CONDITIONALLY REQUIRED
-  // List of project owners specified by email addresses. See
-  // BenchmarkInfo.owner_list for further specifications.
-
+  // CONDITIONALLY REQUIRED when creating or updating projects.
+  // List of project owners specified by email addresses.
+  //
   // Only project owners can create, update, or delete this project. Adding a
   // new benchmark for this project without project ownership will result in a
   // permission denied error. Project and benchmark owners can perform all
   // other benchmark/run operations.
-
-  // This field is required for project creation and updates.
+  //
+  // To provide write access to a google account, supply the full email address.
+  //   Example: user@google.com
+  //
+  // Limitations:
+  //   * Each owner must be a legal email address
+  //   * Max owners: 100
   repeated string owner_list = 3;
 
   // OPTIONAL
@@ -297,6 +330,37 @@ message ProjectInfoGetResponse {
 
   // CONDITIONALLY_REQUIRED - set when results exist
   optional ProjectInfo project_info = 2;
+}
+
+// Input for Storage.QueryProjectInfo()
+// NEXT_ID: 4
+message ProjectInfoQuery {
+  // OPTIONAL
+  // See Querying with and without limits and cursors
+  optional string cursor = 1;
+
+  // OPTIONAL
+  // See Querying with and without limits and cursors
+  optional int32 limit = 2;
+
+  // COMMON
+  // Exact match of ProjectInfo.project_name
+  optional string project_name = 3;
+}
+
+// Output for Storage.QueryProjectInfo()
+// NEXT_ID: 4
+message ProjectInfoQueryResponse {
+  // REQUIRED
+  // Response status
+  optional Status status = 1;
+
+  // CONDITIONALLY_REQUIRED - set when results exist
+  repeated ProjectInfo project_info_list = 2;
+
+  // OPTIONAL
+  // See Querying with and without limits and cursors
+  optional string cursor = 3;
 }
 
 // -----------------------------------------------------------------------------
@@ -345,41 +409,17 @@ message BenchmarkInfo {
   optional string benchmark_name = 2;
 
   // REQUIRED
-  // Your project name. Benchmarks are often queried by project name,
-  // so it's best to use one project name for all benchmarks owned by
-  // your team. Note that any user can use any project name, so it should
-  // be somewhat unique in order to avoid grouping benchmarks from multiple
-  // teams.
-  // This value can be changed at any time without affecting the Benchmark
-  // or chart dashboard links, because they reference benchmarks by key.
-  //
-  // Limitations:
-  //   * No more than 100 characters
-  //   * These are the only legal characters:
-  //     * Letters (A-Z, a-z)
-  //     * Numbers (0-9)
-  //     * Hyphen (-)
-  //     * Underscore (_)
-  //     * Slash (/)
-  //     * Dot (.)
-  //     * Space ( )
+  // Your project name. This project name must already exist in Storage.
+  // See ProjectInfo.project_name for more details.
   optional string project_name = 3;
 
-  // REQUIRED
-  // Users that will be able to write to this benchmark.
-  // All users with access to the Mako storage server have read access to
-  // all benchmarks and all data.
-  // Only benchmark owners can create, update, or delete any data associated
-  // with a benchmark.
+  // OPTIONAL
+  // List of benchmark owners specified by email addresses.
   //
-  // To provide write access to a google account, supply the full email address.
-  //   Example: user@google.com
+  // Benchmark owners can write to this benchmark. This includes updating or
+  // deleting the benchmark, and uploading runs to the benchmark.
   //
-  // Limitations:
-  //   * The user making a call to create/update/delete a benchmark must be in
-  //     the list.
-  //   * Each owner must be a legal email address
-  //   * Max owners: 100
+  // See ProjectInfo.owner_list for details on how to specify email addresses.
   repeated string owner_list = 4;
 
   // REQUIRED
@@ -424,7 +464,7 @@ message BenchmarkInfo {
   // for that key will be ignored by charts.
   //
   // Limitations:
-  //   * See storage server limits for max metric count.
+  //   * See go/mako-storage#limits for max metric count.
   repeated ValueInfo metric_info_list = 6;
 
   // COMMON
@@ -444,7 +484,7 @@ message BenchmarkInfo {
   //
   // Limitations:
   //   * For best charting performance, use no more than 10 custom aggregates.
-  //   * See storage server limits for max custom aggregates count.
+  //   * See go/mako-storage#limits for max custom aggregates count.
   repeated ValueInfo custom_aggregation_info_list = 7;
 
   // COMMON
@@ -678,7 +718,7 @@ message RunInfo {
   //   * "experiment=move-filter-to-client"
   //
   // Limitations:
-  //   * See the storage server limits for max run tags.
+  //   * See the go/mako-storage#limits for max run tags.
   //     Never provide more than the max tags for any message. (These tags
   //     may be used as index keys, so they need to be limited.)
   //   * These are the only legal characters:
@@ -886,8 +926,8 @@ message SampleError {
   // CONDITIONALLY REQUIRED
   // Short identifier of the sampler to help a human debug which Sampler hit
   // the error. If a sampler_name is not supplied, the Mako framework will
-  // autoassign the sampler_name to be the name of the current sampler in C++
-  // and Python. In Go and Java, the sampler_name must be specified.
+  // autoassign the sampler_name to be the name of the current sampler in C++,
+  // Python, and Java. In Go, the sampler_name must be specified.
   optional string sampler_name = 2;
 
   // REQUIRED
@@ -1037,7 +1077,7 @@ message RunAggregate {
   // should be declared in BenchmarkInfo.custom_aggregation_info_list.
   //
   // Limitations:
-  //   * See the storage server limits for custom aggregate count max.
+  //   * See the go/mako-storage#limits for custom aggregate count max.
   repeated KeyedValue custom_aggregate_list = 5;
 }
 
@@ -1051,7 +1091,7 @@ message Aggregate {
   //
   // Limitations:
   //   * For best charting performance, use no more than 25 metrics.
-  //   * See the storage server limits for max metric count.
+  //   * See the go/mako-storage#limits for max metric count.
   repeated MetricAggregate metric_aggregate_list = 1;
 
   // REQUIRED
@@ -1264,7 +1304,7 @@ message BenchmarkInfoQueryResponse {
 // Input for Storage.QueryRunInfo(), Storage.DeleteRunInfo(),
 // and Storage.CountRunInfo().
 //
-// NEXT_ID: 13
+// NEXT_ID: 14
 message RunInfoQuery {
   // COMMON
   // See "Querying with and without limits and cursors" above,
@@ -1277,24 +1317,33 @@ message RunInfoQuery {
   // Ignored for deletion requests.
   optional int32 limit = 2;
 
-  // CONDITIONALLY_REQUIRED - benchmark_key or run_key or test_pass_id
-  // must be set.
+  // CONDITIONALLY_REQUIRED - one of {benchmark_key, run_key, test_pass_id
+  //                                  alert_key} must be set.
   // Matches RunInfo.benchmark_key,
   // see "Querying with and without primary key" above
   optional string benchmark_key = 3;
 
-  // CONDITIONALLY_REQUIRED - benchmark_key or run_key or test_pass_id
-  // must be set.
+  // CONDITIONALLY_REQUIRED - one of {benchmark_key, run_key, test_pass_id
+  //                                  alert_key} must be set.
   // Exact match of RunInfo.run_key,
   // see "Querying with and without primary key" above
   optional string run_key = 4;
 
-  // CONDITIONALLY_REQUIRED - benchmark_key or run_key or test_pass_id
-  // must be set.
+  // CONDITIONALLY_REQUIRED - one of {benchmark_key, run_key, test_pass_id
+  //                                  alert_key} must be set.
   // Exact match of RunInfo.test_pass_id.
-  // Fields test_pass_id and run_key are mutually exclusive.
+  // Fields {alert_key, run_key, test_pass_id} are mutually exclusive.
   // see "Querying with and without primary key" above
   optional string test_pass_id = 11;
+
+  // CONDITIONALLY_REQUIRED - one of {benchmark_key, run_key, test_pass_id
+  //                                  alert_key} must be set.
+  // Returns the runs that have at least one AnalyzerOutput message with
+  // alert_key set in the analysis_triage_info.alert_key field.
+  // Fields {alert_key, run_key, test_pass_id} are mutually exclusive.
+  // see "Querying with and without primary key" above
+  // TODO(b/129361687): this field is currently not implemented.
+  optional string alert_key = 13;
 
   // UNCOMMON
   // How we will sort runs fetched by this query.
@@ -1386,19 +1435,19 @@ message SampleBatchQuery {
   // Ignored for deletion requests.
   optional int32 limit = 2;
 
-  // CONDITIONALLY_REQUIRED - (benchmark_key AND run_key) OR (batch_key)
+  // CONDITIONALLY_REQUIRED - benchmark_key OR run_key OR batch_key
   // must be set.
   // Exact match of SampleBatch.benchmark_key.
   // See "Querying with and without primary key" above.
   optional string benchmark_key = 3;
 
-  // CONDITIONALLY_REQUIRED - (benchmark_key AND run_key) OR (batch_key)
+  // CONDITIONALLY_REQUIRED - benchmark_key OR run_key OR batch_key
   // must be set.
   // Exact match of SampleBatch.run_key.
   // see "Querying with and without primary key" above.
   optional string run_key = 4;
 
-  // CONDITIONALLY_REQUIRED - (benchmark_key AND run_key) OR (batch_key)
+  // CONDITIONALLY_REQUIRED - benchmark_key OR run_key OR batch_key
   // must be set.
   // Exact match of SampleBatch.batch_key,
   // see "Querying with and without primary key" above
@@ -1490,6 +1539,12 @@ message AggregatorInput {
   // A list of sample files.
   // The format of these files is defined by the Load implementation.
   repeated SampleFile sample_file_list = 3;
+
+  // User-supplied configuration, usually passed in via TestInput.
+  // These options are understood by Mako's standard/default aggregator.
+  // Whether any custom aggregators understand these options is up to the
+  // implementation.
+  optional StandardAggregatorOptions standard_aggregator_options = 4;
 }
 
 // Output argument to Aggregator.Aggregate()
@@ -1532,6 +1587,12 @@ message DownsamplerInput {
   // The max binary size (in bytes) of a SampleBatch that can be saved
   // by the storage system.
   optional int64 batch_size_max = 5;
+
+  // User-supplied configuration, usually passed in via TestInput.
+  // These options are understood by Mako's standard/default downsampler.
+  // Whether any custom downsamplers understand these options is up to the
+  // implementation.
+  optional StandardDownsamplerOptions standard_downsampler_options = 11;
 }
 
 // Output argument for Downsampler.Downsample().
@@ -1971,13 +2032,16 @@ message TestOption {
   // Option name
   optional string name = 1;
 
-  // REQUIRED
-  // Option value
-  optional string value = 2;
+  // DEPRECATED -- use `value_data` instead.
+  // CONDITIONALLY_REQUIRED if `value_data` is not provided.
+  optional string value = 2 [deprecated = true];
+
+  // CONDITIONALLY_REQUIRED if `value` is not provided.
+  optional bytes value_data = 3;
 }
 
 // Test inputs that will be provided to framework, Master, and Samplers.
-// NEXT_ID: 11
+// NEXT_ID: 13
 message TestInput {
   // REQUIRED
   // The benchmark key for this test run.
@@ -2021,6 +2085,13 @@ message TestInput {
   repeated string tags = 6;
 
   // UNCOMMON
+  // Tags for this run that define what other Runs of this Benchmark are part of
+  // the history for this configuration of this benchmark.
+  //
+  // See RunInfo.historical_context_tags for more info.
+  repeated string historical_context_tags = 19;
+
+  // UNCOMMON
   // A unique identifier used to group multiple runs into a single Test Pass.
   // Users can set this manually for custom grouping behavior. If manually
   // setting test_pass_id, include a GUID to prevent collisions with other
@@ -2036,6 +2107,16 @@ message TestInput {
   // This must be a positive non-zero integer value.
   optional int64 build_id = 8;
 
+  // Used to configure the downsampler. These options are understood by
+  // Mako's standard/default downsampler. Whether any custom downsamplers
+  // understand these options is up to the implementation.
+  optional StandardDownsamplerOptions standard_downsampler_options = 11;
+
+  // Used to configure the aggregator. These options are understood by
+  // Mako's standard/default aggregator. Whether any custom aggregators
+  // understand these options is up to the implementation.
+  optional StandardAggregatorOptions standard_aggregator_options = 12;
+
   // FRAMEWORK_WRITE_ONLY
   // Internal options that need to be forwarded on to the rest of the
   // framework.
@@ -2046,6 +2127,34 @@ message TestInput {
   // DEPRECATED
   reserved 5;
   reserved "start_time_sec";
+}
+
+// TODO(b/155104976): Move sample_errors_randomly switch here.
+message StandardDownsamplerOptions {}
+
+message StandardAggregatorOptions {
+  // The behavior when SampleErrors are emitted by user samplers while in an
+  // ignore range. Historically the behavior is COUNT_ERRORS. Based on user
+  // feedback, the Mako team will eventually change the default behavior to
+  // IGNORE_ERRORS.
+  //
+  enum ErrorsInIgnoreRangeOption {
+    // The framework will choose how to interpret SampleErrors emitted in the
+    // ignore range. The historical behavior is COUNT_ERRORS but will become
+    // IGNORE_ERRORS.
+    UNSPECIFIED = 0;
+
+    // SampleErrors emitted in the ignore range are neither counted (as part of
+    // the ERROR_COUNT aggregate).
+    IGNORE_ERRORS = 1;
+
+    // SampleErrors emitted in the ignore range are counted (as part of the
+    // ERRORS_COUNT aggregate).
+    COUNT_ERRORS = 2;
+  }
+  // OPTIONAL
+  optional ErrorsInIgnoreRangeOption errors_in_ignore_range_behavior = 1
+      [default = UNSPECIFIED];
 }
 
 // Test output that summarizes test run results.

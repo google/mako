@@ -32,18 +32,25 @@ class MockQuickstore : public Quickstore {
       const mako::quickstore::QuickstoreInput& input)
       : Quickstore(input) {}
 
-  MOCK_METHOD1(AddSamplePoint, std::string(const mako::SamplePoint& point));
-  MOCK_METHOD2(AddSamplePoint,
-               std::string(double xval, const std::map<std::string, double>& yvals));
+  MOCK_METHOD(std::string, AddSamplePoint, (const mako::SamplePoint& point),
+              (override));
+  MOCK_METHOD(std::string, AddSamplePoint,
+              (double xval, (const std::map<std::string, double>& yvals)),
+              (override));
 
-  MOCK_METHOD2(AddError, std::string(double xval, const std::string& error_msg));
-  MOCK_METHOD1(AddError, std::string(const mako::SampleError&));
+  MOCK_METHOD(std::string, AddError,
+              (double xval, const std::string& error_msg), (override));
+  MOCK_METHOD(std::string, AddError, (const mako::SampleError&),
+              (override));
 
-  MOCK_METHOD2(AddRunAggregate, std::string(const std::string& value_key, double value));
-  MOCK_METHOD3(AddMetricAggregate,
-               std::string(const std::string& value_key, const std::string& aggregate_type,
-                      double value));
-  MOCK_METHOD0(Store, mako::quickstore::QuickstoreOutput());
+  MOCK_METHOD(std::string, AddRunAggregate,
+              (const std::string& value_key, double value), (override));
+  MOCK_METHOD(std::string, AddMetricAggregate,
+              (const std::string& value_key, const std::string& aggregate_type,
+               double value),
+              (override));
+  MOCK_METHOD(mako::quickstore::QuickstoreOutput, Store, (),
+              (override));
 };
 
 }  // namespace quickstore

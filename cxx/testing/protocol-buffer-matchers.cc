@@ -37,7 +37,8 @@ namespace internal {
 
 class StringErrorCollector : public google::protobuf::io::ErrorCollector {
  public:
-  explicit StringErrorCollector(std::string* error_text) : error_text_(error_text) {}
+  explicit StringErrorCollector(std::string* error_text)
+      : error_text_(error_text) {}
 
   void AddError(int line, int column, const std::string& message) override {
     absl::SubstituteAndAppend(error_text_, "$0($1): $2\n",
@@ -70,7 +71,8 @@ bool ProtoComparable(const google::protobuf::Message& p, const google::protobuf:
 }
 
 template <typename Container>
-std::string JoinStringPieces(const Container& strings, absl::string_view separator) {
+std::string JoinStringPieces(const Container& strings,
+                             absl::string_view separator) {
   std::stringstream stream;
   absl::string_view sep = "";
   for (const absl::string_view str : strings) {
@@ -306,7 +308,7 @@ bool ProtoCompare(const internal::ProtoComparison& comp,
 
 // Describes the types of the expected and the actual protocol buffer.
 std::string DescribeTypes(const google::protobuf::Message& expected,
-                     const google::protobuf::Message& actual) {
+                          const google::protobuf::Message& actual) {
   return "whose type should be " + expected.GetDescriptor()->full_name() +
       " but actually is " + actual.GetDescriptor()->full_name();
 }
@@ -321,8 +323,8 @@ std::string PrintProtoPointee(const google::protobuf::Message* proto) {
 
 // Describes the differences between the two protocol buffers.
 std::string DescribeDiff(const internal::ProtoComparison& comp,
-                    const google::protobuf::Message& actual,
-                    const google::protobuf::Message& expected) {
+                         const google::protobuf::Message& actual,
+                         const google::protobuf::Message& expected) {
   google::protobuf::util::MessageDifferencer differencer;
   google::protobuf::util::DefaultFieldComparator field_comparator;
   ConfigureDifferencer(comp, &field_comparator, &differencer,

@@ -102,7 +102,8 @@ static mako::internal::Random* GetRandom() {
   return random;
 }
 
-std::set<std::string> ToStringSet(const google::protobuf::RepeatedPtrField<std::string>& list) {
+std::set<std::string> ToStringSet(
+    const google::protobuf::RepeatedPtrField<std::string>& list) {
   std::set<std::string> set;
   for (const auto& key : list) {
     set.insert(key);
@@ -439,6 +440,9 @@ Status RollingWindowReducer::CompleteImpl(
     return InvalidArgumentError("RepeatedPtrField pointer invalid.");
   }
   for (auto& subreducer : subreducers_) {
+    RWRAddPointsInput input;
+    *input.mutable_point_list() = {output->begin(), output->end()};
+    subreducer->AddPoints(input);
     subreducer->Complete(output);
   }
   return OkStatus();

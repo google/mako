@@ -50,13 +50,12 @@ ThreadsafeRunningStats* Aggregator::GetOrCreateRunningStats(
 // Return bool if the passed SamplePoint's input_value falls within any of the
 // ignore ranges.
 bool Aggregator::Ignored(const std::list<mako::Range>& sorted_ignore_list,
-                         const mako::SamplePoint& sample_point) {
+                         double input_value) {
   for (const auto& range : sorted_ignore_list) {
     // Because ignore list is sorted by start time we can abort search.
-    if (range.start() > sample_point.input_value()) {
+    if (range.start() > input_value) {
       return false;
-    } else if (range.start() <= sample_point.input_value() &&
-               sample_point.input_value() <= range.end()) {
+    } else if (range.start() <= input_value && input_value <= range.end()) {
       return true;
     }
   }
@@ -65,8 +64,9 @@ bool Aggregator::Ignored(const std::list<mako::Range>& sorted_ignore_list,
 
 // Calculate aggregates based on AggregatorInput(). Place results in
 // AggergatorOutput or return error string.
-std::string Aggregator::Aggregate(const mako::AggregatorInput& aggregator_input,
-                             mako::AggregatorOutput* aggregator_output) {
+std::string Aggregator::Aggregate(
+    const mako::AggregatorInput& aggregator_input,
+    mako::AggregatorOutput* aggregator_output) {
 
   if (!fileio_) {
     return "Must pass a FileIO instance with Aggregator.SetFileIO() first.";
@@ -98,6 +98,9 @@ std::string Aggregator::ProcessFiles(
     std::map<std::string, std::unique_ptr<ThreadsafeRunningStats>>* stats_map) {
   std::string err;
 
+  const StandardAggregatorOptions& options =
+      aggregator_input.standard_aggregator_options();
+
   int num_threads = aggregator_input.sample_file_list_size();
   if (max_threads_ > 0 && max_threads_ < num_threads) {
     num_threads = max_threads_;
@@ -110,13 +113,14 @@ std::string Aggregator::ProcessFiles(
        aggregator_input.sample_file_list()) {
     file_processor.Schedule([&err, &sample_file, &m, &sorted_ignore_list,
                              sample_counts, stats_map, &total_fileio_read_time,
-                             this]() {
+                             &options, this]() {
       SampleCounts file_sample_counts;
       std::unique_ptr<mako::FileIO> fio = fileio_->MakeInstance();
       absl::Duration fileio_read_time;
-      std::string error =
-          ProcessFile(sorted_ignore_list, sample_file.file_path(), fio.get(),
-                      &file_sample_counts, stats_map, &fileio_read_time);
+
+      std::string error = ProcessFile(
+          sorted_ignore_list, sample_file.file_path(), options, fio.get(),
+          &file_sample_counts, stats_map, &fileio_read_time);
       bool successful_close = fio->Close();
       VLOG(1) << "Spent " << fileio_read_time << " reading points from "
                 << sample_file.file_path();
@@ -141,7 +145,8 @@ std::string Aggregator::ProcessFiles(
 
 std::string Aggregator::ProcessFile(
     const std::list<mako::Range>& sorted_ignore_list,
-    const std::string& file_path, mako::FileIO* fio, SampleCounts* sample_counts,
+    const std::string& file_path, const StandardAggregatorOptions& options,
+    mako::FileIO* fio, SampleCounts* sample_counts,
     std::map<std::string, std::unique_ptr<ThreadsafeRunningStats>>* stats_map,
     absl::Duration* fileio_read_time) {
   std::map<std::string, std::vector<double>> buffers;
@@ -163,7 +168,7 @@ std::string Aggregator::ProcessFile(
       break;
     }
     *fileio_read_time += absl::Now() - start;
-    err = ProcessRecord(sorted_ignore_list, sample_record, &buffers,
+    err = ProcessRecord(sorted_ignore_list, sample_record, options, &buffers,
                         sample_counts, stats_map);
     if (!err.empty()) {
       return err;
@@ -183,11 +188,14 @@ std::string Aggregator::ProcessFile(
 std::string Aggregator::ProcessRecord(
     const std::list<mako::Range>& sorted_ignore_list,
     const mako::SampleRecord& sample_record,
-    std::map<std::string, std::vector<double>>* buffers, SampleCounts* sample_counts,
+    const StandardAggregatorOptions& options,
+    std::map<std::string, std::vector<double>>* buffers,
+    SampleCounts* sample_counts,
     std::map<std::string, std::unique_ptr<ThreadsafeRunningStats>>* stats_map) {
   std::string err;
   if (sample_record.has_sample_point()) {
-    if (Ignored(sorted_ignore_list, sample_record.sample_point())) {
+    if (Ignored(sorted_ignore_list,
+                sample_record.sample_point().input_value())) {
       ++sample_counts->ignored;
     } else {
       ++sample_counts->usable;
@@ -207,7 +215,15 @@ std::string Aggregator::ProcessRecord(
     }
   }
   if (sample_record.has_sample_error()) {
-    ++sample_counts->error;
+    // Default (historical) behavior is COUNT_ERRORS, so treat UNSPECIFIED that
+    // way.
+    bool ignore_errors = options.errors_in_ignore_range_behavior() ==
+                         StandardAggregatorOptions::IGNORE_ERRORS;
+    bool is_ignored =
+        Ignored(sorted_ignore_list, sample_record.sample_error().input_value());
+    if (!is_ignored || !ignore_errors) {
+      ++sample_counts->error;
+    }
   }
   return kNoError;
 }
@@ -235,8 +251,9 @@ std::string Aggregator::ProcessBuffer(
 }
 
 std::string Aggregator::Init(const mako::AggregatorInput& aggregator_input,
-                        std::list<mako::Range>* sorted_ignore_list) {
-  std::string err = mako::internal::ValidateAggregatorInput(aggregator_input);
+                             std::list<mako::Range>* sorted_ignore_list) {
+  std::string err =
+      mako::internal::ValidateAggregatorInput(aggregator_input);
   if (!err.empty()) {
     LOG(ERROR) << err;
     return err;
@@ -257,7 +274,8 @@ std::string Aggregator::Init(const mako::AggregatorInput& aggregator_input,
 std::string Aggregator::Complete(
     const mako::AggregatorInput& aggregator_input,
     const SampleCounts& sample_counts,
-    const std::map<std::string, std::unique_ptr<ThreadsafeRunningStats>>& stats_map,
+    const std::map<std::string, std::unique_ptr<ThreadsafeRunningStats>>&
+        stats_map,
     mako::AggregatorOutput* output) {
   // Set the percentil_milli_rank on aggregator_output. If not set on benchmark
   // then use defaults.

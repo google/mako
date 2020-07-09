@@ -62,9 +62,9 @@ class Analyzer : public mako::Analyzer {
   std::string ValidateUTestAnalyzerInput() const;
 
   std::string AnalyzeUTestConfig(const std::string& config_name,
-                            const StatsCalculator& s_calc,
-                            const UTestConfig& config,
-                            UTestConfigResult* result);
+                                 const StatsCalculator& s_calc,
+                                 const UTestConfig& config,
+                                 UTestConfigResult* result);
 
   bool SetAnalyzerOutputPassing(AnalyzerOutput* output,
                                 UTestAnalyzerOutput* custom_output);

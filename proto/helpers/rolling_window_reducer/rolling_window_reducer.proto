@@ -109,9 +109,11 @@ message RWRConfig {
   optional WindowOperation window_operation = 3;
 
   // REQUIRED
-  // The higher this value, the smoother the resulting data.
-  // For computing throughput / aggregate data, this value does not need to be
-  // the interval of time you are interested in; see output_scaling_factor.
+  // Size of the window in x-axis units, configured via the
+  // BenchmarkInfo.input_value_info field. The higher this value, the smoother
+  // the resulting data. For computing throughput / aggregate data, this value
+  // does not need to be the interval of time you are interested in; see
+  // output_scaling_factor.
   //
   // Each window is inclusive on the lower end and exclusive on the upper end
   // eg. [...)

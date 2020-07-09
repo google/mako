@@ -47,12 +47,13 @@ class Analyzer : public mako::Analyzer {
       mako::AnalyzerHistoricQueryOutput* output) override;
 
   // Return analyzer type, see ifc for more info
-  std::string analyzer_type() override { return "WindowDeviation"; }
+  std::string analyzer_type() override { return kWindowDeviationType; }
 
   // Return analyzer name, see ifc for more info.
   // If WindowDeviationInput.name is not set, empty std::string will be returned.
   std::string analyzer_name() override { return config_.name(); }
 
+  static constexpr char kWindowDeviationType[] = "WindowDeviation";
 
  private:
   // Run the analysis, see ifc for more info.

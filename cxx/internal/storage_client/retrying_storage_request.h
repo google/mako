@@ -33,23 +33,30 @@
 namespace mako {
 namespace internal {
 
+template <typename RequestMessage, typename ReturnMessage>
 inline helpers::Status ConnectAndCall(
-    mako::internal::StorageTransport* transport, const std::string& path,
-    const google::protobuf::Message& request, absl::Duration deadline,
-    google::protobuf::Message* response) {
+    mako::internal::StorageTransport* transport,
+    helpers::Status (internal::StorageTransport::*method)(absl::Duration,
+                                                          const RequestMessage&,
+                                                          ReturnMessage*),
+    const RequestMessage& request, absl::Duration deadline,
+    ReturnMessage* response) {
   auto status = transport->Connect();
   if (!status.ok()) {
     return status;
   }
-  return transport->Call(path, request, deadline, response);
+  return (transport->*method)(deadline, request, response);
 }
 
 template <typename RequestMessage, typename ReturnMessage>
 bool RetryingStorageRequest(
-    const RequestMessage& request, const std::string& url,
-    const std::string& telemetry_action, ReturnMessage* response,
+    const RequestMessage& request, ReturnMessage* response,
     mako::internal::StorageTransport* transport,
-    mako::internal::StorageRetryStrategy* retry_strategy) {
+    helpers::Status (internal::StorageTransport::*method)(absl::Duration,
+                                                          const RequestMessage&,
+                                                          ReturnMessage*),
+    mako::internal::StorageRetryStrategy* retry_strategy,
+    absl::string_view telemetry_action) {
   constexpr absl::Duration kRPCDeadline = absl::Seconds(65);
 
   std::string result = "FAIL";
@@ -64,7 +71,7 @@ bool RetryingStorageRequest(
     // Once the transport has been connected once, further calls to Connect are
     // no-ops.
     helpers::Status status =
-        ConnectAndCall(transport, url, request, kRPCDeadline, response);
+        ConnectAndCall(transport, method, request, kRPCDeadline, response);
     if (!status.ok()) {
       // Insert transport-level errors into the response message. This makes
       // the user aware of what happened, regardless of the originating layer of
