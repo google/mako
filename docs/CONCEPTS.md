@@ -96,7 +96,7 @@ which metrics are being displayed and how they're displayed.
 
 Quickstore is the high-level Mako client for adding performance test data to
 Mako as new [runs](#runs). It is available in Go and C++. Please see
-[QUICKSTORE.md](QUICKSTORE.md) for Quickstore documentation.
+[GUIDE.md](GUIDE.md) for Quickstore documentation.
 
 
 ## Storage Clients
