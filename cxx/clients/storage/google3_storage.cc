@@ -86,7 +86,7 @@ constexpr absl::Duration kMinSleep = absl::Seconds(1);
 constexpr absl::Duration kMaxSleep = absl::Seconds(30);
 
 constexpr int kMetricValueCountMax = 50000;
-constexpr int kSampleErrorCountMax = 5000;
+constexpr int kSampleErrorCountMax = 1000;
 constexpr int kBatchSizeMax = 1000000;
 
 std::string ResolveClientToolTag() {
